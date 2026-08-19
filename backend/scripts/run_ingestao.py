@@ -10,8 +10,10 @@ from core.logger import get_logger
 from scraper.facebook_scraper import FacebookScraper
 from scraper.instagram_scraper import InstagramScraper
 from scraper.orchestrator import Orchestrator
+from scraper.telegram_scraper import TelegramScraper
 from scraper.twitter_scraper import TwitterScraper
 from scraper.web_scraper import WebScraper
+from scraper.youtube_scraper import YouTubeScraper
 
 logger = get_logger(__name__)
 
@@ -62,6 +64,29 @@ def construir_scrapers() -> list:
         )
     if settings.HABILITAR_WEB:
         scrapers.append(WebScraper(CONFIG_BASE))
+    if settings.HABILITAR_YOUTUBE:
+        scrapers.append(
+            YouTubeScraper(
+                {
+                    **CONFIG_BASE,
+                    "coletar_transcricao": settings.YOUTUBE_COLETAR_TRANSCRICAO,
+                    "max_videos": settings.YOUTUBE_MAX_VIDEOS,
+                }
+            )
+        )
+    if settings.HABILITAR_TELEGRAM:
+        scrapers.append(
+            TelegramScraper(
+                {
+                    **CONFIG_BASE,
+                    "api_id": settings.TELEGRAM_API_ID,
+                    "api_hash": settings.TELEGRAM_API_HASH,
+                    "session_file": settings.TELEGRAM_SESSION_FILE,
+                    "canais": settings.TELEGRAM_CANAIS,
+                    "limite_por_canal": settings.TELEGRAM_LIMITE_POR_CANAL,
+                }
+            )
+        )
     if not scrapers:
         logger.warning("Nenhum scraper habilitado no .env.")
     return scrapers

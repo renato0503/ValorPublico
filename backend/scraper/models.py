@@ -6,6 +6,8 @@ PLATAFORMA_TWITTER = "Twitter"
 PLATAFORMA_INSTAGRAM = "Instagram"
 PLATAFORMA_FACEBOOK = "Facebook"
 PLATAFORMA_WEB = "Web"
+PLATAFORMA_YOUTUBE = "YouTube"
+PLATAFORMA_TELEGRAM = "Telegram"
 
 # Tipos de clipping
 TIPO_POSTAGEM = "Postagem"

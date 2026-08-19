@@ -25,6 +25,13 @@ playwright>=1.44.0
 twscrape>=0.4.5
 instaloader>=4.10.0
 
+# YouTube
+yt-dlp>=2025.1.0
+youtube-transcript-api>=1.0.0
+
+# Telegram (MTProto autenticado - evitar clones do Pyrogram)
+telethon>=1.37.0
+
 # NLP / sentimentos
 vaderSentiment>=3.3.2
 nltk>=3.8.1

@@ -47,6 +47,23 @@ HABILITAR_TWITTER = os.getenv("HABILITAR_TWITTER", "1") == "1"
 HABILITAR_INSTAGRAM = os.getenv("HABILITAR_INSTAGRAM", "1") == "1"
 HABILITAR_FACEBOOK = os.getenv("HABILITAR_FACEBOOK", "1") == "1"
 HABILITAR_WEB = os.getenv("HABILITAR_WEB", "1") == "1"
+HABILITAR_YOUTUBE = os.getenv("HABILITAR_YOUTUBE", "1") == "1"
+HABILITAR_TELEGRAM = os.getenv("HABILITAR_TELEGRAM", "1") == "1"
+
+# YouTube
+YOUTUBE_COLETAR_TRANSCRICAO = os.getenv("YOUTUBE_COLETAR_TRANSCRICAO", "1") == "1"
+YOUTUBE_MAX_VIDEOS = int(os.getenv("YOUTUBE_MAX_VIDEOS", "5"))
+
+# Telegram (Telethon)
+TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0") or "0")
+TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
+TELEGRAM_SESSION_FILE = os.getenv("TELEGRAM_SESSION_FILE", "")
+TELEGRAM_CANAIS = [
+    c.strip()
+    for c in os.getenv("TELEGRAM_CANAIS", "").split(",")
+    if c.strip()
+]
+TELEGRAM_LIMITE_POR_CANAL = int(os.getenv("TELEGRAM_LIMITE_POR_CANAL", "50"))
 
 # Nomes das colecoes Firestore
 COLLECTION_AGENTES = "agentes_publicos"
