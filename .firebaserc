@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "valorpublico-b1e6d"
-  }
+  },
+  "targets": {
+    "valorpublico-b1e6d": {
+      "hosting": {
+        "valorpublico": [
+          "valorpublico"
+        ],
+        "principal": [
+          "valorpublico-b1e6d"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
