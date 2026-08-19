@@ -1,0 +1,108 @@
+# ============================================================
+# SEGREDOS E CREDENCIAIS — nunca versionar
+# ============================================================
+
+# Variáveis de ambiente (qualquer local, qualquer extensão)
+.env
+.env.*
+*.env
+!.env.example
+!*.env.example
+
+# Chaves de serviço do Firebase / Google Cloud (qualquer formato/nome)
+*.json
+!backend/data/seeds/*.json
+*credentials*
+*serviceaccount*
+*service-account*
+*firebase-adminsdk*
+*adminsdk*
+google-application-credentials*
+
+# Chaves/certificados criptográficos
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Sessões, cookies e autenticação de scrapers
+*.cookies
+*.cookie
+*.session
+cookies.txt
+session.*
+cookies.*
+instaloader-*
+*.db
+*.sqlite
+*.sqlite3
+
+# Listas de proxies
+proxies*
+proxy-list*
+
+# ============================================================
+# PYTHON
+# ============================================================
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.so
+.venv/
+venv/
+env/
+.python-version
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# ============================================================
+# DADOS GERADOS / INGERIDOS (raw, processados, exportações)
+# ============================================================
+backend/data/raw/*
+backend/data/processed/*
+!backend/data/raw/.gitkeep
+!backend/data/processed/.gitkeep
+*.csv
+*.parquet
+*.feather
+*.xlsx
+exports/
+output/
+
+# ============================================================
+# LOGS
+# ============================================================
+*.log
+logs/
+*.log.*
+
+# ============================================================
+# FRONTEND / NODE
+# ============================================================
+node_modules/
+dist/
+build/
+.sass-cache/
+*.min.js
+
+# ============================================================
+# ARTEFATOS DE AUTOMAÇÃO (Playwright/Selenium)
+# ============================================================
+screenshots/
+test-results/
+.playwright/
+selenium-*
+
+# ============================================================
+# IDE / SO
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
