@@ -1,7 +1,7 @@
 # ValorPúblico — Plano de Implementação (Sprints)
 
 > Roteiro de execução da plataforma, da base até o **go live** completo.
-> Atualizado em: 19/08/2026.
+> Atualizado em: 19/08/2026 (fim do dia).
 
 ---
 
@@ -18,18 +18,19 @@
 | 6 | Métricas agregadas | `metricas` por geral/cidade/agente + série diária | ✅ Concluída |
 | 7 | Dashboard PWA | KPIs, filtros, gráficos, tempo real | ✅ Concluída |
 | 8 | Controle de acesso (owner) | Coleção `usuarios` + script de owner | ✅ Concluída |
-| 9 | **Deploy (Firebase Hosting)** | PWA publicado + `firebase.json`/`.firebaserc` | ✅ Concluída |
-| 10 | **Valoração financeira da mídia** | Tabela R$/espaço + `valor_estimado` no pipeline/dashboard | ⏳ Pendente |
+| 9 | **Deploy (Firebase Hosting)** | PWA publicado em `valorpublico.web.app` | ✅ Concluída |
+| 10 | **Valoração financeira da mídia** | Tabela R$/espaço + `valor_estimado` no pipeline/dashboard | ✅ Concluída |
+| 15 | **Layout — Fundação visual** | Dark mode de alto padrão, tipografia, grid assimétrico | ✅ Concluída |
+| 16 | **Layout — KPIs e tendência** | Indicadores de tendência nos KPIs | ✅ Concluída |
+| 17 | **Layout — Gráficos** | Sentimento em donut, share + valoração 1/2+1/2 | ✅ Concluída |
+| 18 | **Layout — Tabela e responsividade** | Top 10 full-width, sticky, media queries mobile | ✅ Concluída |
+| — | **Ingestão Web (retomada)** | Completar clippings dos 50 agentes (13/50 ok) | 🔄 Em andamento |
 | 11 | Agendamento da ingestão | Cloud Scheduler / cron | ⏳ Pendente |
 | 12 | Regras de Security (RBAC) | Firestore Rules por papel | ⏳ Pendente |
 | 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ⏳ Pendente |
 | 14 | **Go live** | Homologação, monitoramento, documentação final | ⏳ Pendente |
-| 15 | **Layout — Fundação visual** | Dark mode de alto padrão, tipografia, grid assimétrico | ⏳ Pendente |
-| 16 | **Layout — KPIs e tendência** | Indicadores de tendência nos KPIs | ⏳ Pendente |
-| 17 | **Layout — Gráficos** | Sentimento em donut, share + valoração 1/2+1/2 | ⏳ Pendente |
-| 18 | **Layout — Tabela e responsividade** | Top 10 full-width, sticky, media queries mobile | ⏳ Pendente |
 
-**Status total:** 9 concluídas · 0 em andamento · 9 pendentes.
+**Status total:** 14 sprints concluídas · 1 em andamento (ingestão) · 4 pendentes.
 
 ---
 
@@ -106,20 +107,22 @@
 ## Sprint 9 — Deploy (Firebase Hosting) ✅
 
 **Objetivo:** Publicar o PWA em produção.
-- [x] `firebase.json` — hosting, `cleanUrls`, rewrite SPA, headers de cache (sw.js no-cache).
-- [x] `.firebaserc` — projeto `valorpublico-b1e6d`.
+- [x] `firebase.json` — hosting (2 targets), `cleanUrls`, rewrite SPA, headers de cache.
+- [x] `.firebaserc` — projeto `valorpublico-b1e6d` + targets `valorpublico` e `principal`.
 - [x] `.gitignore` — `.firebase/` (cache local com tokens).
 - [x] `firebase login` + `firebase deploy`.
-- [x] Validação de `https://valorpublico-b1e6d.web.app` (todos os recursos 200 OK).
-- **Produção:** https://valorpublico-b1e6d.web.app
+- [x] Correção do service worker (network-first p/ JS, bump do cache) e do header de cache dos JS (evita MIME `text/html`).
+- [x] Config do Firebase embutida no `js/firebase-init.js` (elimina dependência do `firebase-config.js`).
+- **Produção:** https://valorpublico.web.app (site principal) e https://valorpublico-b1e6d.web.app
 
-## Sprint 10 — Valoração Financeira da Mídia ⏳
+## Sprint 10 — Valoração Financeira da Mídia ✅
 
 **Objetivo:** Converter menções em R$ (espaço publicitário equivalente).
-- Tabela de `R$/espaço` por veículo/plataforma (Web, TV, Rádio, Impresso, Redes).
-- Cálculo de `valor_estimado` no pipeline de ingestão (antes da persistência).
-- Exibição da valoração por veículo e total no dashboard (KPI + Top 10).
-- Persistência do `valor_estimado` nos clippings e nas métricas.
+- [x] Tabela `tabela_midia/geral` — CPM por plataforma + R$/matéria por veículo (configurável).
+- [x] `processing/valoracao.py` — `Valorador` calcula `valor_estimado` (CPM por alcance p/ redes; tabela p/ Web).
+- [x] Integrado ao `Orchestrator` (após sentimento, antes de persistir).
+- [x] Métricas incluem `valoracao_por_plataforma` e `valoracao_por_categoria`.
+- [x] Dashboard: KPI de valoração + gráfico de valoração por plataforma + coluna de valor no Top 10.
 
 ## Sprint 11 — Agendamento da Ingestão ⏳
 
@@ -127,6 +130,28 @@
 - Cloud Scheduler (cron) disparando o job de ingestão.
 - Alternativa: GitHub Actions / cron local para MVP.
 - Roda `run_ingestao.py` e depois `atualizar_metricas.py`.
+
+## Sprints 15–18 — Layout do Dashboard (Painel Executivo) ✅
+
+**Objetivo:** Upgrade visual para um painel executivo de alto padrão em dark mode.
+- **15 — Fundação visual:** fundo Slate 900, cards Slate 800 com bordas sutis e sombra; tipografia Inter; rótulos/eixos em Slate 400 e KPIs grandes/bold.
+- **16 — KPIs e tendência:** 4 cards com indicador de tendência ("+X% esta semana", verde/vermelho) calculado pela série temporal.
+- **17 — Gráficos:** grid assimétrico — série temporal (2/3) + sentimento em donut (1/3); share de mídia + valoração por plataforma (1/2+1/2).
+- **18 — Tabela e responsividade:** Top 10 full-width com cabeçalho sticky, hover e colunas numéricas à direita; media queries que empilham os grids em mobile.
+- **Deploy:** refatoração publicada em `https://valorpublico.web.app`.
+
+## Estado Atual e Retomada (19/08/2026)
+
+- ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` repopulados após o reset.
+- 🔄 **Ingestão Web em andamento** — 420 clippings gravados até o 13º agente (processo interrompido; persistência incremental preserva o progresso).
+- ⏳ **A fazer amanhã (ordem):**
+  1. Completar a ingestão Web dos 50 agentes (`run_ingestao.py`).
+  2. Regenerar métricas (`atualizar_metricas.py`).
+  3. Recriar o owner (`criar_owner.py` — apagado no reset).
+  4. Validar o dashboard em `https://valorpublico.web.app` (hard refresh / limpar cache se o SW v3 não assumir).
+  5. Ativar YouTube/Telegram e configurar redes sociais.
+
+
 
 ## Sprint 12 — Regras de Security (RBAC) ⏳
 
