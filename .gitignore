@@ -12,6 +12,7 @@
 # Chaves de serviço do Firebase / Google Cloud (qualquer formato/nome)
 *.json
 !backend/data/seeds/*.json
+!firebase.json
 *credentials*
 *serviceaccount*
 *service-account*
