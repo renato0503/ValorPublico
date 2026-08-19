@@ -1,15 +1,15 @@
-const CACHE_VERSION = "valorpublico-v1";
+const CACHE_VERSION = "valorpublico-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/styles.css",
-  "./js/firebase-init.js",
-  "./js/app.js",
-  "./js/charts.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
 ];
+
+const IGNORAR_CACHE = (url) =>
+  url.pathname.endsWith(".js") || url.pathname.endsWith("firebase-config.js");
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -20,15 +20,17 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_VERSION)
-          .map((key) => caches.delete(key))
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_VERSION)
+            .map((key) => caches.delete(key))
+        )
       )
-    )
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
@@ -39,8 +41,20 @@ self.addEventListener("fetch", (event) => {
   const isGstatic = url.hostname.endsWith("gstatic.com");
   const isGoogle = url.hostname.endsWith("googleapis.com");
 
-  if (isGstatic || isGoogle) {
-    event.respondWith(fetch(request).catch(() => caches.match(request)));
+  // Modulos JS (firebase-config, app, etc.) e CDNs: sempre da rede (network-first).
+  // Evita servir HTML cacheado no lugar de JS (erro de MIME) apos redeploys.
+  if (IGNORAR_CACHE(url) || isGstatic || isGoogle) {
+    event.respondWith(
+      fetch(request)
+        .then((resp) => {
+          if (resp.ok && IGNORAR_CACHE(url)) {
+            const copy = resp.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
+          }
+          return resp;
+        })
+        .catch(() => caches.match(request))
+    );
     return;
   }
 
@@ -57,6 +71,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Assets estaticos imutaveis do app shell: cache-first.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
