@@ -88,6 +88,9 @@ build/
 .sass-cache/
 *.min.js
 
+# Config real do Firebase no frontend (apenas o exemplo e versionado)
+frontend/firebase-config.js
+
 # ============================================================
 # ARTEFATOS DE AUTOMAÇÃO (Playwright/Selenium)
 # ============================================================
