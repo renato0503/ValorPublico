@@ -27,7 +27,13 @@ def construir_scrapers() -> list:
     scrapers: list = []
     if settings.HABILITAR_TWITTER:
         scrapers.append(
-            TwitterScraper({**CONFIG_BASE, "contas_twitter": settings.TWITTER_ACCOUNTS})
+            TwitterScraper(
+                {
+                    **CONFIG_BASE,
+                    "contas_twitter": settings.TWITTER_ACCOUNTS,
+                    "cookies_file": settings.TWITTER_COOKIES_FILE,
+                }
+            )
         )
     if settings.HABILITAR_INSTAGRAM:
         scrapers.append(
@@ -37,12 +43,22 @@ def construir_scrapers() -> list:
                     "username": settings.INSTAGRAM_USERNAME,
                     "password": settings.INSTAGRAM_PASSWORD,
                     "session_file": settings.INSTAGRAM_SESSION_FILE,
+                    "max_posts_por_perfil": settings.INSTAGRAM_MAX_POSTS_PERFIL,
                 }
             )
         )
     if settings.HABILITAR_FACEBOOK:
         scrapers.append(
-            FacebookScraper({**CONFIG_BASE, "cookies_file": settings.FACEBOOK_COOKIES_FILE})
+            FacebookScraper(
+                {
+                    **CONFIG_BASE,
+                    "cookies_file": settings.FACEBOOK_COOKIES_FILE,
+                    "username": settings.FACEBOOK_USERNAME,
+                    "password": settings.FACEBOOK_PASSWORD,
+                    "headless": settings.FACEBOOK_HEADLESS,
+                    "max_rolagens": settings.FACEBOOK_MAX_ROLAGENS,
+                }
+            )
         )
     if settings.HABILITAR_WEB:
         scrapers.append(WebScraper(CONFIG_BASE))

@@ -10,15 +10,17 @@ logger = get_logger(__name__)
 class WebScraper(BaseScraper):
     """Monitora midia tradicional (portais de noticia) via RSS do Google News.
 
-    Busca pelo termo no Google News (pt-BR) e enriquece com o conteudo da
-    pagina original quando `config["enriquecer"]` estiver habilitado.
+    O texto das paginas e extraido com o Trafilatura (referencia F1 em 2026),
+    que remove boilerplate e produz texto limpo pronto para NLP/RAG. A rede e
+    adquirida via httpx (HTTP/2), com o corpo repassado ao feedparser.
     """
 
     plataforma = PLATAFORMA_WEB
 
     def __init__(self, config: dict | None = None) -> None:
         super().__init__(config)
-        self.enriquecer = (config or {}).get("enriquecer", True)
+        cfg = config or {}
+        self.enriquecer = cfg.get("enriquecer", True)
 
     def _buscar_rss(self, termo: str, limite: int) -> list[dict]:
         import feedparser
@@ -32,14 +34,25 @@ class WebScraper(BaseScraper):
         return feed.entries[:limite]
 
     def _extrair_texto(self, url: str) -> str:
+        """Corpo do artigo limpo via Trafilatura (fallback: marcacao markdown)."""
         try:
-            from bs4 import BeautifulSoup
+            import trafilatura
 
             resp = self._get(url)
-            soup = BeautifulSoup(resp.text, "lxml")
-            for tag in soup(["script", "style", "nav", "footer", "header"]):
-                tag.decompose()
-            return " ".join(soup.get_text(" ", strip=True).split())
+            texto = trafilatura.extract(
+                resp.text,
+                include_comments=False,
+                include_tables=False,
+                favor_recall=True,
+            )
+            if not texto:
+                texto = trafilatura.extract(
+                    resp.text,
+                    output_format="markdown",
+                    include_comments=False,
+                    favor_recall=True,
+                )
+            return (texto or "").strip()
         except Exception as e:  # noqa: BLE001
             logger.debug("Web: nao foi possivel enriquecer %s: %s", url, e)
             return ""

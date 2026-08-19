@@ -29,6 +29,8 @@ class InstagramScraper(BaseScraper):
         self.username = cfg.get("username", "")
         self.password = cfg.get("password", "")
         self.session_file = cfg.get("session_file", "")
+        # instaloader ban por IP em alta cadencia: limites baixos + proxies
+        self.max_posts_por_perfil = int(cfg.get("max_posts_por_perfil", 20))
         self._logado = False
         self._loader: instaloader.Instaloader | None = None
 
@@ -43,6 +45,8 @@ class InstagramScraper(BaseScraper):
             download_geotags=False,
             download_comments=self.incluir_comentarios,
             save_metadata=False,
+            sleep=True,
+            max_connection_attempts=3,
         )
         session_path = Path(self.session_file)
         try:
@@ -80,10 +84,11 @@ class InstagramScraper(BaseScraper):
     def coletar(self, agente: dict, limite: int = 50) -> list[RawItem]:
         loader = self._login()
         itens: list[RawItem] = []
+        limite_perfil = min(limite, self.max_posts_por_perfil)
         for termo in agente.get("termos_de_busca", []):
             usuario = self._normalizar_usuario(termo)
             try:
-                for post in self._posts_do_perfil(loader, usuario, limite):
+                for post in self._posts_do_perfil(loader, usuario, limite_perfil):
                     itens.append(
                         RawItem(
                             agente_id=agente["id"],

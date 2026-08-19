@@ -1,20 +1,24 @@
-from scraper.base import AsyncScraper
-from scraper.models import (
-    TIPO_COMENTARIO,
-    TIPO_POSTAGEM,
-    PLATAFORMA_TWITTER,
-    RawItem,
-)
+import json
+from pathlib import Path
+
 from core.logger import get_logger
+from scraper.base import AsyncScraper
+from scraper.models import TIPO_COMENTARIO, TIPO_POSTAGEM, PLATAFORMA_TWITTER, RawItem
 
 logger = get_logger(__name__)
 
 
 class TwitterScraper(AsyncScraper):
-    """Coleta tweets e respostas via `twscrape` (API não-oficial do X/Twitter).
+    """Coleta tweets e respostas via `twscrape`.
 
-    Requer contas configuradas em `config["contas_twitter"]` como tuplas
-    (username, senha, email). Sem contas, o pool tenta modo anônimo.
+    A pesquisa anonima foi encerrada pelo X; o twscrape intercepta o GraphQL
+    interno e exige cookies validos de sessao do navegador (auth_token, ct0).
+
+    Contas:
+      - `config["contas_twitter"]`: lista de tuplas (username, senha, email)
+      - `config["cookies_file"]`: arquivo JSON {username: {auth_token, ct0, ...}}
+        aplicado por conta (recomendado — resiste a banimentos por roteamento
+        automatico via pool SQLite e rotacao em HTTP 429).
     """
 
     plataforma = PLATAFORMA_TWITTER
@@ -23,16 +27,26 @@ class TwitterScraper(AsyncScraper):
         super().__init__(config)
         cfg = config or {}
         self.contas_twitter: list[tuple] = cfg.get("contas_twitter", [])
+        self.cookies_file = cfg.get("cookies_file", "")
         self._api = None
+
+    def _cookies_por_conta(self) -> dict:
+        if not self.cookies_file or not Path(self.cookies_file).exists():
+            return {}
+        return json.loads(Path(self.cookies_file).read_text(encoding="utf-8"))
 
     async def _api_cliente(self):
         if self._api is None:
             from twscrape import API
 
             api = API()
+            cookies = self._cookies_por_conta()
             for conta in self.contas_twitter:
                 usuario, senha, email = conta
-                await api.pool.add_account(usuario, senha, email, "", source="env")
+                cookies_conta = cookies.get(usuario) or {}
+                await api.pool.add_account(
+                    usuario, senha, email, "", cookies=cookies_conta or None
+                )
             if self.contas_twitter:
                 await api.pool.login_all()
             self._api = api

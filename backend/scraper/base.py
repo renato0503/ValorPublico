@@ -2,7 +2,7 @@
 import time
 from abc import ABC, abstractmethod
 
-import requests
+import httpx
 
 from core.logger import get_logger
 from scraper.models import RawItem
@@ -63,13 +63,25 @@ class ResilienciaMixin:
     def _cabecalhos(self) -> dict:
         return {
             "User-Agent": random.choice(USER_AGENTS),
-            "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept": (
+                "text/html,application/xhtml+xml,application/xml;q=0.9,"
+                "image/avif,image/webp,*/*;q=0.8"
+            ),
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Sec-CH-UA": '"Chromium";v="124", "Google Chrome";v="124", "Not-A.Brand";v="99"',
+            "Sec-CH-UA-Mobile": "?0",
+            "Sec-CH-UA-Platform": '"Windows"',
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Upgrade-Insecure-Requests": "1",
+            "Connection": "keep-alive",
         }
 
 
 class BaseScraper(ResilienciaMixin, ABC):
-    """Scraper sincrono (Instagram, Facebook, Web) com client HTTP resiliente."""
+    """Scraper sincrono (Instagram, Facebook, Web) com client HTTP/2 resiliente."""
 
     plataforma: str = "Web"
 
@@ -82,21 +94,36 @@ class BaseScraper(ResilienciaMixin, ABC):
             max_retries=cfg.get("max_retries", 3),
         )
         self.incluir_comentarios = cfg.get("incluir_comentarios", True)
-        self.session = requests.Session()
+        self.session = httpx.Client(
+            http2=True,
+            follow_redirects=True,
+            timeout=httpx.Timeout(30.0, connect=10.0),
+            headers=self._cabecalhos(),
+        )
 
-    def _get(self, url: str, **kwargs) -> requests.Response:
+    def _get(self, url: str, **kwargs) -> httpx.Response:
         headers = kwargs.pop("headers", {})
-        headers.update(self._cabecalhos())
+        headers = {**self._cabecalhos(), **headers}
         params = kwargs.pop("params", None)
+        proxy = self._proximo_proxy()
 
-        def _fetch() -> requests.Response:
-            proxies = None
-            proxy = self._proximo_proxy()
-            if proxy:
-                proxies = {"http": proxy, "https": proxy}
-            return self.session.get(
-                url, headers=headers, params=params, proxies=proxies, timeout=30, **kwargs
-            )
+        def _fetch() -> httpx.Response:
+            try:
+                return self.session.get(
+                    url, headers=headers, params=params, proxy=proxy, **kwargs
+                )
+            except TypeError:
+                # httpx < 0.26: proxy por requisicao nao suportado
+                if proxy:
+                    with httpx.Client(
+                        proxy=proxy,
+                        http2=True,
+                        follow_redirects=True,
+                        timeout=httpx.Timeout(30.0, connect=10.0),
+                        headers=self._cabecalhos(),
+                    ) as cliente:
+                        return cliente.get(url, headers=headers, params=params, **kwargs)
+                return self.session.get(url, headers=headers, params=params, **kwargs)
 
         resp = self.com_resiliencia(_fetch)
         resp.raise_for_status()

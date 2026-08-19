@@ -1,15 +1,30 @@
+# Firestore / Firebase
 firebase-admin>=6.5.0
 google-cloud-firestore>=2.16.0
+
+# Processamento de dados
 pandas>=2.2.0
 numpy>=1.26.0
+
+# Configuracao
 python-dotenv>=1.0.1
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-lxml>=5.1.0
+
+# Cliente HTTP furtivo (HTTP/2)
+httpx[http2]>=0.27.0
+
+# Parsing de noticias / RSS
+trafilatura>=2.0.0
 feedparser>=6.0.10
+lxml>=5.1.0
+beautifulsoup4>=4.12.0
+
+# Automacao de navegador (Facebook)
+playwright>=1.44.0
+
+# Redes sociais
 twscrape>=0.4.5
 instaloader>=4.10.0
-facebook-scraper>=0.3.0
-playwright>=1.44.0
+
+# NLP / sentimentos
 vaderSentiment>=3.3.2
 nltk>=3.8.1

@@ -17,7 +17,14 @@ FIREBASE_DATABASE_URL = os.getenv("FIREBASE_DATABASE_URL", "")
 INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
 INSTAGRAM_SESSION_FILE = os.getenv("INSTAGRAM_SESSION_FILE", "")
+# instaloader ban por IP em alta cadencia: limite conservador por perfil
+INSTAGRAM_MAX_POSTS_PERFIL = int(os.getenv("INSTAGRAM_MAX_POSTS_PERFIL", "20"))
+
 FACEBOOK_COOKIES_FILE = os.getenv("FACEBOOK_COOKIES_FILE", "")
+FACEBOOK_USERNAME = os.getenv("FACEBOOK_USERNAME", "")
+FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
+FACEBOOK_HEADLESS = os.getenv("FACEBOOK_HEADLESS", "1") == "1"
+FACEBOOK_MAX_ROLAGENS = int(os.getenv("FACEBOOK_MAX_ROLAGENS", "5"))
 
 # Contas Twitter no formato "user:pass:email;user2:pass2:email2"
 TWITTER_ACCOUNTS = [
@@ -25,6 +32,8 @@ TWITTER_ACCOUNTS = [
     for parte in os.getenv("TWITTER_ACCOUNTS", "").split(";")
     if parte.strip()
 ]
+# Arquivo JSON {username: {auth_token, ct0, ...}} com cookies reais do navegador
+TWITTER_COOKIES_FILE = os.getenv("TWITTER_COOKIES_FILE", "")
 
 PROXY_LIST = [p.strip() for p in os.getenv("PROXY_LIST", "").split(",") if p.strip()]
 SCRAPE_DELAY_MIN = float(os.getenv("SCRAPE_DELAY_MIN", "2"))
