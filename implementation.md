@@ -18,14 +18,14 @@
 | 6 | Métricas agregadas | `metricas` por geral/cidade/agente + série diária | ✅ Concluída |
 | 7 | Dashboard PWA | KPIs, filtros, gráficos, tempo real | ✅ Concluída |
 | 8 | Controle de acesso (owner) | Coleção `usuarios` + script de owner | ✅ Concluída |
-| 9 | **Deploy (Firebase Hosting)** | PWA publicado + `firebase.json`/`.firebaserc` | 🔄 Em andamento |
+| 9 | **Deploy (Firebase Hosting)** | PWA publicado + `firebase.json`/`.firebaserc` | ✅ Concluída |
 | 10 | **Valoração financeira da mídia** | Tabela R$/espaço + `valor_estimado` no pipeline/dashboard | ⏳ Pendente |
 | 11 | Agendamento da ingestão | Cloud Scheduler / cron | ⏳ Pendente |
 | 12 | Regras de Security (RBAC) | Firestore Rules por papel | ⏳ Pendente |
 | 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ⏳ Pendente |
 | 14 | **Go live** | Homologação, monitoramento, documentação final | ⏳ Pendente |
 
-**Status total:** 8 concluídas · 1 em andamento · 5 pendentes.
+**Status total:** 9 concluídas · 0 em andamento · 5 pendentes.
 
 ---
 
@@ -99,14 +99,15 @@
 - Script `criar_owner.py` grava o proprietário como `owner`.
 - Base para RBAC (regras de Firestore Security na Sprint 12).
 
-## Sprint 9 — Deploy (Firebase Hosting) 🔄
+## Sprint 9 — Deploy (Firebase Hosting) ✅
 
 **Objetivo:** Publicar o PWA em produção.
 - [x] `firebase.json` — hosting, `cleanUrls`, rewrite SPA, headers de cache (sw.js no-cache).
 - [x] `.firebaserc` — projeto `valorpublico-b1e6d`.
 - [x] `.gitignore` — `.firebase/` (cache local com tokens).
-- [ ] `firebase login` + `firebase deploy`.
-- [ ] Validação de `https://valorpublico-b1e6d.web.app`.
+- [x] `firebase login` + `firebase deploy`.
+- [x] Validação de `https://valorpublico-b1e6d.web.app` (todos os recursos 200 OK).
+- **Produção:** https://valorpublico-b1e6d.web.app
 
 ## Sprint 10 — Valoração Financeira da Mídia ⏳
 

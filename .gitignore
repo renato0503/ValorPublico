@@ -109,3 +109,8 @@ selenium-*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ============================================================
+# FIREBASE (cache local de deploy - pode conter tokens)
+# ============================================================
+.firebase/
