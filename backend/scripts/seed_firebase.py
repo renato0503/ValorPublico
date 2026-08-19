@@ -14,63 +14,67 @@ logger = get_logger(__name__)
 CARGO_MASCULINO = "Vereador"
 CARGO_FEMININO = "Vereadora"
 
-# (nome_urna, cidade, partido, genero)
+# (nome_urna, cidade, partido, genero, votos_2024)
+# Cuiaba: 21ª legislatura (eleitos 20ª, posse 01/01/2024, mandato ate 31/01/2028).
+# Votos nominais conforme lista oficial da Camara Municipal.
 ROSTER = [
     # --- Camara Municipal de Cuiaba (27) ---
-    ("Samantha Iris", "Cuiaba", "PL", "F"),
-    ("Maysa Leao", "Cuiaba", "Republicanos", "F"),
-    ("Alex Rodrigues", "Cuiaba", "PV", "M"),
-    ("Paula Calil", "Cuiaba", "PL", "F"),
-    ("Cezinha Nascimento", "Cuiaba", "Uniao", "M"),
-    ("Ilde Taques", "Cuiaba", "PSB", "M"),
-    ("Michellly Alencar", "Cuiaba", "Uniao", "F"),
-    ("Maria Avalone", "Cuiaba", "PSDB", "F"),
-    ("Marcrean Santos", "Cuiaba", "MDB", "M"),
-    ("T. Coronel Dias", "Cuiaba", "Cidadania", "M"),
-    ("Dra Mara", "Cuiaba", "Pode", "F"),
-    ("Adevair Cabral", "Cuiaba", "Solidariedade", "M"),
-    ("Dilemario Alencar", "Cuiaba", "Uniao", "M"),
-    ("Policial Federal Rafael Ranalli", "Cuiaba", "PL", "M"),
-    ("Eduardo Magalhaes", "Cuiaba", "Republicanos", "M"),
-    ("Kassio Coelho", "Cuiaba", "Pode", "M"),
-    ("Demilson Nogueira", "Cuiaba", "PP", "M"),
-    ("Didimo Vovo", "Cuiaba", "PSB", "M"),
-    ("Chico 2000", "Cuiaba", "PL", "M"),
-    ("Sargento Joelson", "Cuiaba", "PSB", "M"),
-    ("Baixinha Giraldelli", "Cuiaba", "Solidariedade", "F"),
-    ("Katiuscia", "Cuiaba", "PSB", "F"),
-    ("Mario Nadaf", "Cuiaba", "PV", "M"),
-    ("Marcus Brito Jr", "Cuiaba", "PV", "M"),
-    ("Daniel Monteiro", "Cuiaba", "Republicanos", "M"),
-    ("Jefferson Siqueira", "Cuiaba", "PSD", "M"),
-    ("Wilson Kero Kero", "Cuiaba", "PMB", "M"),
+    ("Samantha Iris", "Cuiaba", "PL", "F", 7460),
+    ("Maysa Leao", "Cuiaba", "Republicanos", "F", 5615),
+    ("Alex Rodrigues", "Cuiaba", "PV", "M", 5556),
+    ("Paula Calil", "Cuiaba", "PL", "F", 5460),
+    ("Cezinha Nascimento", "Cuiaba", "Uniao Brasil", "M", 4733),
+    ("Ilde Taques", "Cuiaba", "PSB", "M", 4731),
+    ("Michellly Alencar", "Cuiaba", "Uniao Brasil", "F", 4514),
+    ("Maria Avalone", "Cuiaba", "PSDB", "F", 4347),
+    ("Marcrean Santos", "Cuiaba", "MDB", "M", 3685),
+    ("Tenente Coronel Dias", "Cuiaba", "Cidadania", "M", 3659),
+    ("Dra. Mara", "Cuiaba", "Podemos", "F", 3500),
+    ("Adevair Cabral", "Cuiaba", "Solidariedade", "M", 3481),
+    ("Dilemario Alencar", "Cuiaba", "Uniao Brasil", "M", 3370),
+    ("Rafael Ranalli", "Cuiaba", "PL", "M", 3360),
+    ("Eduardo Magalhaes", "Cuiaba", "Republicanos", "M", 3274),
+    ("Kassio Coelho", "Cuiaba", "Podemos", "M", 3262),
+    ("Demilson Nogueira", "Cuiaba", "Progressistas", "M", 3211),
+    ("Didimo Vovo", "Cuiaba", "PSB", "M", 3137),
+    ("Chico 2000", "Cuiaba", "PL", "M", 3098),
+    ("Sargento Joelson", "Cuiaba", "PSB", "M", 2945),
+    ("Baixinha Giraldelli", "Cuiaba", "Solidariedade", "F", 2843),
+    ("Katiuscia Manteli", "Cuiaba", "PSB", "F", 2785),
+    ("Mario Nadaf", "Cuiaba", "PV", "M", 2747),
+    ("Marcus Brito Junior", "Cuiaba", "PV", "M", 2558),
+    ("Daniel Monteiro", "Cuiaba", "Republicanos", "M", 2537),
+    ("Jeferson Siqueira", "Cuiaba", "PSD", "M", 2468),
+    ("Wilson Quero Quero", "Cuiaba", "PMB", "M", 1964),
     # --- Camara Municipal de Varzea Grande (23) ---
-    ("Adilsinho", "Varzea Grande", "Republicanos", "M"),
-    ("Alessandro Moreira", "Varzea Grande", "MDB", "M"),
-    ("Braz Jaciro", "Varzea Grande", "PSDB", "M"),
-    ("Bruno Rios", "Varzea Grande", "PL", "M"),
-    ("Caio Cordeiro", "Varzea Grande", "Partido Novo", "M"),
-    ("Carlinhos Figueiredo", "Varzea Grande", "Republicanos", "M"),
-    ("Charles da Educacao", "Varzea Grande", "Uniao", "M"),
-    ("Cilcinho", "Varzea Grande", "PV", "M"),
-    ("Cleyton Nassarden", "Varzea Grande", "MDB", "M"),
-    ("Enfermeiro Emerson", "Varzea Grande", "PP", "M"),
-    ("Feitoza", "Varzea Grande", "PSB", "M"),
-    ("Sargento Galibert", "Varzea Grande", "PSB", "M"),
-    ("Gisa Barros", "Varzea Grande", "Podemos", "F"),
-    ("Janio Calistro", "Varzea Grande", "Uniao", "M"),
-    ("Jero Neto", "Varzea Grande", "MDB", "M"),
-    ("Lucelia Oliveira", "Varzea Grande", "AGIR", "F"),
-    ("Dr. Miguel Junior", "Varzea Grande", "Cidadania", "M"),
-    ("Lucas Chapeu do Sol", "Varzea Grande", "PL", "M"),
-    ("Rosy Prado", "Varzea Grande", "UB", "F"),
-    ("Raul Curvo", "Varzea Grande", "Republicanos", "M"),
-    ("Wanderley Cerqueira", "Varzea Grande", "MDB", "M"),
-    ("Wender Madureira", "Varzea Grande", "Republicanos", "M"),
-    ("Joaquim Antunes de Souza", "Varzea Grande", "Sem Partido", "M"),
+    # votos_2024 = 0 (lista oficial nao fornecida ainda)
+    ("Adilsinho", "Varzea Grande", "Republicanos", "M", 0),
+    ("Alessandro Moreira", "Varzea Grande", "MDB", "M", 0),
+    ("Braz Jaciro", "Varzea Grande", "PSDB", "M", 0),
+    ("Bruno Rios", "Varzea Grande", "PL", "M", 0),
+    ("Caio Cordeiro", "Varzea Grande", "Partido Novo", "M", 0),
+    ("Carlinhos Figueiredo", "Varzea Grande", "Republicanos", "M", 0),
+    ("Charles da Educacao", "Varzea Grande", "Uniao", "M", 0),
+    ("Cilcinho", "Varzea Grande", "PV", "M", 0),
+    ("Cleyton Nassarden", "Varzea Grande", "MDB", "M", 0),
+    ("Enfermeiro Emerson", "Varzea Grande", "PP", "M", 0),
+    ("Feitoza", "Varzea Grande", "PSB", "M", 0),
+    ("Sargento Galibert", "Varzea Grande", "PSB", "M", 0),
+    ("Gisa Barros", "Varzea Grande", "Podemos", "F", 0),
+    ("Janio Calistro", "Varzea Grande", "Uniao", "M", 0),
+    ("Jero Neto", "Varzea Grande", "MDB", "M", 0),
+    ("Lucelia Oliveira", "Varzea Grande", "AGIR", "F", 0),
+    ("Dr. Miguel Junior", "Varzea Grande", "Cidadania", "M", 0),
+    ("Lucas Chapeu do Sol", "Varzea Grande", "PL", "M", 0),
+    ("Rosy Prado", "Varzea Grande", "UB", "F", 0),
+    ("Raul Curvo", "Varzea Grande", "Republicanos", "M", 0),
+    ("Wanderley Cerqueira", "Varzea Grande", "MDB", "M", 0),
+    ("Wender Madureira", "Varzea Grande", "Republicanos", "M", 0),
+    ("Joaquim Antunes de Souza", "Varzea Grande", "Sem Partido", "M", 0),
 ]
 
 AGENTES_ESPERADOS = {"Cuiaba": 27, "Varzea Grande": 23}
+LEGISLATURA = "21ª (2024-2028)"
 
 
 def _sem_acento(texto: str) -> str:
@@ -111,7 +115,7 @@ def slugify(value: str) -> str:
     return value
 
 
-def montar_documento(nome_urna: str, cidade: str, partido: str, genero: str) -> dict:
+def montar_documento(nome_urna: str, cidade: str, partido: str, genero: str, votos_2024: int) -> dict:
     cargo = CARGO_FEMININO if genero.upper() == "F" else CARGO_MASCULINO
     partido_norm = _normalizar_partido(partido)
     return {
@@ -120,6 +124,9 @@ def montar_documento(nome_urna: str, cidade: str, partido: str, genero: str) -> 
         "partido": partido_norm,
         "cargo": cargo,
         "genero": genero.upper(),
+        "votos_2024": int(votos_2024 or 0),
+        "legislatura": LEGISLATURA,
+        "mandato_ate": "2028-01-31",
         "termos_de_busca": gerar_termos_de_busca(nome_urna, cargo, partido_norm),
     }
 
@@ -139,15 +146,31 @@ def validar_escopo() -> None:
                 len(ROSTER))
 
 
+def _remover_orfanos(db, ids_validos: set[str]) -> None:
+    """Remove documentos de Cuiaba/VG que nao estao mais no roster (nomes antigos)."""
+    existentes = list(db.collection(COLLECTION_AGENTES).stream())
+    removidos = 0
+    for doc in existentes:
+        if doc.id not in ids_validos:
+            doc.reference.delete()
+            removidos += 1
+            logger.info("Removido orfao: %s (%s)", doc.id, doc.to_dict().get("nome_urna"))
+    if removidos:
+        logger.info("Total de documentos orfaos removidos: %d", removidos)
+
+
 def main() -> None:
     db = init_firebase()
     validar_escopo()
-    for nome_urna, cidade, partido, genero in ROSTER:
-        doc = montar_documento(nome_urna, cidade, partido, genero)
+    ids_validos: set[str] = set()
+    for nome_urna, cidade, partido, genero, votos in ROSTER:
+        doc = montar_documento(nome_urna, cidade, partido, genero, votos)
         doc_id = slugify(nome_urna)
+        ids_validos.add(doc_id)
         db.collection(COLLECTION_AGENTES).document(doc_id).set(doc, merge=True)
         logger.info("Gravado: %s (%s, %s) - id=%s",
                     doc["nome_urna"], doc["cidade"], doc["partido"], doc_id)
+    _remover_orfanos(db, ids_validos)
     logger.info("Seed concluido: %d documentos em '%s'.", len(ROSTER), COLLECTION_AGENTES)
 
 
