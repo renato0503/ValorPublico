@@ -7,13 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
-from scraper.facebook_scraper import FacebookScraper
-from scraper.instagram_scraper import InstagramScraper
 from scraper.orchestrator import Orchestrator
-from scraper.telegram_scraper import TelegramScraper
-from scraper.twitter_scraper import TwitterScraper
-from scraper.web_scraper import WebScraper
-from scraper.youtube_scraper import YouTubeScraper
 
 logger = get_logger(__name__)
 
@@ -28,6 +22,8 @@ CONFIG_BASE = {
 def construir_scrapers() -> list:
     scrapers: list = []
     if settings.HABILITAR_TWITTER:
+        from scraper.twitter_scraper import TwitterScraper
+
         scrapers.append(
             TwitterScraper(
                 {
@@ -38,6 +34,8 @@ def construir_scrapers() -> list:
             )
         )
     if settings.HABILITAR_INSTAGRAM:
+        from scraper.instagram_scraper import InstagramScraper
+
         scrapers.append(
             InstagramScraper(
                 {
@@ -50,6 +48,8 @@ def construir_scrapers() -> list:
             )
         )
     if settings.HABILITAR_FACEBOOK:
+        from scraper.facebook_scraper import FacebookScraper
+
         scrapers.append(
             FacebookScraper(
                 {
@@ -63,8 +63,14 @@ def construir_scrapers() -> list:
             )
         )
     if settings.HABILITAR_WEB:
-        scrapers.append(WebScraper(CONFIG_BASE))
+        from scraper.web_scraper import WebScraper
+
+        scrapers.append(
+            WebScraper({**CONFIG_BASE, "enriquecer": settings.WEB_ENRIQUECER})
+        )
     if settings.HABILITAR_YOUTUBE:
+        from scraper.youtube_scraper import YouTubeScraper
+
         scrapers.append(
             YouTubeScraper(
                 {
@@ -75,6 +81,8 @@ def construir_scrapers() -> list:
             )
         )
     if settings.HABILITAR_TELEGRAM:
+        from scraper.telegram_scraper import TelegramScraper
+
         scrapers.append(
             TelegramScraper(
                 {

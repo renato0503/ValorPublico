@@ -41,73 +41,85 @@ class Orchestrator:
             agentes = agentes[:limite_agentes]
         logger.info("Ingestao iniciada: %d agentes, %d scrapers", len(agentes), len(self.scrapers))
 
-        async_tasks: list[asyncio.Task] = []
-        sync_futures = []
-        loop = asyncio.get_running_loop()
+        total_gravados = 0
+        itens_acumulados: list[RawItem] = []
+        for indice, agente in enumerate(agentes, start=1):
+            itens = await self._coletar_agente(agente)
+            itens_acumulados.extend(itens)
 
-        for scraper in self.scrapers:
-            if isinstance(scraper, AsyncScraper):
-                async_tasks.append(asyncio.create_task(self._coletar_async(scraper, agentes)))
-            elif isinstance(scraper, BaseScraper):
-                sync_futures.append(
-                    loop.run_in_executor(self._pool, self._coletar_sync, scraper, agentes)
-                )
-            else:
-                logger.error("Scraper desconhecido ignorado: %r", scraper)
+            if not itens:
+                logger.info("(%d/%d) %s: sem itens.", indice, len(agentes), agente["id"])
+                continue
 
-        resultados: list = []
-        if async_tasks:
-            resultados += await asyncio.gather(*async_tasks, return_exceptions=True)
-        for futuro in sync_futures:
-            try:
-                resultados.append(await asyncio.wrap_future(futuro))
-            except Exception as e:  # noqa: BLE001
-                logger.error("Scraper sincrono falhou: %s", e)
-
-        itens: list[RawItem] = []
-        for r in resultados:
-            if isinstance(r, Exception):
-                logger.error("Erro em execucao de scraper: %s", r)
-            elif r:
-                itens.extend(r)
-
-        logger.info("Coleta concluida: %d itens brutos.", len(itens))
-        df = padronizar_dataframe(itens)
-        self.analisador.aplicar_dataframe(df)
-        self.valorador.aplicar_dataframe(df)
-        total_gravados = self.repo.salvar_lote(df)
+            df = padronizar_dataframe(itens)
+            self.analisador.aplicar_dataframe(df)
+            self.valorador.aplicar_dataframe(df)
+            gravados = self.repo.salvar_lote(df)
+            total_gravados += gravados
+            logger.info("(%d/%d) %s: %d clippings gravados.", indice, len(agentes), agente["id"], gravados)
 
         resumo = {
             "total_agentes": len(agentes),
-            "total_brutos": len(itens),
+            "total_brutos": len(itens_acumulados),
             "total_gravados": total_gravados,
-            "por_plataforma": df["plataforma"].value_counts().to_dict() if not df.empty else {},
-            "por_sentimento": df["sentimento"].value_counts().to_dict() if not df.empty else {},
-            "valoracao_total": round(float(df["valor_estimado"].sum()), 2) if not df.empty else 0.0,
+            "por_plataforma": {},
+            "por_sentimento": {},
+            "valoracao_total": 0.0,
         }
         self.repo.registrar_ultimo_scrape(resumo)
         logger.info("Ingestao finalizada: %s", resumo)
         return resumo
 
-    async def _coletar_async(self, scraper: AsyncScraper, agentes: list[dict]) -> list[RawItem]:
-        tarefas = [scraper.coletar(agente, self.limite_por_agente) for agente in agentes]
-        resultados = await asyncio.gather(*tarefas, return_exceptions=True)
-        itens: list[RawItem] = []
-        for agente, r in zip(agentes, resultados):
-            if isinstance(r, Exception):
-                logger.error("Scraper %s falhou no agente %s: %s", scraper.plataforma, agente["id"], r)
+    async def _coletar_agente(self, agente: dict) -> list[RawItem]:
+        """Coleta todos os scrapers para UM agente (async + sync em paralelo)."""
+        loop = asyncio.get_running_loop()
+        async_tasks = []
+        sync_futures = []
+
+        for scraper in self.scrapers:
+            if isinstance(scraper, AsyncScraper):
+                async_tasks.append(
+                    asyncio.create_task(
+                        self._guard_async(scraper.coletar(agente, self.limite_por_agente), scraper, agente)
+                    )
+                )
+            elif isinstance(scraper, BaseScraper):
+                sync_futures.append(
+                    loop.run_in_executor(
+                        self._pool, self._guard_sync, scraper, agente, self.limite_por_agente
+                    )
+                )
             else:
-                itens.extend(r)
+                logger.error("Scraper desconhecido ignorado: %r", scraper)
+
+        itens: list[RawItem] = []
+        if async_tasks:
+            for resultado in await asyncio.gather(*async_tasks):
+                if resultado:
+                    itens.extend(resultado)
+        for futuro in sync_futures:
+            try:
+                resultado = await asyncio.wrap_future(futuro)
+            except Exception as e:  # noqa: BLE001
+                logger.error("Scraper sincrono falhou no agente %s: %s", agente["id"], e)
+                continue
+            if resultado:
+                itens.extend(resultado)
         return itens
 
-    def _coletar_sync(self, scraper: BaseScraper, agentes: list[dict]) -> list[RawItem]:
-        itens: list[RawItem] = []
-        for agente in agentes:
-            try:
-                itens.extend(scraper.coletar(agente, self.limite_por_agente))
-            except Exception as e:  # noqa: BLE001
-                logger.error("Scraper %s falhou no agente %s: %s", scraper.plataforma, agente["id"], e)
-        return itens
+    async def _guard_async(self, coro, scraper, agente):
+        try:
+            return await coro
+        except Exception as e:  # noqa: BLE001
+            logger.error("Scraper %s falhou no agente %s: %s", scraper.plataforma, agente["id"], e)
+            return []
+
+    def _guard_sync(self, scraper: BaseScraper, agente: dict, limite: int) -> list[RawItem]:
+        try:
+            return scraper.coletar(agente, limite)
+        except Exception as e:  # noqa: BLE001
+            logger.error("Scraper %s falhou no agente %s: %s", scraper.plataforma, agente["id"], e)
+            return []
 
     def fechar(self) -> None:
         self._pool.shutdown(wait=True)

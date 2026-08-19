@@ -50,6 +50,10 @@ HABILITAR_WEB = os.getenv("HABILITAR_WEB", "1") == "1"
 HABILITAR_YOUTUBE = os.getenv("HABILITAR_YOUTUBE", "1") == "1"
 HABILITAR_TELEGRAM = os.getenv("HABILITAR_TELEGRAM", "1") == "1"
 
+# Web: enriquecer busca o corpo do artigo (lento). Desabilite para coletar
+# apenas titulo+resumo do RSS (rapido).
+WEB_ENRIQUECER = os.getenv("WEB_ENRIQUECER", "1") == "1"
+
 # YouTube
 YOUTUBE_COLETAR_TRANSCRICAO = os.getenv("YOUTUBE_COLETAR_TRANSCRICAO", "1") == "1"
 YOUTUBE_MAX_VIDEOS = int(os.getenv("YOUTUBE_MAX_VIDEOS", "5"))
