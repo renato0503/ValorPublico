@@ -24,8 +24,12 @@
 | 12 | Regras de Security (RBAC) | Firestore Rules por papel | ⏳ Pendente |
 | 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ⏳ Pendente |
 | 14 | **Go live** | Homologação, monitoramento, documentação final | ⏳ Pendente |
+| 15 | **Layout — Fundação visual** | Dark mode de alto padrão, tipografia, grid assimétrico | ⏳ Pendente |
+| 16 | **Layout — KPIs e tendência** | Indicadores de tendência nos KPIs | ⏳ Pendente |
+| 17 | **Layout — Gráficos** | Sentimento em donut, share + valoração 1/2+1/2 | ⏳ Pendente |
+| 18 | **Layout — Tabela e responsividade** | Top 10 full-width, sticky, media queries mobile | ⏳ Pendente |
 
-**Status total:** 9 concluídas · 0 em andamento · 5 pendentes.
+**Status total:** 9 concluídas · 0 em andamento · 9 pendentes.
 
 ---
 

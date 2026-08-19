@@ -9,6 +9,9 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script type="importmap">
@@ -23,74 +26,110 @@
 <body>
   <header class="topo">
     <div class="topo-marca">
-      <img src="icons/icon-192.png" alt="" width="40" height="40" />
-      <div>
+      <span class="logo-marca" aria-hidden="true">
+        <img src="icons/icon-192.png" alt="" width="40" height="40" />
+      </span>
+      <div class="topo-titulo">
         <h1>ValorPúblico</h1>
         <p>BI &amp; Monitoramento de Mídia · Cuiabá e Várzea Grande (MT)</p>
       </div>
     </div>
-    <div class="filtros">
-      <select id="filtroCidade" aria-label="Filtrar por cidade">
-        <option value="">Todas as cidades</option>
-      </select>
-      <select id="filtroParlamentar" aria-label="Filtrar por parlamentar">
-        <option value="">Todos os parlamentares</option>
-      </select>
+    <div class="filtros" role="group" aria-label="Filtros do painel">
+      <label class="filtro">
+        <span class="filtro-rotulo">Cidade</span>
+        <select id="filtroCidade" aria-label="Filtrar por cidade">
+          <option value="">Todas as cidades</option>
+        </select>
+      </label>
+      <label class="filtro">
+        <span class="filtro-rotulo">Parlamentar</span>
+        <select id="filtroParlamentar" aria-label="Filtrar por parlamentar">
+          <option value="">Todos os parlamentares</option>
+        </select>
+      </label>
     </div>
   </header>
 
-  <main>
-    <div id="aviso" class="aviso oculto"></div>
+  <main class="conteudo">
+    <div id="aviso" class="aviso oculto" role="status"></div>
 
     <section class="kpis" aria-label="Indicadores principais">
-      <article class="card kpi">
-        <span class="kpi-rotulo">Fontes Monitoradas</span>
+      <article class="card kpi kpi-verde">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Fontes Monitoradas</span>
+          <span class="kpi-tendencia" id="tendenciaVeiculos" data-base="0">—</span>
+        </div>
         <span class="kpi-valor" id="kpiVeiculos">–</span>
       </article>
-      <article class="card kpi">
-        <span class="kpi-rotulo">Audiência Total</span>
+      <article class="card kpi kpi-azul">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Audiência Total</span>
+          <span class="kpi-tendencia" id="tendenciaAudiencia" data-base="0">—</span>
+        </div>
         <span class="kpi-valor" id="kpiAudiencia">–</span>
       </article>
-      <article class="card kpi">
-        <span class="kpi-rotulo">Valoração Espontânea</span>
+      <article class="card kpi kpi-ambar">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Valoração Espontânea</span>
+          <span class="kpi-tendencia" id="tendenciaValoracao" data-base="0">—</span>
+        </div>
         <span class="kpi-valor" id="kpiValoracao">–</span>
       </article>
-      <article class="card kpi">
-        <span class="kpi-rotulo">Clippings</span>
+      <article class="card kpi kpi-roxo">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Clippings</span>
+          <span class="kpi-tendencia" id="tendenciaClippings" data-base="0">—</span>
+        </div>
         <span class="kpi-valor" id="kpiClippings">–</span>
       </article>
     </section>
 
-    <section class="grades">
-      <article class="card painel">
-        <h2>Série Temporal de Menções</h2>
+    <section class="grade-principal" aria-label="Série temporal e sentimento">
+      <article class="card painel painel-temporal">
+        <div class="painel-cabecalho">
+          <h2>Série Temporal de Menções</h2>
+          <span class="painel-sub">Menções por dia</span>
+        </div>
         <div class="canvas-box"><canvas id="graficoTemporal" aria-label="Gráfico de menções por dia"></canvas></div>
       </article>
-      <article class="card painel">
-        <h2>Share de Mídia</h2>
-        <div class="canvas-box"><canvas id="graficoRosca" aria-label="Gráfico de distribuição por mídia"></canvas></div>
+      <article class="card painel painel-sentimento">
+        <div class="painel-cabecalho">
+          <h2>Sentimento</h2>
+          <span class="painel-sub">Análise dos comentários</span>
+        </div>
+        <div class="canvas-box"><canvas id="graficoSentimento" aria-label="Gráfico de sentimento"></canvas></div>
+        <div class="sentimento-lista" id="sentimentoLista"></div>
       </article>
     </section>
 
-    <section class="grades">
+    <section class="grade-secundaria" aria-label="Distribuição de mídia e valoração">
       <article class="card painel">
-        <h2>Valoração por Plataforma (R$)</h2>
+        <div class="painel-cabecalho">
+          <h2>Share de Mídia</h2>
+          <span class="painel-sub">Distribuição por categoria</span>
+        </div>
+        <div class="canvas-box"><canvas id="graficoShare" aria-label="Gráfico de share de mídia"></canvas></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Valoração por Plataforma</h2>
+          <span class="painel-sub">Em reais (R$)</span>
+        </div>
         <div class="canvas-box"><canvas id="graficoValoracao" aria-label="Gráfico de valoração por plataforma"></canvas></div>
       </article>
-      <article class="card painel">
-        <h2>Sentimento</h2>
-        <div class="sentimento" id="sentimentoBarras"></div>
-      </article>
     </section>
 
-    <section class="grades">
-      <article class="card painel">
-        <h2>Top 10 Fontes Relevantes</h2>
+    <section class="grade-detalhe" aria-label="Top fontes">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <h2>Top 10 Fontes Relevantes</h2>
+          <span class="painel-sub">Veículos e páginas mais relevantes</span>
+        </div>
         <div class="tabela-wrapper">
           <table class="tabela">
             <thead>
               <tr>
-                <th>#</th>
+                <th class="col-pos">#</th>
                 <th>Fonte</th>
                 <th class="num">Clippings</th>
                 <th class="num">Audiência</th>

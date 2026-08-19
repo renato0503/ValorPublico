@@ -169,6 +169,12 @@ async function aplicarFiltros() {
 
 /* ---------- renderizacao ---------- */
 
+const CORES_SENTIMENTO = {
+  positivo: "#22c55e",
+  neutro: "#3b82f6",
+  negativo: "#ef4444",
+};
+
 function renderizar(dados) {
   if (!dados || !dados.total_clippings) {
     renderizarVazio();
@@ -179,19 +185,62 @@ function renderizar(dados) {
   $("kpiValoracao").textContent = formatarValor(dados.valoracao_total);
   $("kpiClippings").textContent = formatarNumero(dados.total_clippings);
 
+  renderizarTendencias(dados);
+
   charts.criarGraficoTemporal("graficoTemporal", dados);
-  charts.criarGraficoRosca(
-    "graficoRosca",
+  charts.criarGraficoDonut(
+    "graficoSentimento",
+    dados.distribuicao_sentimento || {},
+    ["#22c55e", "#3b82f6", "#ef4444"]
+  );
+  charts.criarGraficoDonut(
+    "graficoShare",
     dados.distribuicao_categorias || {}
   );
   charts.criarGraficoBarras(
     "graficoValoracao",
     dados.valoracao_por_plataforma || {},
-    formatarValor
+    formatarValor,
+    true
   );
-  renderizarSentimento(dados.distribuicao_sentimento || {});
+  renderizarSentimentoLista(dados.distribuicao_sentimento || {});
   renderizarTop(dados.top_veiculos || []);
   $("atualizadoEm").textContent = formatarData(dados.atualizado_em);
+}
+
+/* Calcula tendência comparando os últimos 7 dias com os 7 anteriores da série. */
+function calcularTendencia(dias) {
+  const chaves = Object.keys(dias || {}).sort();
+  if (chaves.length < 14) return null;
+
+  const soma7 = (arr) =>
+    arr.reduce((acc, k) => acc + Object.values(dias[k] || {}).reduce((a, b) => a + b, 0), 0);
+
+  const anterior = soma7(chaves.slice(0, chaves.length - 7));
+  const recente = soma7(chaves.slice(chaves.length - 7));
+
+  if (anterior === 0) return recente === 0 ? null : 100;
+  return Math.round(((recente - anterior) / anterior) * 100);
+}
+
+function aplicarTendencia(elementoId, valor, formatador) {
+  const el = $(elementoId);
+  if (valor === null) {
+    el.textContent = "—";
+    el.className = "kpi-tendencia";
+    return;
+  }
+  const sinal = valor >= 0 ? "+" : "";
+  el.textContent = `${sinal}${valor}% esta semana`;
+  el.className = `kpi-tendencia ${valor >= 0 ? "trend-alta" : "trend-baixa"}`;
+}
+
+function renderizarTendencias(dados) {
+  const t = calcularTendencia(dados.dias);
+  aplicarTendencia("tendenciaVeiculos", t, formatarNumero);
+  aplicarTendencia("tendenciaAudiencia", t, formatarNumero);
+  aplicarTendencia("tendenciaValoracao", t, formatarValor);
+  aplicarTendencia("tendenciaClippings", t, formatarNumero);
 }
 
 function renderizarVazio() {
@@ -199,10 +248,17 @@ function renderizarVazio() {
   $("kpiAudiencia").textContent = "–";
   $("kpiValoracao").textContent = "–";
   $("kpiClippings").textContent = "–";
+  ["tendenciaVeiculos", "tendenciaAudiencia", "tendenciaValoracao", "tendenciaClippings"].forEach(
+    (id) => {
+      $(id).textContent = "—";
+      $(id).className = "kpi-tendencia";
+    }
+  );
   charts.criarGraficoTemporal("graficoTemporal", { dias: {} });
-  charts.criarGraficoRosca("graficoRosca", {});
-  charts.criarGraficoBarras("graficoValoracao", {}, formatarValor);
-  $("sentimentoBarras").innerHTML = "";
+  charts.criarGraficoDonut("graficoSentimento", {});
+  charts.criarGraficoDonut("graficoShare", {});
+  charts.criarGraficoBarras("graficoValoracao", {}, formatarValor, true);
+  $("sentimentoLista").innerHTML = "";
   $("corpoTop").innerHTML = "";
   $("atualizadoEm").textContent = "–";
   mostrarAviso(
@@ -211,16 +267,11 @@ function renderizarVazio() {
   );
 }
 
-function renderizarSentimento(distribuicao) {
-  const cores = {
-    positivo: "var(--verde)",
-    neutro: "var(--azul)",
-    negativo: "var(--vermelho)",
-  };
+function renderizarSentimentoLista(distribuicao) {
   const total = Object.values(distribuicao).reduce((a, b) => a + b, 0) || 1;
-  const container = $("sentimentoBarras");
+  const container = $("sentimentoLista");
   container.innerHTML = "";
-  for (const [chave, cor] of Object.entries(cores)) {
+  for (const [chave, cor] of Object.entries(CORES_SENTIMENTO)) {
     const qtd = distribuicao[chave] || 0;
     const pct = Math.round((qtd / total) * 100);
     const linha = document.createElement("div");
