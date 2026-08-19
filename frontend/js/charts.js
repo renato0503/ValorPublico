@@ -72,6 +72,49 @@ export function criarGraficoRosca(canvasId, distribuicao) {
   return charts[canvasId];
 }
 
+export function criarGraficoBarras(canvasId, distribuicao, formatador) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return null;
+  destruir(canvasId);
+
+  const cores = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+  const rotulos = Object.keys(distribuicao);
+  const valores = Object.values(distribuicao);
+
+  charts[canvasId] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: rotulos,
+      datasets: [
+        {
+          data: valores,
+          backgroundColor: rotulos.map((_, i) => cores[i % cores.length]),
+          borderRadius: 6,
+          borderSkipped: false,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => (formatador ? formatador(ctx.parsed.x) : ctx.parsed.x),
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { color: "#94a3b8", callback: (v) => (formatador ? formatador(v) : v) }, grid: { color: "#1e293b" } },
+        y: { ticks: { color: "#e2e8f0" }, grid: { display: false } },
+      },
+    },
+  });
+  return charts[canvasId];
+}
+
 export function destruir(canvasId) {
   if (charts[canvasId]) {
     charts[canvasId].destroy();

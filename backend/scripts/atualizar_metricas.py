@@ -64,19 +64,24 @@ def agregar(clippings: list[dict]) -> dict:
     valor_por_veiculo: defaultdict[str, float] = defaultdict(float)
     categorias: Counter = Counter()
     sentimentos: Counter = Counter()
+    valoracao_por_plataforma: defaultdict[str, float] = defaultdict(float)
+    valoracao_por_categoria: defaultdict[str, float] = defaultdict(float)
     serie: defaultdict[str, Counter] = defaultdict(Counter)
 
     for c in clippings:
         plataforma = c.get("plataforma", "Web")
         autor = (c.get("autor") or "").strip()
         veiculo = c.get("metadados", {}).get("veiculo") or autor or "Sem fonte"
+        valor = float(c.get("valor_estimado") or 0)
 
         categorias[_categoria(plataforma)] += 1
         sentimentos[c.get("sentimento", "neutro")] += 1
+        valoracao_por_plataforma[plataforma] += valor
+        valoracao_por_categoria[_categoria(plataforma)] += valor
 
         veiculos[veiculo] += 1
         audiencia_por_veiculo[veiculo] += int(c.get("alcance") or 0)
-        valor_por_veiculo[veiculo] += float(c.get("valor_estimado") or 0)
+        valor_por_veiculo[veiculo] += valor
 
         dia = _chave_dia(c.get("data_publicacao"))
         serie[dia][plataforma] += 1
@@ -99,6 +104,8 @@ def agregar(clippings: list[dict]) -> dict:
         "valoracao_total": round(sum(valor_por_veiculo.values()), 2),
         "distribuicao_categorias": dict(categorias),
         "distribuicao_sentimento": dict(sentimentos),
+        "valoracao_por_plataforma": dict(valoracao_por_plataforma),
+        "valoracao_por_categoria": dict(valoracao_por_categoria),
         "top_veiculos": top_veiculos,
         "dias": {dia: dict(contagens) for dia, contagens in sorted(serie.items())},
         "atualizado_em": datetime.now(timezone.utc),

@@ -184,6 +184,11 @@ function renderizar(dados) {
     "graficoRosca",
     dados.distribuicao_categorias || {}
   );
+  charts.criarGraficoBarras(
+    "graficoValoracao",
+    dados.valoracao_por_plataforma || {},
+    formatarValor
+  );
   renderizarSentimento(dados.distribuicao_sentimento || {});
   renderizarTop(dados.top_veiculos || []);
   $("atualizadoEm").textContent = formatarData(dados.atualizado_em);
@@ -196,6 +201,7 @@ function renderizarVazio() {
   $("kpiClippings").textContent = "–";
   charts.criarGraficoTemporal("graficoTemporal", { dias: {} });
   charts.criarGraficoRosca("graficoRosca", {});
+  charts.criarGraficoBarras("graficoValoracao", {}, formatarValor);
   $("sentimentoBarras").innerHTML = "";
   $("corpoTop").innerHTML = "";
   $("atualizadoEm").textContent = "–";
