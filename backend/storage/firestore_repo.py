@@ -21,6 +21,17 @@ class FirestoreRepo:
         docs = query.stream()
         return [{**doc.to_dict(), "id": doc.id} for doc in docs]
 
+    def tem_clippings(self, agente_id: str) -> bool:
+        """True se a subcolecao clippings do agente possui ao menos 1 doc."""
+        it = (
+            self.db.collection(COLLECTION_AGENTES)
+            .document(agente_id)
+            .collection(SUBCOLLECTION_CLIPPINGS)
+            .limit(1)
+            .stream()
+        )
+        return next(it, None) is not None
+
     @staticmethod
     def _id_clipping(registro: dict) -> str:
         return f"{registro['plataforma']}_{registro['id_externo']}"

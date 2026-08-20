@@ -2,7 +2,7 @@
 
 > Documento vivo de contexto da plataforma de **Business Intelligence (BI)** e
 > **Monitoramento de Mídia** focada em inteligência política e institucional.
-> Atualizado em: 19/08/2026 (fim do dia de trabalho).
+> Atualizado em: 20/08/2026 (Sprints 11 e 12 concluídas).
 
 ---
 
@@ -167,27 +167,27 @@ ValorPublico/
 - Para escala real de scraping, usar **proxies residenciais/móveis** (o código
   já suporta `PROXY_LIST`).
 
-## 10. Estado Atual (19/08/2026)
+## 10. Estado Atual (20/08/2026)
 
-- **Banco (Firestore):** foi zerado e repopulado do zero.
+- **Banco (Firestore):** pipeline completo operando.
   - ✅ `agentes_publicos` — 50 agentes (27 Cuiabá + 23 Várzea Grande), com `votos_2024`, `legislatura` e `termos_de_busca`.
   - ✅ `tabela_midia/geral` — CPM de 6 plataformas + 10 veículos (valoração).
-  - ⚠️ `clippings` — 420 clippings gravados (ingestão Web em andamento, interrompida no 13º agente; retomar em lote).
-  - ⚠️ `metricas` — **ainda não recalculadas** (rodar `atualizar_metricas.py` após completar a ingestão).
-  - ❌ `usuarios` — owner foi apagado no reset (recriar com `criar_owner.py`).
-- **Frontend (PWA):** deployado em `https://valorpublico.web.app`.
-  - ✅ Config do Firebase **embutida** no `js/firebase-init.js` (eliminou o erro de MIME do `firebase-config.js`).
-  - ✅ Layout refatorado (dark mode executivo, grid assimétrico, KPIs com tendência, donut de sentimento).
-  - ⚠️ Se ainda exibir erro de MIME no navegador: fazer **hard refresh (Ctrl+Shift+R)** ou **limpar cache do site** (DevTools → Application → Clear storage) para o service worker v3 assumir.
+  - ✅ `clippings` — **1.510 clippings** (ingestão Web completa nos 50 agentes).
+  - ✅ `metricas` — regeneradas: `metricas/geral` (1.510 clippings, 227 veículos, R$ 609.650) + 2 cidades + 50 agentes.
+  - ✅ `usuarios` — owner recriado (`criar_owner.py`).
+- **Segurança (Firestore Rules):** `firestore.rules` deployado.
+  - Leitura pública liberada para o dashboard (`agentes_publicos`, `metricas*`, `tabela_midia`).
+  - Escrita restrita ao backend (Admin SDK); `clippings`/`usuarios`/`execucoes_ingestao` protegidos.
+- **Agendamento (Sprint 11):** GitHub Actions `.github/workflows/ingestao.yml` (cron diário) + rotina local `backend/scripts/rotina_diaria.ps1`.
+- **Frontend (PWA):** deployado em `https://valorpublico.web.app` (config embutida no `firebase-init.js`, SW v3).
+  - ⚠️ Se ainda exibir erro de MIME ou dados antigos: **hard refresh (Ctrl+Shift+R)** ou limpar cache do site (DevTools → Application → Clear storage).
 
-## 11. Próximos Passos (para continuar amanhã)
+## 11. Próximos Passos
 
-- [ ] **Completar a ingestão Web** — rodar `run_ingestao.py` (Web) até os 50 agentes (persistência incremental já salvou 13).
-- [ ] **Rodar `atualizar_metricas.py`** — regenerar `metricas/geral`, `metricas_por_cidade`, `metricas_por_agente`.
-- [ ] **Recriar o owner** — rodar `criar_owner.py` (foi apagado no reset).
-- [ ] **Validar o dashboard** em `https://valorpublico.web.app` com os dados reais.
+- [ ] **Validar o dashboard** em `https://valorpublico.web.app` com os dados reais (hard refresh / limpar SW cache).
+- [ ] **Configurar secrets no GitHub** (`FIREBASE_DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_B64`) para ativar o workflow de agendamento.
 - [ ] **Ativar YouTube/Telegram** — diversificar share de mídia e gerar audiência (alcance).
 - [ ] **Redes sociais** — configurar credenciais (Twitter cookies, Instagram sessão, Facebook Playwright).
-- [ ] **Agendamento da ingestão** — Cloud Scheduler / cron.
-- [ ] **Regras de Firestore Security (RBAC)** — proteger coleções por papel.
-- [ ] **Cobertura TV, Rádio e Impresso** — transcrição de falas e valoração específica.
+- [ ] **Sprint 13 — TV, Rádio e Impresso** — transcrição de falas e valoração específica.
+- [ ] **Sprint 14 — Go live** — homologação, monitoramento, documentação final.
+- [ ] **Testes de regras** no Emulator Suite (aprimoramento do RBAC).

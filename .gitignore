@@ -79,6 +79,7 @@ output/
 *.log
 logs/
 *.log.*
+ingesta_log.txt
 
 # ============================================================
 # FRONTEND / NODE

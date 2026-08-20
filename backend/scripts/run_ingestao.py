@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import sys
 from pathlib import Path
@@ -8,6 +9,7 @@ from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
 from scraper.orchestrator import Orchestrator
+from storage.firestore_repo import FirestoreRepo
 
 logger = get_logger(__name__)
 
@@ -101,7 +103,41 @@ def construir_scrapers() -> list:
 
 
 async def main() -> None:
+    parser = argparse.ArgumentParser(description="Motor de ingestao do ValorPublico.")
+    parser.add_argument(
+        "--apenas-sem-dados",
+        action="store_true",
+        help="Processa apenas agentes que ainda nao possuem clippings (retomada).",
+    )
+    parser.add_argument(
+        "--agentes",
+        default="",
+        help="Lista de IDs de agentes separados por virgula (ex.: samantha-iris,chico-2000).",
+    )
+    parser.add_argument(
+        "--limite-agentes",
+        type=int,
+        default=None,
+        help="Processa apenas os N primeiros agentes (apos os filtros).",
+    )
+    args = parser.parse_args()
+
     db = init_firebase()
+    agente_ids: list[str] | None = None
+
+    if args.agentes.strip():
+        agente_ids = [a.strip() for a in args.agentes.split(",") if a.strip()]
+    elif args.apenas_sem_dados:
+        repo = FirestoreRepo(db)
+        sem_dados = [
+            a["id"] for a in repo.carregar_agentes() if not repo.tem_clippings(a["id"])
+        ]
+        if not sem_dados:
+            logger.info("Nenhum agente sem clippings. Nada a fazer.")
+            return
+        agente_ids = sem_dados
+        logger.info("Retomada: %d agentes sem clippings.", len(sem_dados))
+
     orquestrador = Orchestrator(
         db,
         scrapers=construir_scrapers(),
@@ -109,7 +145,10 @@ async def main() -> None:
         max_workers=settings.MAX_WORKERS,
     )
     try:
-        resumo = await orquestrador.executar()
+        resumo = await orquestrador.executar(
+            limite_agentes=args.limite_agentes,
+            agente_ids=agente_ids,
+        )
         logger.info("Resumo final: %s", resumo)
     finally:
         orquestrador.fechar()

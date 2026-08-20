@@ -24,13 +24,13 @@
 | 16 | **Layout — KPIs e tendência** | Indicadores de tendência nos KPIs | ✅ Concluída |
 | 17 | **Layout — Gráficos** | Sentimento em donut, share + valoração 1/2+1/2 | ✅ Concluída |
 | 18 | **Layout — Tabela e responsividade** | Top 10 full-width, sticky, media queries mobile | ✅ Concluída |
-| — | **Ingestão Web (retomada)** | Completar clippings dos 50 agentes (13/50 ok) | 🔄 Em andamento |
-| 11 | Agendamento da ingestão | Cloud Scheduler / cron | ⏳ Pendente |
-| 12 | Regras de Security (RBAC) | Firestore Rules por papel | ⏳ Pendente |
+| — | **Ingestão Web (retomada)** | Completar clippings dos 50 agentes (13/50 ok) | ✅ Concluída (50/50, 1.510 clippings) |
+| 11 | Agendamento da ingestão | Cloud Scheduler / cron | ✅ Concluída (GitHub Actions + rotina local) |
+| 12 | Regras de Security (RBAC) | Firestore Rules por papel | ✅ Concluída |
 | 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ⏳ Pendente |
 | 14 | **Go live** | Homologação, monitoramento, documentação final | ⏳ Pendente |
 
-**Status total:** 14 sprints concluídas · 1 em andamento (ingestão) · 4 pendentes.
+**Status total:** 18 sprints concluídas · 2 pendentes.
 
 ---
 
@@ -124,12 +124,21 @@
 - [x] Métricas incluem `valoracao_por_plataforma` e `valoracao_por_categoria`.
 - [x] Dashboard: KPI de valoração + gráfico de valoração por plataforma + coluna de valor no Top 10.
 
-## Sprint 11 — Agendamento da Ingestão ⏳
+## Sprint 11 — Agendamento da Ingestão ✅
 
 **Objetivo:** Execução automática e recorrente do motor.
-- Cloud Scheduler (cron) disparando o job de ingestão.
-- Alternativa: GitHub Actions / cron local para MVP.
-- Roda `run_ingestao.py` e depois `atualizar_metricas.py`.
+- [x] GitHub Actions `.github/workflows/ingestao.yml` — cron diário (06:30/18:30 UTC) rodando `run_ingestao.py` + `atualizar_metricas.py`; credenciais via secrets (`FIREBASE_DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_B64`).
+- [x] Rotina local `backend/scripts/rotina_diaria.ps1` — alternativa MVP no Windows (Agendador de Tarefas).
+- [ ] (Alternativa futura) Cloud Scheduler disparando job em ambiente serverless.
+
+## Sprint 12 — Regras de Security (RBAC) ✅
+
+**Objetivo:** Proteger o Firestore por papel de usuário.
+- [x] `firestore.rules` — dashboard é público (leitura liberada em `agentes_publicos`, `metricas*`, `tabela_midia`); escrita **bloqueada** no cliente (backend usa Admin SDK, que ignora regras).
+- [x] `usuarios/{uid}` — cada usuário lê/edita apenas o próprio documento (base para RBAC futuro).
+- [x] `clippings`, `execucoes_ingestao` e coleções não listadas — negadas ao cliente.
+- [x] Registrado no `firebase.json` (`firestore.rules` + `firestore.indexes.json`) e deployado.
+- [ ] (Pendente) Testes automatizados de regras (Emulator Suite).
 
 ## Sprints 15–18 — Layout do Dashboard (Painel Executivo) ✅
 
@@ -139,26 +148,6 @@
 - **17 — Gráficos:** grid assimétrico — série temporal (2/3) + sentimento em donut (1/3); share de mídia + valoração por plataforma (1/2+1/2).
 - **18 — Tabela e responsividade:** Top 10 full-width com cabeçalho sticky, hover e colunas numéricas à direita; media queries que empilham os grids em mobile.
 - **Deploy:** refatoração publicada em `https://valorpublico.web.app`.
-
-## Estado Atual e Retomada (19/08/2026)
-
-- ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` repopulados após o reset.
-- 🔄 **Ingestão Web em andamento** — 420 clippings gravados até o 13º agente (processo interrompido; persistência incremental preserva o progresso).
-- ⏳ **A fazer amanhã (ordem):**
-  1. Completar a ingestão Web dos 50 agentes (`run_ingestao.py`).
-  2. Regenerar métricas (`atualizar_metricas.py`).
-  3. Recriar o owner (`criar_owner.py` — apagado no reset).
-  4. Validar o dashboard em `https://valorpublico.web.app` (hard refresh / limpar cache se o SW v3 não assumir).
-  5. Ativar YouTube/Telegram e configurar redes sociais.
-
-
-
-## Sprint 12 — Regras de Security (RBAC) ⏳
-
-**Objetivo:** Proteger o Firestore por papel de usuário.
-- Firestore Security Rules: leitura/escrita condicionada ao `papel` em `usuarios/{uid}`.
-- Proteger `agentes_publicos`, `clippings`, `metricas` e `usuarios`.
-- Testes de regras (Emulator Suite).
 
 ## Sprint 13 — Cobertura TV, Rádio e Impresso ⏳
 
@@ -174,3 +163,18 @@
 - Monitoramento (logs, alertas de erro, health checks).
 - Documentação final (README + context.md + implementation.md atualizados).
 - Comunicação e onboarding do usuário final.
+
+## Estado Atual (20/08/2026)
+
+- ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` repopulados.
+- ✅ **Ingestão Web completa** — 50/50 agentes, **1.510 clippings** (R$ 609.650 em valoração, 227 veículos).
+- ✅ **Métricas recalculadas** — `metricas/geral` + 2 cidades + 50 agentes (`atualizar_metricas.py`).
+- ✅ **Owner recriado** — `usuarios/PS7XKpuuQHdw4wUsTjkxwhHBJfC3` (`criar_owner.py`).
+- ✅ **Firestore Security Rules** (`firestore.rules`) — leitura pública do dashboard; escrita só via Admin SDK.
+- ✅ **Sprint 11 (agendamento)** — GitHub Actions `.github/workflows/ingestao.yml` + rotina local `rotina_diaria.ps1`.
+- ✅ **Deploy atualizado** — hosting + regras publicados em `https://valorpublico.web.app`.
+- ⏳ **A fazer (ordem sugerida):**
+  1. Validar o dashboard no navegador (hard refresh / limpar cache do SW v3).
+  2. Configurar secrets no GitHub (`FIREBASE_DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_B64`) para o workflow.
+  3. Ativar YouTube/Telegram e configurar credenciais das redes sociais (Twitter/Instagram/Facebook).
+  4. Sprint 13 (TV/Rádio/Impresso) e Sprint 14 (Go live).

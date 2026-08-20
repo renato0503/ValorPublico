@@ -35,8 +35,12 @@ class Orchestrator:
         self,
         cidades: list[str] | None = None,
         limite_agentes: int | None = None,
+        agente_ids: list[str] | None = None,
     ) -> dict:
         agentes = self.repo.carregar_agentes(cidades)
+        if agente_ids:
+            ids = set(agente_ids)
+            agentes = [a for a in agentes if a["id"] in ids]
         if limite_agentes:
             agentes = agentes[:limite_agentes]
         logger.info("Ingestao iniciada: %d agentes, %d scrapers", len(agentes), len(self.scrapers))

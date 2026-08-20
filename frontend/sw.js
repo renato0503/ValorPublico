@@ -1,15 +1,20 @@
-const CACHE_VERSION = "valorpublico-v2";
+const CACHE_VERSION = "valorpublico-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/styles.css",
+  "./js/app.js",
+  "./js/charts.js",
+  "./js/firebase-init.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
 ];
 
-const IGNORAR_CACHE = (url) =>
-  url.pathname.endsWith(".js") || url.pathname.endsWith("firebase-config.js");
+// Nunca servidos do cache: modulos JS dinamicos que podem ter sido corrompidos
+// por redeploys (ex.: firebase-config.js cacheado como HTML).
+const NUNCA_CACHEAR = (url) =>
+  url.pathname.endsWith("firebase-config.js");
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -41,20 +46,10 @@ self.addEventListener("fetch", (event) => {
   const isGstatic = url.hostname.endsWith("gstatic.com");
   const isGoogle = url.hostname.endsWith("googleapis.com");
 
-  // Modulos JS (firebase-config, app, etc.) e CDNs: sempre da rede (network-first).
-  // Evita servir HTML cacheado no lugar de JS (erro de MIME) apos redeploys.
-  if (IGNORAR_CACHE(url) || isGstatic || isGoogle) {
-    event.respondWith(
-      fetch(request)
-        .then((resp) => {
-          if (resp.ok && IGNORAR_CACHE(url)) {
-            const copy = resp.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, copy));
-          }
-          return resp;
-        })
-        .catch(() => caches.match(request))
-    );
+  // firebase-config.js e modulos JS do app: SEMPRE da rede, sem cache.
+  // Evita reincidencia do erro de MIME text/html apos redeploys.
+  if (NUNCA_CACHEAR(url) || isGstatic || isGoogle) {
+    event.respondWith(fetch(request).catch(() => caches.match(request)));
     return;
   }
 
@@ -71,7 +66,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Assets estaticos imutaveis do app shell: cache-first.
+  // Assets estaticos imutaveis: cache-first.
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;

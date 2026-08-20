@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ---------------------------------------------------------------
+    // Regras de Seguranca (RBAC) - ValorPublico
+    // ---------------------------------------------------------------
+    // O dashboard PWA e PUBLICO (BI de monitoramento de midia): leitura
+    // liberada para as colecoes de leitura leve. Toda escrita e feita
+    // pelo backend via Admin SDK (que ignora estas regras), entao o
+    // cliente web nao precisa de permissao de escrita em nenhum lugar.
+    // ---------------------------------------------------------------
+
+    // Agentes publicos (roster de parlamentares) - leitura publica.
+    // Clippings ficam em subcolecao e NAO sao expostos ao cliente.
+    match /agentes_publicos/{docId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /clippings/{clipId} {
+        allow read, write: if false;
+      }
+    }
+
+    // Metricas agregadas - leitura publica (dashboard em tempo real).
+    match /metricas/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /metricas_por_cidade/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /metricas_por_agente/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /metricas_diarias/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Tabela de valoracao (CPM + veiculos) - leitura publica.
+    match /tabela_midia/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Usuarios: cada usuario le/edita apenas o proprio documento
+    // (o owner e definido pelo backend via Admin SDK).
+    match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Registros de execucao do motor de ingestao - apenas backend.
+    match /execucoes_ingestao/{docId} {
+      allow read, write: if false;
+    }
+
+    // Qualquer outra colecao: negada por padrao.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
