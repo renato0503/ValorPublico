@@ -185,7 +185,7 @@ ValorPublico/
 - **Banco (Firestore):** pipeline completo operando.
   - ✅ `agentes_publicos` — 50 agentes (27 Cuiabá + 23 Várzea Grande), com `votos_2024`, `legislatura` e `termos_de_busca`.
   - ✅ `tabela_midia/geral` — CPM de 8 plataformas + 13 veículos (portal/impresso).
-  - ✅ `clippings` — **1.801 clippings** (Web + YouTube com transcrição), 50 agentes.
+  - ✅ `clippings` — **1.863 clippings** (Web + YouTube com transcrição), 50 agentes.
   - ✅ `metricas` — regeneradas com **share destrincado**: Portal 1.177, Jornal Impresso 338, YouTube 156, Governo 77, TV 36, Rádio 13 (+ série por sentimento e nuvem de palavras).
   - ✅ `usuarios` — owner recriado (`criar_owner.py`).
 - **Scrapers:**
@@ -210,6 +210,11 @@ ValorPublico/
 - **Agendamento:** GitHub Actions `.github/workflows/ingestao.yml` (cron diário) + rotina local `backend/scripts/rotina_diaria.ps1`.
 - **Frontend (PWA):** deployado em `https://valorpublico.web.app` (config embutida no `firebase-init.js`).
   - ⚠️ Se exibir dados antigos: use o botão **↻ Atualizar** no topo (limpa cache do SW e recarrega) ou **Ctrl+Shift+R**.
+- **Monitoramento e alertas:**
+  - ✅ **Erros de JS visíveis na tela** — handler global (`window.onerror` + `unhandledrejection`) exibe banner vermelho em qualquer falha do dashboard.
+  - ✅ **Indicador de saúde da ingestão** no rodapé — `● OK` (verde) / atrasada / desatualizada (>2 dias) / erro (vermelho).
+  - ✅ **Status detalhado da última execução** — `sucesso`/erro + clippings gravados propagados na `ultima_execucao` (backend).
+  - ✅ **Issue automática no GitHub** quando a ingestão do cron falhar (via `github-script` no workflow).
 
 ## 11. Próximos Passos
 
@@ -221,7 +226,6 @@ ValorPublico/
 - [ ] **Dashboard — Análise Lexical visual:** mapa fatorial (AFC), grafo de similaridade e dendrograma da CHD no frontend (os dados já são gerados pelo backend).
 - [ ] **Avaliação IA do sentimento** (alternativa ao VADER) — custo/LLM a decidir.
 - [ ] **Ajustar CPM/valores** da tabela conforme a tabela publicitária real de cada veículo.
-- [ ] **Alertas de erro/health check** externo para o workflow (opcional).
 - [ ] **Testes de regras** no Emulator Suite (aprimoramento do RBAC).
 
 ## 12. Análises Lexicais (estilo IRAMUTEQ)

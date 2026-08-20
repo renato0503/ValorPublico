@@ -28,8 +28,16 @@
 | 14 | **Go live** | Homologação, monitoramento, documentação final | ✅ Concluída |
 | 19 | **Auditoria, destrinche de mídia e YouTube** | Classificador de mídia, YouTube ativo, export CSV | ✅ Concluída |
 | 20 | **Analytics e análise lexical (IRAMUTEQ)** | Série por sentimento, nuvem interativa, análises lexicais | ✅ Concluída |
+| 21 | Filtros de período no dashboard | Hoje / 7d / 30d / Todo (KPIs, série, share, top) | ✅ Concluída |
+| 22 | Insights Principais e Top Veículos | Cards de destaque + top com filtro por tipo | ✅ Concluída |
+| 23 | Categorias/temas por notícia | 16 temas por palavras-chave + backfill | ✅ Concluída |
+| 24 | Detalhe de notícia | Modal com valoração, categorias, conteúdo, palavras-chave | ✅ Concluída |
+| 25 | Pesquisa avançada / Relatórios | Filtros + somatórios de espaço/valor/sentimento | ✅ Concluída |
+| 26 | Análise de Mídia | Abas estatística/qualitativa/repercussão negativa | ✅ Concluída |
+| 27 | Exportação PDF de relatório | PDF via impressão do navegador | ✅ Concluída |
+| 28 | **Monitoramento e alertas** | Erros na tela, saúde da ingestão, status, issue no cron | ✅ Concluída |
 
-**Status total:** 21 sprints/entregas concluídas · pendências pontuais listadas abaixo.
+**Status total:** 29 sprints/entregas concluídas · pendências pontuais listadas abaixo.
 
 ---
 
@@ -131,11 +139,11 @@ context/implementation atualizados, secrets + workflow validados.
 ## Estado Atual (20/08/2026)
 
 - ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` (8 CPM + 13 veículos).
-- ✅ **Ingestão Web + YouTube** — 50/50 agentes, **1.801 clippings**.
-- ✅ **Share de mídia destrincado** — Portal 1.177, Jornal Impresso 338, YouTube 156,
-  Governo 77, TV 36, Rádio 13 (+ 2 Redes, 2 Outros).
+- ✅ **Ingestão Web + YouTube** — 50/50 agentes, **1.863 clippings**.
+- ✅ **Share de mídia destrincado** — Portal, Jornal Impresso, YouTube, Governo, TV, Rádio
+  (+ Redes/Outros) — ver `context.md` para os números atuais.
 - ✅ **Métricas com série por sentimento e nuvem** — `metricas/geral` + 2 cidades + 50 agentes.
-- ✅ **Export CSV** — `data/export/clippings_20260820.csv` (1.801 linhas, com `categoria_midia`).
+- ✅ **Export CSV** — `data/export/clippings_20260820.csv` (com `categoria_midia` + `temas`).
 - ✅ **Análises lexicais** — `data/export/lexical/` (frequência, especificidade, co-ocorrência,
   AFC, CHD — 4 classes temáticas).
 - ✅ **Dashboard** — série por sentimento, nuvem interativa, botão Atualizar, cores corretas;
@@ -146,8 +154,10 @@ context/implementation atualizados, secrets + workflow validados.
   2. TV/Rádio/Impresso com dados reais (ampliar canais/janela; hoje 0 menções).
   3. Incluir TV/Rádio/Impresso no cron do GitHub Actions (secrets `TV_CANAIS`/`RADIO_CANAIS`/`IMPRESSO_SITES`).
   4. Visualização das análises lexicais no frontend (AFC/grafo/dendrograma).
-5. Ajustar CPM/valores conforme tabela publicitária real.
-6. Testes de regras no Emulator Suite.
+  5. Ajustar CPM/valores conforme tabela publicitária real.
+  6. Testes de regras no Emulator Suite.
+  7. (Fase 3) E-mail/SMS de alerta — hoje a notificação de falha é por issue no GitHub.
+  8. (Fase 3) Monitoramento externo de uptime (ex.: UptimeRobot).
 
 ---
 
@@ -306,3 +316,52 @@ Educação, CPI, Eleições), como a DSM faz com "Categorias".
 - **PDF** — escolha da lib de geração e hospedagem (Cloud Function vs local no cron).
 - **Redes sociais** — a própria DSM ainda está em desenvolvimento; manter YouTube ativo e
   configurar credenciais das demais (pendência já listada).
+
+---
+
+# Fase 3 — Monitoramento e Alertas
+
+> Implementada em 20/08/2026 (pós-go-live). Garante visibilidade imediata quando algo
+> "quebra" (dashboard, ingestão, cron), sem depender de abrir o console do navegador.
+
+| Sprint | Tema | Entrega principal | Status |
+|---|---|---|---|
+| 28 | Monitoramento e alertas | Erros visíveis na tela, saúde da ingestão, status da última execução, issue automática no cron | ✅ Concluída |
+
+### Sprint 28 — Monitoramento e Alertas ✅
+
+**Objetivo:** detectar e sinalizar falhas de forma proativa em todos os níveis.
+
+- **Frontend — erros visíveis na tela:**
+  - `capturarErro()` + handlers globais `window.onerror` e `unhandledrejection` → exibem
+    banner vermelho com a mensagem de qualquer falha de JS (sem precisar abrir o console).
+  - Erro do `onSnapshot` do Firestore também tratado via `capturarErro` (rótulo de rede/banco).
+  - Corrigido modal que travava a tela: `.oculto { display: none !important }` (a regra do
+    `.modal-overlay { display: flex }` sobrescrevia o `oculto` e bloqueava os cliques).
+- **Indicador de saúde da ingestão (rodapé):**
+  - `● OK` (verde) — ingestão recente (<26h).
+  - `● Ingestão atrasada` (âmbar) — 26–48h.
+  - `● Desatualizado (há mais de 2 dias)` (âmbar) — >48h.
+  - `● Última ingestão com erro` (vermelho) — quando `sucesso === false`.
+- **Status detalhado da última execução:**
+  - Backend: `orchestrator.py` grava `sucesso: True` no resumo; `atualizar_metricas.py`
+    propaga `sucesso` + contadores em `metricas/*.ultima_execucao`.
+  - Frontend: rodapé mostra data/hora, nº de clippings gravados e estado de saúde.
+- **Alerta de falha no cron (GitHub Actions):**
+  - Novo passo no workflow (se `failure()`): `actions/github-script` **abre issue de alerta**
+    automática no GitHub (evitando duplicar se já houver issue aberta), com link para a run
+    e os logs (artefato `logs-ingestao`).
+- **Deploy:** publicado em https://valorpublico.web.app.
+
+### Estado atual (Fase 3)
+
+- ✅ Erros de JS visíveis na tela (banner vermelho).
+- ✅ Indicador de saúde da ingestão + status detalhado da última execução.
+- ✅ Issue automática de falha no cron.
+- ✅ Métricas regeneradas (1.863 clippings; `ultima_execucao` com `sucesso: true`).
+
+### Pendências pós-Fase 3
+
+- E-mail/SMS de alerta (hoje a notificação é por issue no GitHub; e-mail exige um provedor SMTP).
+- Monitoramento externo de uptime (ex.: UptimeRobot) para detectar queda do site.
+- Dashboard da última execução com histórico (ex.: gráfico de sucesso/erro ao longo do tempo).

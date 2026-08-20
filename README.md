@@ -33,6 +33,11 @@ imagem e reputação política.
 - **Análises lexicais (estilo IRAMUTEQ):** frequência, especificidade por período,
   co-ocorrência/similaridade, AFC (mapa fatorial) e CHD (classes temáticas com Ward).
 - **Exportação CSV** de auditoria com todos os clippings + metadados + temas.
+- **Monitoramento e alertas:**
+  - Erros de JS **visíveis na tela** (banner vermelho) — qualquer falha no dashboard.
+  - **Indicador de saúde da ingestão** no rodapé (OK / atrasada / desatualizada / erro).
+  - **Status detalhado da última execução** (sucesso/erro, clippings gravados).
+  - **Issue automática no GitHub** quando a ingestão do cron falhar.
 - **Agendamento:** GitHub Actions (cron diário) + rotina local para Windows.
 
 ## Arquitetura
@@ -111,7 +116,8 @@ python scripts/analise_lexical.py --n-classes 6   # ajusta classes da CHD
 
 ### Agendamento
 - **Nuvem:** `.github/workflows/ingestao.yml` (cron 06:30/18:30 UTC). Configure os
-  secrets `FIREBASE_DATABASE_URL` e `FIREBASE_SERVICE_ACCOUNT_B64`.
+  secrets `FIREBASE_DATABASE_URL` e `FIREBASE_SERVICE_ACCOUNT_B64`. Em caso de falha,
+  o workflow **abre uma issue de alerta** automática no GitHub (com link para os logs).
 - **Local:** `backend/scripts/rotina_diaria.ps1` (via Agendador de Tarefas).
 
 ### Deploy
