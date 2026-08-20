@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 
 CATEGORIA_REDES = {"Twitter", "Instagram", "Facebook"}
 CATEGORIA_WEB = {"Web"}
+CATEGORIA_MIDIA_TRADICIONAL = {"TV", "Radio", "Impresso"}
 
 
 def slugify_cidade(cidade: str) -> str:
@@ -44,6 +45,8 @@ def _categoria(plataforma: str) -> str:
         return "Redes Sociais"
     if plataforma in CATEGORIA_WEB:
         return "Web"
+    if plataforma in CATEGORIA_MIDIA_TRADICIONAL:
+        return "Midia Tradicional"
     return plataforma
 
 
@@ -117,7 +120,28 @@ def main() -> None:
     clippings = coletar_clippings(db)
     logger.info("Lidos %d clippings de todas as subcolecoes.", len(clippings))
 
-    db.collection("metricas").document("geral").set(agregar(clippings), merge=True)
+    ultima_execucao = None
+    try:
+        execs = (
+            db.collection("execucoes_ingestao")
+            .order_by("executado_em", direction="DESCENDING")
+            .limit(1)
+            .stream()
+        )
+        for exec_doc in execs:
+            ultima_execucao = exec_doc.to_dict()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Falha ao ler ultima execucao: %s", e)
+
+    dados_geral = agregar(clippings)
+    if ultima_execucao:
+        dados_geral["ultima_execucao"] = {
+            "executado_em": ultima_execucao.get("executado_em"),
+            "total_agentes": ultima_execucao.get("total_agentes"),
+            "total_brutos": ultima_execucao.get("total_brutos"),
+            "total_gravados": ultima_execucao.get("total_gravados"),
+        }
+    db.collection("metricas").document("geral").set(dados_geral, merge=True)
 
     por_cidade: dict[str, list[dict]] = defaultdict(list)
     por_agente: dict[str, list[dict]] = defaultdict(list)

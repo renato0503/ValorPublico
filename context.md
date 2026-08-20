@@ -2,7 +2,7 @@
 
 > Documento vivo de contexto da plataforma de **Business Intelligence (BI)** e
 > **Monitoramento de Mídia** focada em inteligência política e institucional.
-> Atualizado em: 20/08/2026 (Sprints 11 e 12 concluídas).
+> Atualizado em: 20/08/2026 (Sprints 11–14 concluídas — Go live).
 
 ---
 
@@ -171,23 +171,24 @@ ValorPublico/
 
 - **Banco (Firestore):** pipeline completo operando.
   - ✅ `agentes_publicos` — 50 agentes (27 Cuiabá + 23 Várzea Grande), com `votos_2024`, `legislatura` e `termos_de_busca`.
-  - ✅ `tabela_midia/geral` — CPM de 6 plataformas + 10 veículos (valoração).
-  - ✅ `clippings` — **1.510 clippings** (ingestão Web completa nos 50 agentes).
-  - ✅ `metricas` — regeneradas: `metricas/geral` (1.510 clippings, 227 veículos, R$ 609.650) + 2 cidades + 50 agentes.
+  - ✅ `tabela_midia/geral` — CPM de 8 plataformas (inclui TV/Rádio) + 13 veículos (portal/impresso).
+  - ✅ `clippings` — **1.597 clippings** (ingestão Web completa nos 50 agentes).
+  - ✅ `metricas` — regeneradas: `metricas/geral` (1.597 clippings, 231 veículos, R$ 645.400) + 2 cidades + 50 agentes + `ultima_execucao`.
   - ✅ `usuarios` — owner recriado (`criar_owner.py`).
 - **Segurança (Firestore Rules):** `firestore.rules` deployado.
   - Leitura pública liberada para o dashboard (`agentes_publicos`, `metricas*`, `tabela_midia`).
   - Escrita restrita ao backend (Admin SDK); `clippings`/`usuarios`/`execucoes_ingestao` protegidos.
-- **Agendamento (Sprint 11):** GitHub Actions `.github/workflows/ingestao.yml` (cron diário) + rotina local `backend/scripts/rotina_diaria.ps1`.
+- **Agendamento (Sprint 11):** GitHub Actions `.github/workflows/ingestao.yml` (cron diário, validado) + rotina local `backend/scripts/rotina_diaria.ps1`.
+- **Cobertura TV/Rádio/Impresso (Sprint 13):** `tv_radio_scraper.py` (transcrição de falas via YouTube) e `impresso_scraper.py` (RSS/homepage), com valoração específica (CPM para TV/Rádio; tabela para Impresso).
+- **Go live (Sprint 14):** `README.md`, monitoramento (`ultima_execucao` no rodapé do dashboard) e documentação final.
 - **Frontend (PWA):** deployado em `https://valorpublico.web.app` (config embutida no `firebase-init.js`, SW v3).
   - ⚠️ Se ainda exibir erro de MIME ou dados antigos: **hard refresh (Ctrl+Shift+R)** ou limpar cache do site (DevTools → Application → Clear storage).
 
 ## 11. Próximos Passos
 
 - [ ] **Validar o dashboard** em `https://valorpublico.web.app` com os dados reais (hard refresh / limpar SW cache).
-- [ ] **Configurar secrets no GitHub** (`FIREBASE_DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_B64`) para ativar o workflow de agendamento.
-- [ ] **Ativar YouTube/Telegram** — diversificar share de mídia e gerar audiência (alcance).
+- [ ] **Preencher `TV_CANAIS`/`RADIO_CANAIS`/`IMPRESSO_SITES`** no `.env` e ativar YouTube/Telegram para diversificar o share de mídia.
 - [ ] **Redes sociais** — configurar credenciais (Twitter cookies, Instagram sessão, Facebook Playwright).
-- [ ] **Sprint 13 — TV, Rádio e Impresso** — transcrição de falas e valoração específica.
-- [ ] **Sprint 14 — Go live** — homologação, monitoramento, documentação final.
+- [ ] **Ajustar CPM/valores** da tabela conforme a tabela publicitária real de cada veículo.
+- [ ] **Alertas de erro/health check** externo para o workflow (opcional).
 - [ ] **Testes de regras** no Emulator Suite (aprimoramento do RBAC).

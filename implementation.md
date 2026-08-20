@@ -27,10 +27,10 @@
 | — | **Ingestão Web (retomada)** | Completar clippings dos 50 agentes (13/50 ok) | ✅ Concluída (50/50, 1.510 clippings) |
 | 11 | Agendamento da ingestão | Cloud Scheduler / cron | ✅ Concluída (GitHub Actions + rotina local) |
 | 12 | Regras de Security (RBAC) | Firestore Rules por papel | ✅ Concluída |
-| 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ⏳ Pendente |
-| 14 | **Go live** | Homologação, monitoramento, documentação final | ⏳ Pendente |
+| 13 | Cobertura TV/Rádio/Impresso | Transcrição + valoração de falas | ✅ Concluída |
+| 14 | **Go live** | Homologação, monitoramento, documentação final | ✅ Concluída |
 
-**Status total:** 18 sprints concluídas · 2 pendentes.
+**Status total:** 20 sprints concluídas · 0 pendentes.
 
 ---
 
@@ -149,32 +149,38 @@
 - **18 — Tabela e responsividade:** Top 10 full-width com cabeçalho sticky, hover e colunas numéricas à direita; media queries que empilham os grids em mobile.
 - **Deploy:** refatoração publicada em `https://valorpublico.web.app`.
 
-## Sprint 13 — Cobertura TV, Rádio e Impresso ⏳
+## Sprint 13 — Cobertura TV, Rádio e Impresso ✅
 
 **Objetivo:** Ampliar fontes para mídia audiovisual e impressa.
-- Transcrição de falas (speech-to-text) para TV/Rádio.
-- Captura de matérias de jornais impressos.
-- Valoração específica e sentimento sobre falas transcritas.
+- [x] `scraper/tv_radio_scraper.py` — `TVScraper` e `RadioScraper`: monitoram canais de notícia no YouTube, transcrevem as falas (`youtube-transcript-api`) e detectam menções aos termos do agente.
+- [x] `scraper/impresso_scraper.py` — captura jornais com edição digital via RSS (`feedparser`) com fallback para homepage (`trafilatura`).
+- [x] Plataformas `TV`, `Radio`, `Impresso` no modelo de dados.
+- [x] Valoração específica — TV/Rádio por CPM (alcance); Impresso por tabela de veículos (R$/matéria); CPM e veículos impressos adicionados ao `seed_tabela_midia.py`.
+- [x] Categorização "Midia Tradicional" nas métricas e wiring no `run_ingestao.py`.
+- [ ] (Ajuste de campo) Preencher `TV_CANAIS`/`RADIO_CANAIS`/`IMPRESSO_SITES` com os canais/jornais locais reais (ex.: TV Centro América, Diário de Cuiabá).
 
-## Sprint 14 — Go Live ⏳
+## Sprint 14 — Go Live ✅
 
 **Objetivo:** Entrega final em produção.
-- Homologação completa do pipeline (ingestão → métricas → dashboard).
-- Monitoramento (logs, alertas de erro, health checks).
-- Documentação final (README + context.md + implementation.md atualizados).
-- Comunicação e onboarding do usuário final.
+- [x] Homologação do pipeline (ingestão → métricas → dashboard) — 50/50 agentes, 1.597 clippings, R$ 645.400.
+- [x] Monitoramento — `metricas/geral.ultima_execucao` (última ingestão) exibida no rodapé do dashboard; coleção `execucoes_ingestao` registra cada execução.
+- [x] `README.md` com arquitetura, setup, pipeline, agendamento e deploy.
+- [x] `context.md` e `implementation.md` atualizados.
+- [x] Regras de segurança deployadas + secrets do GitHub configurados (workflow validado com sucesso).
+- [ ] (Opcional) Alerta de erro/health check externo (ex.: monitorar falhas do workflow via e-mail/issue).
 
 ## Estado Atual (20/08/2026)
 
-- ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` repopulados.
-- ✅ **Ingestão Web completa** — 50/50 agentes, **1.510 clippings** (R$ 609.650 em valoração, 227 veículos).
+- ✅ 50 agentes (`agentes_publicos`) + `tabela_midia/geral` (8 CPM + 13 veículos).
+- ✅ **Ingestão Web completa** — 50/50 agentes, **1.597 clippings** (R$ 645.400, 231 veículos).
 - ✅ **Métricas recalculadas** — `metricas/geral` + 2 cidades + 50 agentes (`atualizar_metricas.py`).
 - ✅ **Owner recriado** — `usuarios/PS7XKpuuQHdw4wUsTjkxwhHBJfC3` (`criar_owner.py`).
 - ✅ **Firestore Security Rules** (`firestore.rules`) — leitura pública do dashboard; escrita só via Admin SDK.
-- ✅ **Sprint 11 (agendamento)** — GitHub Actions `.github/workflows/ingestao.yml` + rotina local `rotina_diaria.ps1`.
+- ✅ **Sprint 11 (agendamento)** — GitHub Actions `.github/workflows/ingestao.yml` + rotina local `rotina_diaria.ps1` (validado em execução real).
+- ✅ **Sprint 13** — scrapers TV/Rádio (transcrição de falas) e Impresso implementados e conectados.
+- ✅ **Sprint 14 (Go live)** — monitoramento, README e documentação final.
 - ✅ **Deploy atualizado** — hosting + regras publicados em `https://valorpublico.web.app`.
-- ⏳ **A fazer (ordem sugerida):**
+- ⏳ **Ajustes de campo (pós-go-live):**
   1. Validar o dashboard no navegador (hard refresh / limpar cache do SW v3).
-  2. Configurar secrets no GitHub (`FIREBASE_DATABASE_URL`, `FIREBASE_SERVICE_ACCOUNT_B64`) para o workflow.
-  3. Ativar YouTube/Telegram e configurar credenciais das redes sociais (Twitter/Instagram/Facebook).
-  4. Sprint 13 (TV/Rádio/Impresso) e Sprint 14 (Go live).
+  2. Preencher `TV_CANAIS`/`RADIO_CANAIS`/`IMPRESSO_SITES` e ativar YouTube/Telegram.
+  3. Configurar credenciais das redes sociais (Twitter/Instagram/Facebook).

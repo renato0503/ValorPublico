@@ -206,6 +206,17 @@ function renderizar(dados) {
   renderizarSentimentoLista(dados.distribuicao_sentimento || {});
   renderizarTop(dados.top_veiculos || []);
   $("atualizadoEm").textContent = formatarData(dados.atualizado_em);
+  renderizarUltimaExecucao(dados.ultima_execucao);
+}
+
+function renderizarUltimaExecucao(exec) {
+  const el = $("ultimaExecucao");
+  if (!exec || !exec.executado_em) {
+    el.textContent = "–";
+    return;
+  }
+  const quando = formatarData(exec.executado_em);
+  el.textContent = `${quando} · ${formatarNumero(exec.total_gravados || 0)} clippings`;
 }
 
 /* Calcula tendência comparando os últimos 7 dias com os 7 anteriores da série. */
@@ -261,6 +272,7 @@ function renderizarVazio() {
   $("sentimentoLista").innerHTML = "";
   $("corpoTop").innerHTML = "";
   $("atualizadoEm").textContent = "–";
+  $("ultimaExecucao").textContent = "–";
   mostrarAviso(
     "Sem dados ainda. Rode o motor de ingestão e o backend/scripts/atualizar_metricas.py para popular o dashboard.",
     ""

@@ -69,6 +69,17 @@ TELEGRAM_CANAIS = [
 ]
 TELEGRAM_LIMITE_POR_CANAL = int(os.getenv("TELEGRAM_LIMITE_POR_CANAL", "50"))
 
+# TV / Radio (transcricao de falas via canais de noticia no YouTube)
+HABILITAR_TV = os.getenv("HABILITAR_TV", "1") == "1"
+HABILITAR_RADIO = os.getenv("HABILITAR_RADIO", "1") == "1"
+TV_CANAIS = [c.strip() for c in os.getenv("TV_CANAIS", "").split(",") if c.strip()]
+RADIO_CANAIS = [c.strip() for c in os.getenv("RADIO_CANAIS", "").split(",") if c.strip()]
+MIDIA_VIDEOS_POR_CANAL = int(os.getenv("MIDIA_VIDEOS_POR_CANAL", "10"))
+
+# Impresso (jornais impressos com edicao digital)
+HABILITAR_IMPRESSO = os.getenv("HABILITAR_IMPRESSO", "1") == "1"
+IMPRESSO_SITES = [s.strip() for s in os.getenv("IMPRESSO_SITES", "").split(",") if s.strip()]
+
 # Nomes das colecoes Firestore
 COLLECTION_AGENTES = "agentes_publicos"
 SUBCOLLECTION_CLIPPINGS = "clippings"

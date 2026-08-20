@@ -97,6 +97,34 @@ def construir_scrapers() -> list:
                 }
             )
         )
+    if settings.HABILITAR_TV:
+        from scraper.tv_radio_scraper import TVScraper
+
+        scrapers.append(
+            TVScraper(
+                {
+                    **CONFIG_BASE,
+                    "canais": settings.TV_CANAIS,
+                    "max_videos_por_canal": settings.MIDIA_VIDEOS_POR_CANAL,
+                }
+            )
+        )
+    if settings.HABILITAR_RADIO:
+        from scraper.tv_radio_scraper import RadioScraper
+
+        scrapers.append(
+            RadioScraper(
+                {
+                    **CONFIG_BASE,
+                    "canais": settings.RADIO_CANAIS,
+                    "max_videos_por_canal": settings.MIDIA_VIDEOS_POR_CANAL,
+                }
+            )
+        )
+    if settings.HABILITAR_IMPRESSO:
+        from scraper.impresso_scraper import ImpressoScraper
+
+        scrapers.append(ImpressoScraper({**CONFIG_BASE, "sites": settings.IMPRESSO_SITES}))
     if not scrapers:
         logger.warning("Nenhum scraper habilitado no .env.")
     return scrapers

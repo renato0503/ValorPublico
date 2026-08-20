@@ -35,6 +35,9 @@ jobs:
           echo "HABILITAR_WEB=1" >> .env
           echo "HABILITAR_YOUTUBE=0" >> .env
           echo "HABILITAR_TELEGRAM=0" >> .env
+          echo "HABILITAR_TV=0" >> .env
+          echo "HABILITAR_RADIO=0" >> .env
+          echo "HABILITAR_IMPRESSO=0" >> .env
           echo "INCLUIR_COMENTARIOS=0" >> .env
           echo "WEB_ENRIQUECER=0" >> .env
           echo "LIMITE_ITENS_POR_AGENTE=15" >> .env

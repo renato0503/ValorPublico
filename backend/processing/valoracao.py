@@ -5,9 +5,12 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 # Plataformas cujo valor é calculado por alcance (CPM: R$/mil impressões)
-_PLATAFORMAS_CPM = {"Twitter", "Instagram", "Facebook", "YouTube", "Telegram", "TikTok"}
+_PLATAFORMAS_CPM = {
+    "Twitter", "Instagram", "Facebook", "YouTube", "Telegram", "TikTok",
+    "TV", "Radio",
+}
 # Plataformas cujo valor vem da tabela de veículos (mídia tradicional)
-_PLATAFORMAS_TABELA = {"Web"}
+_PLATAFORMAS_TABELA = {"Web", "Impresso"}
 
 COLLECTION_TABELA = "tabela_midia"
 DOCUMENTO_GERAL = "geral"

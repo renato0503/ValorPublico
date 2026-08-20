@@ -31,6 +31,8 @@ CPM_PLATAFORMAS = {
     "YouTube": 25.0,
     "Telegram": 12.0,
     "TikTok": 20.0,
+    "TV": 40.0,
+    "Radio": 18.0,
 }
 
 # Valor de referência (R$) por matéria/veículo — mídia tradicional (Web).
@@ -50,19 +52,28 @@ VEICULOS = {
     "portal várzea grande": {"valor_referencia": 200.0, "tipo": "portal", "unidade": "materia"},
 }
 
+# Veículos de mídia impressa (jornais com edição digital) — R$/matéria.
+IMPRESSOS = {
+    "diario de cuiaba": {"valor_referencia": 500.0, "tipo": "impresso", "unidade": "materia"},
+    "a gazeta": {"valor_referencia": 600.0, "tipo": "impresso", "unidade": "materia"},
+    "folha do estado": {"valor_referencia": 450.0, "tipo": "impresso", "unidade": "materia"},
+}
+
 
 def main() -> None:
     db = init_firebase()
+    veiculos = {**VEICULOS, **IMPRESSOS}
     doc = {
         "cpm": CPM_PLATAFORMAS,
-        "veiculos": VEICULOS,
+        "veiculos": veiculos,
+        "impressos": IMPRESSOS,
         "valor_padrao_portal": VALOR_PADRAO_PORTAL,
         "atualizado_em": datetime.now(timezone.utc),
     }
     db.collection(COLLECTION_TABELA).document("geral").set(doc, merge=True)
     logger.info(
         "Tabela de midia gravada: %d plataformas (CPM) + %d veiculos.",
-        len(CPM_PLATAFORMAS), len(VEICULOS),
+        len(CPM_PLATAFORMAS), len(veiculos),
     )
 
 
