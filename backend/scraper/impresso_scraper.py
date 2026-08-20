@@ -21,6 +21,10 @@ class ImpressoScraper(BaseScraper):
         super().__init__(config)
         cfg = config or {}
         self.sites: list[str] = cfg.get("sites", [])
+        # Cache por execucao: busca o RSS de cada site 1x e filtra para os 50
+        # agentes em memoria (50x -> 1x por site).
+        self._cache_feed: dict[str, list] = {}
+        self._cache_homepage: dict[str, str] = {}
 
     def _data_publicacao(self, entrada: dict) -> datetime | None:
         if entrada.get("published_parsed"):
@@ -35,64 +39,76 @@ class ImpressoScraper(BaseScraper):
         import feedparser
 
         itens: list[RawItem] = []
-        for sufixo in ("/feed", "/rss", "/rss.xml", "/feed.xml"):
-            url = f"{site}{sufixo}"
-            try:
-                resp = self._get(url)
-                feed = feedparser.parse(resp.content)
-                if not feed.entries:
-                    continue
-                for entrada in feed.entries[:limite]:
-                    titulo = entrada.get("title", "")
-                    resumo = entrada.get("summary", "")
-                    if not self._menciona(f"{titulo} {resumo}", termos):
+        if site in self._cache_feed:
+            entradas = self._cache_feed[site]
+        else:
+            entradas = []
+            for sufixo in ("/feed", "/rss", "/rss.xml", "/feed.xml"):
+                url = f"{site}{sufixo}"
+                try:
+                    resp = self._get(url)
+                    feed = feedparser.parse(resp.content)
+                    if not feed.entries:
                         continue
-                    link = entrada.get("link", "")
-                    itens.append(
-                        RawItem(
-                            agente_id="",  # preenchido no coletar
-                            id_externo=self._hash_id(link),
-                            plataforma=self.plataforma,
-                            tipo=TIPO_NOTICIA,
-                            texto_limpo=f"{titulo} {resumo}".strip(),
-                            data_publicacao=self._data_publicacao(entrada),
-                            autor=site,
-                            url=link,
-                            alcance=0,
-                            metadados={"veiculo": site, "origem": "rss"},
-                        )
-                    )
-                self._sleep()
-                return itens
-            except Exception as e:  # noqa: BLE001
-                logger.debug("Impresso: RSS indisponivel em %s%s: %s", site, sufixo, e)
+                    entradas = feed.entries
+                    break
+                except Exception as e:  # noqa: BLE001
+                    logger.debug("Impresso: RSS indisponivel em %s%s: %s", site, sufixo, e)
+            self._cache_feed[site] = entradas
+            self._sleep()
+        if not entradas:
+            return itens
+        for entrada in entradas[:limite]:
+            titulo = entrada.get("title", "")
+            resumo = entrada.get("summary", "")
+            if not self._menciona(f"{titulo} {resumo}", termos):
+                continue
+            link = entrada.get("link", "")
+            itens.append(
+                RawItem(
+                    agente_id="",  # preenchido no coletar
+                    id_externo=self._hash_id(link),
+                    plataforma=self.plataforma,
+                    tipo=TIPO_NOTICIA,
+                    texto_limpo=f"{titulo} {resumo}".strip(),
+                    data_publicacao=self._data_publicacao(entrada),
+                    autor=site,
+                    url=link,
+                    alcance=0,
+                    metadados={"veiculo": site, "origem": "rss"},
+                )
+            )
         return itens
 
     def _coletar_homepage(self, site: str, termos: list[str]) -> list[RawItem]:
         import trafilatura
 
-        try:
-            resp = self._get(site)
-            texto = trafilatura.extract(resp.text, include_comments=False) or ""
-            if not self._menciona(texto, termos):
-                return []
-            return [
-                RawItem(
-                    agente_id="",  # preenchido no coletar
-                    id_externo=self._hash_id(site),
-                    plataforma=self.plataforma,
-                    tipo=TIPO_NOTICIA,
-                    texto_limpo=texto[:4000],
-                    data_publicacao=None,
-                    autor=site,
-                    url=site,
-                    alcance=0,
-                    metadados={"veiculo": site, "origem": "homepage"},
-                )
-            ]
-        except Exception as e:  # noqa: BLE001
-            logger.warning("Impresso: falha na homepage %s: %s", site, e)
+        if site not in self._cache_homepage:
+            try:
+                resp = self._get(site)
+                texto = trafilatura.extract(resp.text, include_comments=False) or ""
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Impresso: falha na homepage %s: %s", site, e)
+                texto = ""
+            self._cache_homepage[site] = texto
+            self._sleep()
+        texto = self._cache_homepage[site]
+        if not texto or not self._menciona(texto, termos):
             return []
+        return [
+            RawItem(
+                agente_id="",  # preenchido no coletar
+                id_externo=self._hash_id(site),
+                plataforma=self.plataforma,
+                tipo=TIPO_NOTICIA,
+                texto_limpo=texto[:4000],
+                data_publicacao=None,
+                autor=site,
+                url=site,
+                alcance=0,
+                metadados={"veiculo": site, "origem": "homepage"},
+            )
+        ]
 
     def coletar(self, agente: dict, limite: int = 50) -> list[RawItem]:
         itens: list[RawItem] = []
