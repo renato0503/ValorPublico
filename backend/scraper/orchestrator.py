@@ -23,6 +23,7 @@ class Orchestrator:
         valorador: Valorador | None = None,
         limite_por_agente: int = 50,
         max_workers: int = 8,
+        concorrencia_agentes: int = 4,
     ) -> None:
         self.repo = FirestoreRepo(db)
         self.scrapers = scrapers
@@ -30,6 +31,7 @@ class Orchestrator:
         self.valorador = valorador or Valorador(db)
         self.limite_por_agente = limite_por_agente
         self._pool = ThreadPoolExecutor(max_workers=max_workers)
+        self._sem_agentes = asyncio.Semaphore(max(1, concorrencia_agentes))
 
     async def executar(
         self,
@@ -45,31 +47,41 @@ class Orchestrator:
             agentes = agentes[:limite_agentes]
         logger.info("Ingestao iniciada: %d agentes, %d scrapers", len(agentes), len(self.scrapers))
 
-        total_gravados = 0
-        itens_acumulados: list[RawItem] = []
-        for indice, agente in enumerate(agentes, start=1):
-            itens = await self._coletar_agente(agente)
-            itens_acumulados.extend(itens)
-
-            if not itens:
-                logger.info("(%d/%d) %s: sem itens.", indice, len(agentes), agente["id"])
-                continue
-
-            df = padronizar_dataframe(itens)
-            self.analisador.aplicar_dataframe(df)
-            self.valorador.aplicar_dataframe(df)
-            gravados = self.repo.salvar_lote(df)
-            total_gravados += gravados
-            logger.info("(%d/%d) %s: %d clippings gravados.", indice, len(agentes), agente["id"], gravados)
-
         resumo = {
             "total_agentes": len(agentes),
-            "total_brutos": len(itens_acumulados),
-            "total_gravados": total_gravados,
+            "total_brutos": 0,
+            "total_gravados": 0,
             "por_plataforma": {},
             "por_sentimento": {},
             "valoracao_total": 0.0,
         }
+
+        async def _processar_agente(agente: dict, ordem: int) -> tuple[int, int] | None:
+            async with self._sem_agentes:
+                itens = await self._coletar_agente(agente)
+                if not itens:
+                    logger.info("(%d/%d) %s: sem itens.", ordem, len(agentes), agente["id"])
+                    return None
+                df = padronizar_dataframe(itens)
+                self.analisador.aplicar_dataframe(df)
+                self.valorador.aplicar_dataframe(df)
+                gravados = self.repo.salvar_lote(df)
+                logger.info(
+                    "(%d/%d) %s: %d clippings gravados.",
+                    ordem, len(agentes), agente["id"], gravados,
+                )
+                return gravados, len(itens)
+
+        resultados = await asyncio.gather(
+            *[_processar_agente(a, i) for i, a in enumerate(agentes, start=1)]
+        )
+        for resultado in resultados:
+            if resultado is None:
+                continue
+            gravados, brutos = resultado
+            resumo["total_gravados"] += gravados
+            resumo["total_brutos"] += brutos
+
         self.repo.registrar_ultimo_scrape(resumo)
         logger.info("Ingestao finalizada: %s", resumo)
         return resumo

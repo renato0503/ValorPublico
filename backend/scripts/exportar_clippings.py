@@ -22,6 +22,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from processing.classificador_midia import classificar_clipping
 
 logger = get_logger(__name__)
 
@@ -37,6 +38,8 @@ COLUNAS_BASE = [
     "agente_mandato_ate",
     "agente_votos_2024",
     "plataforma",
+    "categoria_midia",
+    "temas",
     "tipo",
     "sentimento",
     "autor",
@@ -100,6 +103,8 @@ def exportar(caminho: Path) -> Path:
                     "agente_mandato_ate": _iso(agente.get("mandato_ate")),
                     "agente_votos_2024": agente.get("votos_2024", ""),
                     "plataforma": clip.get("plataforma", ""),
+                    "categoria_midia": classificar_clipping(clip),
+                    "temas": ";".join(clip.get("categorias") or []),
                     "tipo": clip.get("tipo", ""),
                     "sentimento": clip.get("sentimento", ""),
                     "autor": clip.get("autor", ""),

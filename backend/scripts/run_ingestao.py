@@ -171,6 +171,7 @@ async def main() -> None:
         scrapers=construir_scrapers(),
         limite_por_agente=settings.LIMITE_ITENS_POR_AGENTE,
         max_workers=settings.MAX_WORKERS,
+        concorrencia_agentes=settings.PARALELISMO_AGENTES,
     )
     try:
         resumo = await orquestrador.executar(

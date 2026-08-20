@@ -11,23 +11,36 @@ imagem e reputação política.
 
 ## Funcionalidades
 
-- **Monitoramento multi-plataforma:** Web (Google News RSS + Trafilatura),
-  Twitter/X, Instagram, Facebook, YouTube, Telegram, **TV, Rádio (transcrição de
-  falas) e Impresso**.
-- **Pipeline NLP:** limpeza/deduplicação (pandas) + sentimento (VADER expandido
-  com léxico em português).
-- **Valoração financeira espontânea (R$):** CPM por plataforma + tabela de
-  veículos (portal/impresso).
-- **Dashboard PWA em tempo real:** KPIs com tendência, série temporal, share de
-  mídia, sentimento, valoração por plataforma e Top 10 fontes (Firestore
-  `onSnapshot`).
+- **Monitoramento multi-plataforma:** Web (Google News RSS + Trafilatura), **YouTube
+  (ativo, com transcrição das falas)**, Twitter/X, Instagram, Facebook, Telegram,
+  **TV, Rádio (transcrição de falas) e Impresso**.
+- **Share de mídia destrincado:** a origem Web é classificada em Portal, Rádio, TV,
+  Jornal Impresso, Governo e Redes (`processing/classificador_midia.py`).
+- **Pipeline NLP:** limpeza/deduplicação (pandas) + sentimento (VADER expandido com
+  léxico em português).
+- **Valoração financeira espontânea (R$):** CPM por plataforma + tabela de veículos.
+- **Dashboard PWA em tempo real:** KPIs com tendência, **filtros de período (Hoje/7d/30d)**,
+  **série temporal por sentimento (3 linhas)**, **insights principais**, **nuvem de palavras
+  interativa com filtro mensal**, share de mídia destrincado, sentimento, valoração por
+  plataforma e Top 10 fontes (com filtro por tipo) — Firestore `onSnapshot`. Botão **↻ Atualizar**.
+- **Temas/categorias por notícia:** 16 temas (Política/Câmara, Eleições, Governo, Justiça,
+  Tecnologia...) classificados por palavras-chave (`processing/temas.py`).
+- **Detalhe de notícia:** modal com valoração (R$/alcance/plataforma), categorias, palavras-chave,
+  conteúdo e link original.
+- **Relatórios / pesquisa avançada:** filtros por período, tipo de mídia e sentimento com
+  somatórios de menções, valor (R$) e espaço — com **Exportação PDF**.
+- **Análise de Mídia:** abas Estatística, Qualitativa e Repercussão Negativa.
+- **Análises lexicais (estilo IRAMUTEQ):** frequência, especificidade por período,
+  co-ocorrência/similaridade, AFC (mapa fatorial) e CHD (classes temáticas com Ward).
+- **Exportação CSV** de auditoria com todos os clippings + metadados + temas.
 - **Agendamento:** GitHub Actions (cron diário) + rotina local para Windows.
 
 ## Arquitetura
 
 ```
-Backend (Python 3.12)  ->  Scrapers -> Orquestrador (async/sync paralelo)
+Backend (Python 3.12)  ->  Scrapers -> Orquestrador (async/sync + agentes em paralelo)
                               -> Cleaner -> Sentimento -> Valoração
+                              -> Análises lexicais (numpy/scipy/sklearn)
                               -> Firestore (subcoleção clippings)
 Frontend (PWA/JS)      ->  Dashboard BI (tempo real via onSnapshot)
 Agendamento            ->  GitHub Actions / rotina local
@@ -46,9 +59,10 @@ backend/
   config/         settings (.env) e convenções
   core/           cliente Firebase e logging
   scraper/        scrapers + orquestrador + modelos
-  processing/     cleaner (pandas) + sentimento (VADER PT) + valoração
+  processing/     cleaner, sentiment (VADER PT), valoracao, classificador de mídia,
+                  nuvem de palavras e análises lexicais (IRAMUTEQ)
   storage/        repositório Firestore
-  scripts/        seed, ingestão, métricas, owner, rotina diária
+  scripts/        seed, ingestão, métricas, export CSV, análise lexical, owner, rotina
 frontend/         PWA (dashboard, service worker, manifest)
 firestore.rules   Security Rules (RBAC)
 ```
@@ -56,8 +70,8 @@ firestore.rules   Security Rules (RBAC)
 ## Como executar
 
 ### Pré-requisitos
-- Python 3.12+, `firebase-admin`, `pandas`, `httpx[http2]`, `trafilatura`,
-  `feedparser`, `yt-dlp`, `youtube-transcript-api` (ver `backend/requirements.txt`).
+- Python 3.12+, `firebase-admin`, `pandas`, `numpy`, `scipy`, `sklearn`,
+  `httpx[http2]`, `trafilatura`, `feedparser`, `yt-dlp` (ver `backend/requirements.txt`).
 - Conta de serviço do Firebase (`FIREBASE_SERVICE_ACCOUNT` no `.env`).
 
 ### Instalação
@@ -85,6 +99,16 @@ python scripts/atualizar_metricas.py
 python scripts/criar_owner.py
 ```
 
+### Auditoria e análises
+```powershell
+# Exporta todos os clippings para CSV (auditoria/busca)
+python scripts/exportar_clippings.py
+
+# Análises lexicais estilo IRAMUTEQ (gera data/export/lexical/)
+python scripts/analise_lexical.py
+python scripts/analise_lexical.py --n-classes 6   # ajusta classes da CHD
+```
+
 ### Agendamento
 - **Nuvem:** `.github/workflows/ingestao.yml` (cron 06:30/18:30 UTC). Configure os
   secrets `FIREBASE_DATABASE_URL` e `FIREBASE_SERVICE_ACCOUNT_B64`.
@@ -97,8 +121,8 @@ firebase deploy --only hosting,firestore:rules
 
 ## Documentação
 
-- `context.md` — contexto estratégico e estado atual.
-- `implementation.md` — plano de sprints (até Go live).
+- `context.md` — contexto estratégico, estado atual e análises lexicais.
+- `implementation.md` — plano de sprints (até Go live + melhorias contínuas).
 
 ## Segurança
 

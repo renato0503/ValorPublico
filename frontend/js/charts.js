@@ -20,34 +20,67 @@ export function criarGraficoTemporal(canvasId, dados) {
   const ctx = contexto(canvasId);
   if (!ctx) return null;
 
-  const rotulos = Object.keys(dados.dias || {}).sort();
-  const totais = rotulos.map((dia) =>
-    Object.values(dados.dias[dia] || {}).reduce((a, b) => a + b, 0)
+  const serieSentimento = dados.serie_sentimento || {};
+  const rotulos = Object.keys(serieSentimento);
+  if (!rotulos.length) rotulos.push(...Object.keys(dados.dias || {}).sort());
+
+  const CORES_SENTIMENTO = {
+    positivo: "#22c55e",
+    neutro: "#3b82f6",
+    negativo: "#ef4444",
+  };
+  const temSerie = Object.values(serieSentimento).some(
+    (v) => typeof v === "object" && v !== null
   );
+
+  const datasets = [];
+  if (temSerie) {
+    for (const [sent, cor] of Object.entries(CORES_SENTIMENTO)) {
+      datasets.push({
+        label: sent[0].toUpperCase() + sent.slice(1),
+        data: rotulos.map(
+          (dia) => (serieSentimento[dia] && serieSentimento[dia][sent]) || 0
+        ),
+        borderColor: cor,
+        backgroundColor: cor + "26",
+        fill: false,
+        tension: 0.35,
+        pointRadius: 2,
+        pointBackgroundColor: cor,
+        borderWidth: 2,
+      });
+    }
+  } else {
+    const totais = rotulos.map((dia) =>
+      Object.values(dados.dias[dia] || {}).reduce((a, b) => a + b, 0)
+    );
+    datasets.push({
+      label: "Menções por dia",
+      data: totais,
+      borderColor: "#22c55e",
+      backgroundColor: "rgba(34,197,94,0.12)",
+      fill: true,
+      tension: 0.35,
+      pointRadius: 3,
+      pointBackgroundColor: "#22c55e",
+      borderWidth: 2,
+    });
+  }
 
   charts[canvasId] = new Chart(ctx, {
     type: "line",
-    data: {
-      labels: rotulos,
-      datasets: [
-        {
-          label: "Menções por dia",
-          data: totais,
-          borderColor: "#22c55e",
-          backgroundColor: "rgba(34,197,94,0.12)",
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3,
-          pointBackgroundColor: "#22c55e",
-          borderWidth: 2,
-        },
-      ],
-    },
+    data: { labels: rotulos, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: {
+          display: temSerie,
+          position: "bottom",
+          labels: { color: "#94a3b8", boxWidth: 12, padding: 14 },
+        },
+      },
       scales: {
         x: {
           ticks: { color: "#94a3b8", maxTicksLimit: 12 },

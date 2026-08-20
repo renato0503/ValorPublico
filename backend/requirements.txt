@@ -35,3 +35,7 @@ telethon>=1.37.0
 # NLP / sentimentos
 vaderSentiment>=3.3.2
 nltk>=3.8.1
+
+# Analises lexicais (estilo IRAMUTEQ - AFC, CHD/Ward)
+scipy>=1.13.0
+scikit-learn>=1.4.0

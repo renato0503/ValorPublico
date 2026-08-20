@@ -43,4 +43,8 @@ def padronizar_dataframe(itens: list[RawItem]) -> pd.DataFrame:
     df["sentimento"] = SENTIMENTO_NEUTRO
     df["valor_estimado"] = 0.0
     df["created_at"] = datetime.now(timezone.utc)
+    # Datas ausentes viram NaT no pandas; Firestore nao aceita NaT.
+    for col in ("data_publicacao",):
+        if col in df.columns:
+            df[col] = df[col].astype(object).where(df[col].notna(), None)
     return df

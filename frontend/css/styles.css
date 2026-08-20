@@ -139,6 +139,39 @@ body {
   box-shadow: 0 0 0 3px var(--azul-soft);
 }
 
+.btn-atualizar {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, var(--azul), var(--roxo));
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: var(--fonte);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-atualizar:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.btn-atualizar:active {
+  transform: translateY(0);
+}
+
+.btn-atualizar:disabled {
+  opacity: 0.65;
+  cursor: wait;
+  transform: none;
+}
+
 /* ---------- Conteúdo ---------- */
 .conteudo {
   flex: 1;
@@ -266,6 +299,51 @@ body {
 .kpi-tendencia.trend-baixa {
   color: var(--vermelho);
   background: rgba(239, 68, 68, 0.12);
+}
+
+/* ---------- Insights principais (Sprint 22) ---------- */
+.insights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.insight {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-left: 4px solid var(--azul);
+}
+
+.insight:nth-child(2) { border-left-color: var(--verde); }
+.insight:nth-child(3) { border-left-color: var(--ambar); }
+
+.insight-rotulo {
+  color: var(--texto-suave);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 600;
+}
+
+.insight-valor {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.insight-valor.trend-alta { color: var(--verde); }
+.insight-valor.trend-baixa { color: var(--vermelho); }
+
+.top-cat {
+  font-size: 0.7rem;
+  color: var(--texto-mutado);
+  background: var(--bg-deep);
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 4px;
+  text-transform: uppercase;
 }
 
 /* ---------- Painéis e grades ---------- */
@@ -430,6 +508,239 @@ body {
   text-align: center;
 }
 
+/* ---------- Nuvem de palavras ---------- */
+.nuvem-cabecalho {
+  align-items: center;
+}
+
+.filtro-mes select {
+  min-width: 150px;
+}
+
+.nuvem-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 16px;
+  padding: 18px 12px;
+  min-height: 180px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-deep);
+}
+
+.nuvem-palavra {
+  display: inline-block;
+  line-height: 1.25;
+  cursor: help;
+  transition: color 0.12s ease, transform 0.12s ease;
+  user-select: none;
+}
+
+.nuvem-palavra:hover {
+  color: var(--texto) !important;
+  transform: translateY(-1px);
+}
+
+.nuvem-vazio {
+  color: var(--texto-mutado);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ---------- Gráfico de temas ---------- */
+.canvas-box-sm { height: 260px; }
+
+/* ---------- Análise de mídia (abas) ---------- */
+.analise-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-forte);
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.analise-tab {
+  background: transparent;
+  border: 1px solid var(--border-forte);
+  color: var(--texto-suave);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--fonte);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.analise-tab.ativo {
+  background: var(--azul-soft);
+  border-color: var(--azul);
+  color: var(--texto);
+}
+
+.analise-conteudo {
+  min-height: 150px;
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  line-height: 1.6;
+}
+
+.analise-conteudo ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+}
+
+.analise-conteudo li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--bg-deep);
+}
+
+.analise-conteudo li .num {
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+}
+
+/* ---------- Modais ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border-forte);
+  border-radius: 14px;
+  box-shadow: var(--sombra);
+  max-width: 720px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  position: relative;
+}
+
+.modal-lg { max-width: 1000px; }
+
+.modal-fechar {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  color: var(--texto-suave);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.modal-fechar:hover { color: var(--texto); }
+
+.modal-titulo { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+
+.modal-meta {
+  color: var(--texto-suave);
+  font-size: 0.82rem;
+  margin-bottom: 14px;
+}
+
+.modal-valoracao {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.modal-valor {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.modal-valor .rotulo {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--texto-mutado);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.modal-valor .valor { font-size: 1.1rem; font-weight: 700; color: var(--texto); }
+
+.modal-categorias, .modal-palavras {
+  margin-bottom: 14px;
+}
+
+.chip {
+  display: inline-block;
+  background: var(--azul-soft);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #bfdbfe;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  margin: 2px 4px 2px 0;
+}
+
+.modal-conteudo {
+  color: var(--texto);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+.modal-link { color: var(--azul); font-size: 0.85rem; }
+
+/* ---------- Relatório (pesquisa avançada) ---------- */
+.relatorio-cabecalho { margin-bottom: 12px; }
+
+.relatorio-filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+
+.relatorio-soma {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.soma-card {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.soma-card .valor { font-size: 1rem; font-weight: 700; color: var(--texto); }
+
+.relatorio-lista { max-height: 380px; }
+
+.btn-relatorio { background: linear-gradient(135deg, var(--verde), var(--azul)); }
+
 /* ---------- Rodapé ---------- */
 .rodape {
   text-align: center;
@@ -446,7 +757,9 @@ body {
 
 @media (max-width: 860px) {
   .kpis { grid-template-columns: repeat(2, 1fr); }
+  .insights { grid-template-columns: 1fr; }
   .grade-secundaria { grid-template-columns: 1fr; }
+  .relatorio-soma { grid-template-columns: 1fr; }
   .topo { padding: 12px 18px; }
   .conteudo { padding: 16px 18px 36px; }
 }
@@ -457,6 +770,7 @@ body {
   .filtro select { min-width: 100%; }
   .filtros { width: 100%; }
   .filtro { flex: 1; }
+  .btn-atualizar { width: 100%; justify-content: center; }
 }
 
 @media (prefers-reduced-motion: reduce) {

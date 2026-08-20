@@ -47,6 +47,32 @@
           <option value="">Todos os parlamentares</option>
         </select>
       </label>
+      <label class="filtro">
+        <span class="filtro-rotulo">Período</span>
+        <select id="filtroPeriodo" aria-label="Filtrar por período">
+          <option value="">Todo o período</option>
+          <option value="hoje">Hoje</option>
+          <option value="7d">Últimos 7 dias</option>
+          <option value="30d">Últimos 30 dias</option>
+        </select>
+      </label>
+      <button
+        id="btnRelatorio"
+        class="btn-atualizar btn-relatorio"
+        type="button"
+        title="Pesquisa avançada e relatório"
+      >
+        Relatório
+      </button>
+      <button
+        id="btnAtualizar"
+        class="btn-atualizar"
+        type="button"
+        title="Limpa o cache e recarrega os dados mais recentes"
+      >
+        <span aria-hidden="true">↻</span>
+        <span class="btn-atualizar-texto">Atualizar</span>
+      </button>
     </div>
   </header>
 
@@ -84,11 +110,26 @@
       </article>
     </section>
 
+    <section class="insights" aria-label="Insights principais">
+      <article class="card insight">
+        <span class="insight-rotulo">Maior Cobertura</span>
+        <span class="insight-valor" id="insightMaior">—</span>
+      </article>
+      <article class="card insight">
+        <span class="insight-rotulo">Veículo em Destaque</span>
+        <span class="insight-valor" id="insightVeiculo">—</span>
+      </article>
+      <article class="card insight">
+        <span class="insight-rotulo">Tendência Positiva</span>
+        <span class="insight-valor" id="insightTendencia">—</span>
+      </article>
+    </section>
+
     <section class="grade-principal" aria-label="Série temporal e sentimento">
       <article class="card painel painel-temporal">
         <div class="painel-cabecalho">
           <h2>Série Temporal de Menções</h2>
-          <span class="painel-sub">Menções por dia</span>
+          <span class="painel-sub">Menções por dia · por sentimento</span>
         </div>
         <div class="canvas-box"><canvas id="graficoTemporal" aria-label="Gráfico de menções por dia"></canvas></div>
       </article>
@@ -119,11 +160,46 @@
       </article>
     </section>
 
+    <section class="grade-secundaria" aria-label="Distribuição de temas e top veículos">
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Temas em Destaque</h2>
+          <span class="painel-sub">Principais assuntos dos clippings</span>
+        </div>
+        <div class="canvas-box canvas-box-sm"><canvas id="graficoTemas" aria-label="Gráfico de temas"></canvas></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Análise de Mídia</h2>
+          <span class="painel-sub">Estatística / Qualitativa / Repercussão negativa</span>
+        </div>
+        <div class="analise-tabs" role="tablist" aria-label="Abas de análise de mídia">
+          <button class="analise-tab ativo" data-aba="estatistica" role="tab">Estatística</button>
+          <button class="analise-tab" data-aba="qualitativa" role="tab">Qualitativa</button>
+          <button class="analise-tab" data-aba="negativa" role="tab">Repercussão Negativa</button>
+        </div>
+        <div class="analise-conteudo" id="analiseConteudo"></div>
+      </article>
+    </section>
+
     <section class="grade-detalhe" aria-label="Top fontes">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
-          <h2>Top 10 Fontes Relevantes</h2>
-          <span class="painel-sub">Veículos e páginas mais relevantes</span>
+          <div>
+            <h2>Top 10 Fontes Relevantes</h2>
+            <span class="painel-sub">Veículos e páginas mais relevantes</span>
+          </div>
+          <label class="filtro filtro-mes">
+            <span class="filtro-rotulo">Tipo</span>
+            <select id="filtroTipoTop" aria-label="Filtrar top por tipo de mídia">
+              <option value="Geral">Geral</option>
+              <option value="Portal">Portal</option>
+              <option value="Radio">Rádio</option>
+              <option value="TV">TV</option>
+              <option value="Jornal Impresso">Jornal</option>
+              <option value="YouTube">YouTube</option>
+            </select>
+          </label>
         </div>
         <div class="tabela-wrapper">
           <table class="tabela">
@@ -141,7 +217,87 @@
         </div>
       </article>
     </section>
+  <section class="grade-detalhe" aria-label="Nuvem de palavras">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho nuvem-cabecalho">
+          <div>
+            <h2>Nuvem de Palavras</h2>
+            <span class="painel-sub">Principais termos no período</span>
+          </div>
+          <label class="filtro filtro-mes">
+            <span class="filtro-rotulo">Período</span>
+            <select id="filtroMes" aria-label="Filtrar nuvem por mês">
+              <option value="">Todos os meses</option>
+            </select>
+          </label>
+        </div>
+        <div class="nuvem-box" id="nuvemPalavras" aria-label="Nuvem de palavras"></div>
+      </article>
+    </section>
   </main>
+
+  <!-- Modal: Detalhe de notícia (Sprint 24) -->
+  <div class="modal-overlay oculto" id="modalDetalhe" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+      <button class="modal-fechar" id="fecharDetalhe" aria-label="Fechar">&times;</button>
+      <h2 id="modalTitulo" class="modal-titulo"></h2>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-valoracao" id="modalValoracao"></div>
+      <div class="modal-categorias" id="modalCategorias"></div>
+      <div class="modal-palavras" id="modalPalavras"></div>
+      <div class="modal-conteudo" id="modalConteudo"></div>
+      <a class="modal-link" id="modalLink" target="_blank" rel="noopener">Ver original</a>
+    </div>
+  </div>
+
+  <!-- Modal: Relatório / Pesquisa avançada (Sprint 25) -->
+  <div class="modal-overlay oculto" id="modalRelatorio" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="relatorioTitulo">
+      <button class="modal-fechar" id="fecharRelatorio" aria-label="Fechar">&times;</button>
+      <div class="painel-cabecalho relatorio-cabecalho">
+        <div>
+          <h2 id="relatorioTitulo">Relatório de Menções</h2>
+          <span class="painel-sub">Pesquisa avançada com somatórios</span>
+        </div>
+        <button class="btn-atualizar" id="btnExportarPdf" type="button">Exportar PDF</button>
+      </div>
+      <div class="relatorio-filtros">
+        <label class="filtro">
+          <span class="filtro-rotulo">Período</span>
+          <select id="relPeriodo">
+            <option value="">Todo o período</option>
+            <option value="hoje">Hoje</option>
+            <option value="7d">Últimos 7 dias</option>
+            <option value="30d">Últimos 30 dias</option>
+          </select>
+        </label>
+        <label class="filtro">
+          <span class="filtro-rotulo">Tipo de mídia</span>
+          <select id="relTipo">
+            <option value="">Todos</option>
+            <option value="Portal">Portal</option>
+            <option value="Radio">Rádio</option>
+            <option value="TV">TV</option>
+            <option value="Jornal Impresso">Jornal</option>
+            <option value="YouTube">YouTube</option>
+            <option value="Governo">Governo</option>
+          </select>
+        </label>
+        <label class="filtro">
+          <span class="filtro-rotulo">Sentimento</span>
+          <select id="relSentimento">
+            <option value="">Todos</option>
+            <option value="positivo">Positivo</option>
+            <option value="neutro">Neutro</option>
+            <option value="negativo">Negativo</option>
+          </select>
+        </label>
+        <button class="btn-atualizar" id="btnGerarRelatorio" type="button">Gerar Relatório</button>
+      </div>
+      <div class="relatorio-soma" id="relSoma"></div>
+      <div class="tabela-wrapper relatorio-lista" id="relLista"></div>
+    </div>
+  </div>
 
   <footer class="rodape">
     <span>Dados atualizados em <span id="atualizadoEm">–</span></span>

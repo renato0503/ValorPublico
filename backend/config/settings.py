@@ -41,6 +41,8 @@ SCRAPE_DELAY_MAX = float(os.getenv("SCRAPE_DELAY_MAX", "6"))
 INCLUIR_COMENTARIOS = os.getenv("INCLUIR_COMENTARIOS", "1") == "1"
 LIMITE_ITENS_POR_AGENTE = int(os.getenv("LIMITE_ITENS_POR_AGENTE", "50"))
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", "8"))
+# Quantos agentes sao processados simultaneamente na ingestao
+PARALELISMO_AGENTES = int(os.getenv("PARALELISMO_AGENTES", "4"))
 
 # Liga/desliga cada scraper (valor "1" habilita)
 HABILITAR_TWITTER = os.getenv("HABILITAR_TWITTER", "1") == "1"
