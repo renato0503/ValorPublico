@@ -30,6 +30,30 @@ function mostrarAviso(mensagem, tipo = "") {
   aviso.className = `aviso ${tipo}`.trim();
 }
 
+/* ---------- captura global de erros (banner visível) ---------- */
+
+let ultimoErro = "";
+
+function capturarErro(mensagem, fonte = "erro") {
+  const msg = String(mensagem || "Erro desconhecido");
+  if (msg === ultimoErro) return; // evita repetição infinita no mesmo erro
+  ultimoErro = msg;
+  const aviso = $("aviso");
+  aviso.textContent = `⚠ ${fonte === "rede" ? "Falha de rede/banco" : "Falha no sistema"}: ${msg}`;
+  aviso.className = "aviso erro";
+  aviso.classList.remove("oculto");
+  console.error(`[ValorPúblico] ${fonte}:`, mensagem);
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (e) => {
+    capturarErro(e.message || "Erro de execução", "erro");
+  });
+  window.addEventListener("unhandledrejection", (e) => {
+    capturarErro(e.reason?.message || e.reason || "Promessa rejeitada", "erro");
+  });
+}
+
 function formatarNumero(n) {
   return new Intl.NumberFormat("pt-BR").format(Math.round(n || 0));
 }
@@ -170,8 +194,7 @@ async function aplicarFiltros() {
         }
       },
       (erro) => {
-        console.error(erro);
-        mostrarAviso("Falha ao carregar dados em tempo real.", "erro");
+        capturarErro(erro?.message || "Falha ao carregar dados em tempo real.", "rede");
       }
     )
   );
@@ -257,12 +280,36 @@ function renderizarInsights(view) {
 
 function renderizarUltimaExecucao(exec) {
   const el = $("ultimaExecucao");
+  const saude = $("saudeIngestao");
   if (!exec || !exec.executado_em) {
     el.textContent = "–";
+    if (saude) {
+      saude.textContent = "● Sem histórico";
+      saude.className = "saude saude-aviso";
+    }
     return;
   }
   const quando = formatarData(exec.executado_em);
   el.textContent = `${quando} · ${formatarNumero(exec.total_gravados || 0)} clippings`;
+
+  // Indicador de saúde
+  if (!saude) return;
+  const dataExec = exec.executado_em?.toDate ? exec.executado_em.toDate() : new Date(exec.executado_em);
+  const horasDesde = (Date.now() - dataExec.getTime()) / 3600000;
+
+  if (exec.sucesso === false) {
+    saude.textContent = "● Última ingestão com erro";
+    saude.className = "saude saude-erro";
+  } else if (horasDesde > 48) {
+    saude.textContent = "● Desatualizado (há mais de 2 dias)";
+    saude.className = "saude saude-aviso";
+  } else if (horasDesde > 26) {
+    saude.textContent = "● Ingestão atrasada";
+    saude.className = "saude saude-aviso";
+  } else {
+    saude.textContent = "● OK";
+    saude.className = "saude saude-ok";
+  }
 }
 
 /* Calcula tendência comparando os últimos 7 dias com os 7 anteriores da série. */
@@ -332,6 +379,10 @@ function renderizarVazio() {
   });
   $("atualizadoEm").textContent = "–";
   $("ultimaExecucao").textContent = "–";
+  if ($("saudeIngestao")) {
+    $("saudeIngestao").textContent = "● OK";
+    $("saudeIngestao").className = "saude saude-ok";
+  }
   mostrarAviso(
     "Sem dados ainda. Rode o motor de ingestão e o backend/scripts/atualizar_metricas.py para popular o dashboard.",
     ""
@@ -609,6 +660,13 @@ function gerarRelatorio() {
 /* ---------- utilitários de modal ---------- */
 
 function abrirModal(id) {
+  // Fecha qualquer outro modal antes de abrir um novo
+  ["modalDetalhe", "modalRelatorio"].forEach((outroId) => {
+    if (outroId !== id) {
+      const outro = $(outroId);
+      if (outro) fecharModal(outroId);
+    }
+  });
   const el = $(id);
   el.classList.remove("oculto");
   el.setAttribute("aria-hidden", "false");
@@ -695,5 +753,13 @@ $("modalRelatorio").addEventListener("click", (e) => {
 });
 $("btnGerarRelatorio").addEventListener("click", gerarRelatorio);
 $("btnExportarPdf").addEventListener("click", exportarPdf);
+
+/* Fechar modais com a tecla Esc */
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    fecharModal("modalDetalhe");
+    fecharModal("modalRelatorio");
+  }
+});
 
 inicializar();

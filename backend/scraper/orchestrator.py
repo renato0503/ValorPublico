@@ -75,6 +75,8 @@ class Orchestrator:
         resultados = await asyncio.gather(
             *[_processar_agente(a, i) for i, a in enumerate(agentes, start=1)]
         )
+        resumo["sucesso"] = True
+        resumo["total_agentes"] = len(agentes)
         for resultado in resultados:
             if resultado is None:
                 continue

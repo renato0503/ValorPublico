@@ -200,7 +200,7 @@ body {
 }
 
 .oculto {
-  display: none;
+  display: none !important;
 }
 
 /* ---------- Cards ---------- */
@@ -748,7 +748,20 @@ body {
   color: var(--texto-mutado);
   font-size: 0.78rem;
   border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
+
+.saude {
+  font-weight: 600;
+}
+
+.saude-ok { color: var(--verde); }
+.saude-aviso { color: var(--ambar); }
+.saude-erro { color: var(--vermelho); }
 
 /* ---------- Responsividade ---------- */
 @media (max-width: 1080px) {

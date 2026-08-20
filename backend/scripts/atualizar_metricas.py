@@ -231,6 +231,7 @@ def main() -> None:
             "total_agentes": ultima_execucao.get("total_agentes"),
             "total_brutos": ultima_execucao.get("total_brutos"),
             "total_gravados": ultima_execucao.get("total_gravados"),
+            "sucesso": ultima_execucao.get("sucesso", True),
         }
     db.collection("metricas").document("geral").set(dados_geral)
 
