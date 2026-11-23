@@ -4,12 +4,11 @@ name: Redes sociais + deputados ALMT (ValorPublico)
 # (sem login) + comentarios do YouTube dos 24 deputados da ALMT e recalcula as
 # metricas. NAO coleta Web/TV/Radio/Impresso e NAO mexe nos 50 vereadores.
 #
-# O cron esta DESATIVADO de proposito (decisao da Fase 5 em aberto). Para ativar
-# 1x/dia, o dono deve descomentar o bloco `schedule` abaixo.
+# O cron roda 1x/dia (06:00 America/Cuiaba) por decisao do dono em 23/11/2026.
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: "0 9 * * *"   # 1x/dia, 06:00 (America/Cuiaba)
+  schedule:
+    - cron: "0 9 * * *"   # 1x/dia, 06:00 (America/Cuiaba)
 
 permissions:
   contents: read
