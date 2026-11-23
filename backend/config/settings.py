@@ -11,8 +11,19 @@ RAW_DIR = DATA_DIR / "raw"
 PROCESSED_DIR = DATA_DIR / "processed"
 SEED_FILE = DATA_DIR / "seeds" / "agentes_publicos.json"
 
-FIREBASE_SERVICE_ACCOUNT = os.getenv("FIREBASE_SERVICE_ACCOUNT", "")
+# Caminho da credencial de servico. Relativo e resolvido a partir de backend/,
+# para nao quebrar se a pasta do projeto mudar de lugar.
+_caminho_credencial = os.getenv("FIREBASE_SERVICE_ACCOUNT", "").strip()
+if not _caminho_credencial:
+    _caminho_credencial = "serviceAccountKey.json"
+_caminho_credencial = Path(_caminho_credencial)
+if not _caminho_credencial.is_absolute():
+    _caminho_credencial = BASE_DIR / _caminho_credencial
+FIREBASE_SERVICE_ACCOUNT = str(_caminho_credencial)
 FIREBASE_DATABASE_URL = os.getenv("FIREBASE_DATABASE_URL", "")
+# Projeto Firestore esperado. A credencial precisa apontar para ele; caso
+# contrario o cliente aborta (defesa em profundidade contra o achado A1).
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "valorpublico-b1e6d").strip()
 
 INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")

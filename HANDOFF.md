@@ -38,16 +38,24 @@ smoke test do painel no Chrome sem erros de JS.
 ## 3. Estado dos dados (projeto `valorpublico-b1e6d`)
 
 - **O pipeline não roda neste projeto desde a migração de dados** para `assessorpublico`.
-- O código está pronto, mas `radar_publico`, `radares`, `alertas`, `cobertura` e `newsletters`
-  **não foram populados aqui** (só no projeto do Assessor Público).
+- ⚠️ **Correção (23/11):** ao contrário do que este documento dizia, `radar_publico` (29),
+  `radares`, `alertas` e `cobertura` (53 cada) **existem aqui** — foram gravados pelo backfill
+  de 23/11, que usou por engano a chave deste projeto (achado A1). É lixo operacional:
+  não apagar sem antes decidir o destino (§4).
+
+## 3.1 Correções de infraestrutura aplicadas (23/11)
+
+- `backend/core/quota.py` reposto (estava ausente e quebrava 6 scripts — achado A4).
+- `backend/core/firebase_client.py` com a mesma trava do app principal: aborta se o
+  `project_id` da chave divergir de `FIREBASE_PROJECT_ID` (aqui, `valorpublico-b1e6d`).
+  Teste: `python tests/teste_firebase_guard.py` (4/4).
+- `FIREBASE_SERVICE_ACCOUNT` aceita caminho relativo a `backend/` (padrão `serviceAccountKey.json`).
 
 Para operar o ValorPublico como app independente:
 
 ```powershell
 cd D:\Dev\CerraClipping\ValorPublico\backend
-# .env com a service account do valorpublico-b1e6d
-$env:FIREBASE_SERVICE_ACCOUNT="D:\Dev\CerraClipping\ValorPublico\backend\serviceAccountKey.json"
-$env:FIREBASE_DATABASE_URL="https://valorpublico-b1e6d.firebaseio.com"
+# .env já aponta para serviceAccountKey.json (relativo a backend/)
 
 python scripts/run_ingestao.py
 python scripts/atualizar_metricas.py
