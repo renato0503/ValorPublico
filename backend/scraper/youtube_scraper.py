@@ -1,4 +1,5 @@
 import glob
+import json
 import os
 import re
 import subprocess
@@ -8,7 +9,7 @@ from datetime import datetime, timezone
 
 from core.logger import get_logger
 from scraper.base import BaseScraper
-from scraper.models import PLATAFORMA_YOUTUBE, TIPO_POSTAGEM, RawItem
+from scraper.models import PLATAFORMA_YOUTUBE, TIPO_COMENTARIO, TIPO_POSTAGEM, RawItem
 
 logger = get_logger(__name__)
 
@@ -28,10 +29,13 @@ class YouTubeScraper(BaseScraper):
         super().__init__(config)
         cfg = config or {}
         self.coletar_transcricao = cfg.get("coletar_transcricao", True)
+        self.coletar_comentarios = cfg.get("coletar_comentarios", True)
+        self.max_comentarios = int(cfg.get("max_comentarios", 15))
         self.max_videos = int(cfg.get("max_videos", 5))
         # Cache por execucao: 1x por termo de busca / video.
         self._cache_videos: dict[str, list[dict]] = {}
         self._cache_transcricao: dict[str, str] = {}
+        self._cache_comentarios: dict[str, list[dict]] = {}
 
     def _buscar(self, termo: str, n: int) -> list[dict]:
         if termo in self._cache_videos:
@@ -125,6 +129,43 @@ class YouTubeScraper(BaseScraper):
             return None
         return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
+    def _comentarios(self, video_id: str, n: int) -> list[dict]:
+        """Comentarios publicos do video via yt-dlp (getcomments)."""
+        if not self.coletar_comentarios or n <= 0:
+            return []
+        if video_id in self._cache_comentarios:
+            return self._cache_comentarios[video_id]
+        url = f"https://www.youtube.com/watch?v={video_id}"
+        cmd = [
+            sys.executable, "-m", "yt_dlp",
+            "--skip-download", "--no-warnings", "--dump-single-json",
+            "--write-comments",
+            "--extractor-args", f"youtube:max_comments={n},all,{n};comment_sort=top",
+            "--socket-timeout", "20", "--retries", "1",
+            url,
+        ]
+        comentarios: list[dict] = []
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+            info = json.loads(proc.stdout or "{}")
+            for c in (info.get("comments") or [])[:n]:
+                texto = (c.get("text") or "").strip()
+                if not texto:
+                    continue
+                comentarios.append(
+                    {
+                        "id": c.get("id") or "",
+                        "autor": c.get("author") or "",
+                        "texto": texto,
+                        "curtidas": int(c.get("like_count") or 0),
+                        "timestamp": c.get("timestamp"),
+                    }
+                )
+        except Exception as e:  # noqa: BLE001
+            logger.debug("YouTube: sem comentarios p/ %s: %s", video_id, e)
+        self._cache_comentarios[video_id] = comentarios
+        return comentarios
+
     def coletar(self, agente: dict, limite: int = 50) -> list[RawItem]:
         itens: list[RawItem] = []
         termos = [t for t in agente.get("termos_de_busca", []) if t.strip()]
@@ -134,7 +175,8 @@ class YouTubeScraper(BaseScraper):
         termo = termos[0]
         n_videos = min(self.max_videos, max(1, limite // 5))
         try:
-            for v in self._buscar(termo, n_videos):
+            videos = self._buscar(termo, n_videos)
+            for indice, v in enumerate(videos):
                 video_id = v.get("id")
                 if not video_id:
                     continue
@@ -143,6 +185,7 @@ class YouTubeScraper(BaseScraper):
                     transcricao = self._transcricao(video_id)
                     if transcricao:
                         texto = f"{texto} {transcricao}".strip()
+                data_video = self._data(v.get("timestamp"))
                 itens.append(
                     RawItem(
                         agente_id=agente["id"],
@@ -150,7 +193,7 @@ class YouTubeScraper(BaseScraper):
                         plataforma=self.plataforma,
                         tipo=TIPO_POSTAGEM,
                         texto_limpo=texto,
-                        data_publicacao=self._data(v.get("timestamp")),
+                        data_publicacao=data_video,
                         autor=v.get("channel") or "",
                         url=f"https://www.youtube.com/watch?v={video_id}",
                         alcance=int(v.get("view_count") or 0),
@@ -161,6 +204,27 @@ class YouTubeScraper(BaseScraper):
                         },
                     )
                 )
+                # Comentarios publicos apenas dos primeiros videos (custo alto).
+                if self.coletar_comentarios and indice < 2:
+                    for c in self._comentarios(video_id, self.max_comentarios):
+                        texto_c = c["texto"]
+                        if not texto_c:
+                            continue
+                        itens.append(
+                            RawItem(
+                                agente_id=agente["id"],
+                                id_externo=f"{video_id}-c-{c['id'] or self._hash_id(texto_c)[:8]}",
+                                plataforma=self.plataforma,
+                                tipo=TIPO_COMENTARIO,
+                                texto_limpo=texto_c,
+                                data_publicacao=self._data(c.get("timestamp")) or data_video,
+                                autor=c.get("autor") or "",
+                                url=f"https://www.youtube.com/watch?v={video_id}"
+                                    + (f"&lc={c['id']}" if c.get("id") else ""),
+                                alcance=int(c.get("curtidas") or 0),
+                                metadados={"video_id": video_id, "titulo_video": v.get("title") or ""},
+                            )
+                        )
                 self._sleep()
         except Exception as e:  # noqa: BLE001
             logger.warning("YouTube: falha no termo '%s' do agente %s: %s", termo, agente["id"], e)

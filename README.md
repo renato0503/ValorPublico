@@ -240,3 +240,22 @@ completa e o que já foi entregue.
 - **Gráficos**: rótulos nos pontos/barras, % e total nas roscas, cores da identidade.
 - **Diagnóstico**: `window.__erros`, log contextual no console e `?debug=1` (Firestore debug).
 - Motion em `frontend/assets/motion/` (hero do login, splash, faixa e transição de aba).
+## Redes sociais via buscador (LGPD)
+
+A coleta de redes sociais **não faz login** em nenhuma rede e **não burla**
+CAPTCHA/bloqueio. Ela consulta um buscador público (Google CSE, Serper, SerpAPI
+ou DuckDuckGo/`ddgs`, em ordem de preferência) com `site:` por rede e guarda
+**somente o que a própria página de resultados já exibe publicamente**: título,
+descrição/snippet, URL, data (quando o snippet indica) e eventual trecho de
+comentário publicado.
+
+- Não armazenamos dados de comentaristas além do **trecho público** exibido
+  pelo buscador; nomes de pessoas comuns em comentários **não** viram
+  porta-vozes nem entidades no pipeline DSM.
+- Os clippings brutos (incluindo os de redes) continuam **privados**: o cliente
+  lê apenas o agregado `redes_sociais` em `metricas*` (por rede, sentimento por
+  rede, total de comentários e até 40 itens recentes com snippet e link).
+- Itens com `confianca = "baixa"` (nome do agente só no título) **não** geram
+  alertas.
+- Orçamento por execução (`BUSCA_SOCIAL_MAX_CONSULTAS`) com rodízio de metade
+  dos agentes por dia e dedup por URL.

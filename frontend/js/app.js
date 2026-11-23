@@ -36,7 +36,7 @@ const estado = {
   desinscrever: [],
 };
 
-const REDES = new Set(["Twitter", "Instagram", "Facebook"]);
+const REDES = new Set(["Twitter", "Instagram", "Facebook", "TikTok", "Threads", "Kwai"]);
 
 const estadoNuvem = {
   geral: {},
@@ -580,6 +580,7 @@ function renderizar(dados) {
   renderizarUltimaExecucao(dados.ultima_execucao);
   renderizarKpisDsm(view);
   renderizarShareOfVoice(view, dados);
+  renderizarRedes(view);
 }
 
 
@@ -958,6 +959,113 @@ function temasCompletos(distribuicao) {
   return obj;
 }
 
+/* ---------- redes sociais (agregado redes_sociais) ---------- */
+
+let redesCache = {};
+
+function renderizarRedes(view) {
+  const rs =
+    (view && view.redes_sociais) ||
+    (estado.ultimosDados && estado.ultimosDados.redes_sociais) ||
+    {};
+  redesCache = rs;
+  const porRede = rs.por_rede || {};
+  const total = rs.total || Object.values(porRede).reduce((a, b) => a + (Number(b) || 0), 0);
+  const comentarios = rs.comentarios_total || 0;
+  const nRedes = Object.keys(porRede).length;
+
+  const kpis = $("kpisRedes");
+  if (kpis) {
+    kpis.innerHTML = [
+      ["Menções em redes", formatarNumero(total)],
+      ["Comentários públicos", formatarNumero(comentarios)],
+      ["Redes com atividade", formatarNumero(nRedes)],
+    ]
+      .map(
+        ([rotulo, valor]) =>
+          `<div class="rede-kpi"><span>${rotulo}</span><strong>${valor}</strong></div>`
+      )
+      .join("");
+  }
+
+  if ($("graficoRedes")) {
+    charts.criarGraficoDonut("graficoRedes", porRede, undefined, true);
+  }
+
+  const sel = $("filtroRede");
+  if (sel) {
+    const atual = sel.value;
+    const redes = Object.keys(porRede).sort();
+    sel.innerHTML =
+      '<option value="">Todas as redes</option>' +
+      redes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`).join("");
+    sel.value = redes.includes(atual) ? atual : "";
+  }
+
+  const alvo = $("redesSentimento");
+  if (alvo) {
+    const spr = rs.sentimento_por_rede || {};
+    const linhas = Object.entries(spr).sort((a, b) => a[0].localeCompare(b[0]));
+    alvo.innerHTML = linhas.length
+      ? `<table class="tabela"><thead><tr><th>Rede</th>` +
+        `<th class="num">Positivo</th><th class="num">Neutro</th><th class="num">Negativo</th></tr></thead><tbody>` +
+        linhas
+          .map(
+            ([rede, d]) =>
+              `<tr><td>${esc(rede)}</td>` +
+              `<td class="num">${formatarNumero(d.positivo || 0)}</td>` +
+              `<td class="num">${formatarNumero(d.neutro || 0)}</td>` +
+              `<td class="num">${formatarNumero(d.negativo || 0)}</td></tr>`
+          )
+          .join("") +
+        `</tbody></table>`
+      : '<p class="lex-vazio">Sem dados de sentimento por rede no período.</p>';
+  }
+
+  renderizarRedesFeed();
+}
+
+function renderizarRedesFeed() {
+  const feed = $("redesFeed");
+  if (!feed) return;
+  const rede = $("filtroRede")?.value || "";
+  const tipo = $("filtroTipoRede")?.value || "";
+  const itens = (redesCache.recentes || []).filter(
+    (i) => (!rede || i.rede === rede) && (!tipo || i.tipo === tipo)
+  );
+  if (!itens.length) {
+    feed.innerHTML = '<li class="redes-vazio">Sem itens de redes no período.</li>';
+    return;
+  }
+  feed.innerHTML = itens
+    .map((i) => {
+      const d = i.data ? (i.data.toDate ? i.data.toDate() : new Date(i.data)) : null;
+      const dataTxt = d && !isNaN(d)
+        ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(d)
+        : "";
+      const tipoComentario = i.tipo === "Comentario";
+      return (
+        `<li class="rede-item">` +
+        `<div class="rede-item-topo">` +
+        `<span class="rede-badge">${esc(i.rede || "")}</span>` +
+        `<span class="rede-tipo${tipoComentario ? " rede-tipo-comentario" : ""}">${esc(
+          i.tipo || "Postagem"
+        )}</span>` +
+        `<span class="rede-agente">${esc(i.agente || "")}</span>` +
+        `<span class="rede-data">${esc(dataTxt)}</span></div>` +
+        `<p class="rede-snippet">${esc((i.snippet || i.titulo || "").slice(0, 320))}</p>` +
+        `<div class="rede-item-rodape">` +
+        (i.sentimento ? `<span class="sent-${esc(i.sentimento)}">${esc(i.sentimento)}</span>` : "") +
+        (i.confianca ? `<span class="rede-conf">confiança ${esc(i.confianca)}</span>` : "") +
+        (i.url
+          ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">abrir original</a>`
+          : "") +
+        `</div></li>`
+      );
+    })
+    .join("");
+}
+
 function renderizarTemas(view) {
   const canvas = $("graficoTemas");
   if (!canvas) return;
@@ -1284,6 +1392,8 @@ $("filtroTipoTop").addEventListener("change", (e) => {
 });
 
 $("btnTema")?.addEventListener("click", alternarTema);
+$("filtroRede")?.addEventListener("change", renderizarRedesFeed);
+$("filtroTipoRede")?.addEventListener("change", renderizarRedesFeed);
 
 $("btnAtualizar").addEventListener("click", async () => {
   const btn = $("btnAtualizar");

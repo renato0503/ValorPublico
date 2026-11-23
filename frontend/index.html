@@ -298,6 +298,30 @@
       </article>
     </section>
 
+    <section class="grade-secundaria" aria-label="Redes sociais">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Redes sociais</h2>
+            <span class="painel-sub">Posts e comentários públicos encontrados pelo buscador</span>
+          </div>
+          <div class="redes-filtros">
+            <select id="filtroRede" aria-label="Filtrar por rede"><option value="">Todas as redes</option></select>
+            <select id="filtroTipoRede" aria-label="Filtrar por tipo de item">
+              <option value="">Posts e comentários</option>
+              <option value="Postagem">Somente postagens</option>
+              <option value="Comentario">Somente comentários</option>
+            </select>
+          </div>
+        </div>
+        <div id="kpisRedes" class="redes-kpis"></div>
+        <div class="grade-secundaria">
+          <div class="canvas-box canvas-box-sm"><canvas id="graficoRedes" aria-label="Itens por rede"></canvas></div>
+          <div id="redesSentimento" class="tabela-wrapper"></div>
+        </div>
+        <ul id="redesFeed" class="redes-feed"></ul>
+      </article>
+    </section>
     </section>
 
     <section class="tela" id="tela-parlamentares" data-tela="parlamentares">

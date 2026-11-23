@@ -37,6 +37,7 @@ CPM_PLATAFORMAS = {
     "TikTok": 20.0,
     "Linkedin": 25.0,
     "Kwai": 12.0,
+    "Threads": 16.0,
     "TV": 40.0,
     "Radio": 18.0,
 }

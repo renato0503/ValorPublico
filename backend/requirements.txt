@@ -42,3 +42,4 @@ scikit-learn>=1.4.0
 
 # Relatorios em PDF (backend)
 reportlab>=4.0.0
+ddgs>=9.0.0

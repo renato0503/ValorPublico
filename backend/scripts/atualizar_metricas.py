@@ -29,6 +29,69 @@ from processing.classificador_midia import classificar_clipping
 from processing.nuvem import frequencia
 logger = get_logger(__name__)
 
+# Plataformas tratadas como rede social no agregado `redes_sociais`.
+REDES_AGREGADO = {"Instagram", "Facebook", "Twitter", "TikTok", "Threads", "Kwai"}
+
+
+def _timestamp_clip(c: dict) -> float:
+    d = c.get("data_publicacao")
+    if d is None:
+        return 0.0
+    try:
+        return d.timestamp()
+    except Exception:  # noqa: BLE001
+        return 0.0
+
+
+def _redes_sociais(clippings: list[dict]) -> dict:
+    """Agregado das redes sociais (o front nunca le clippings brutos).
+
+    Inclui Instagram/Facebook/Twitter/TikTok/Threads/Kwai e comentarios do
+    YouTube. Guarda apenas o que o buscador exibiu publicamente (titulo,
+    snippet, url, data) - sem dados de comentaristas alem do trecho (LGPD).
+    """
+    por_rede: Counter = Counter()
+    sentimento_por_rede: defaultdict[str, Counter] = defaultdict(Counter)
+    comentarios = 0
+    itens: list[dict] = []
+    for c in clippings:
+        plataforma = c.get("plataforma", "")
+        tipo = c.get("tipo", "")
+        if plataforma not in REDES_AGREGADO and not (
+            plataforma == "YouTube" and tipo == "Comentario"
+        ):
+            continue
+        itens.append(c)
+        por_rede[plataforma] += 1
+        sentimento_por_rede[plataforma][c.get("sentimento") or "neutro"] += 1
+        if tipo == "Comentario":
+            comentarios += 1
+
+    recentes = sorted(itens, key=_timestamp_clip, reverse=True)[:40]
+    recentes_out = []
+    for c in recentes:
+        meta = c.get("metadados") or {}
+        recentes_out.append(
+            {
+                "rede": c.get("plataforma", ""),
+                "tipo": c.get("tipo") or "Postagem",
+                "agente": c.get("nome_agente") or c.get("agente_id") or "",
+                "titulo": meta.get("titulo") or "",
+                "snippet": (meta.get("snippet") or c.get("texto_limpo") or "")[:280],
+                "url": c.get("url") or "",
+                "data": c.get("data_publicacao"),
+                "sentimento": c.get("sentimento") or "neutro",
+                "confianca": meta.get("confianca") or "",
+            }
+        )
+    return {
+        "por_rede": dict(por_rede),
+        "sentimento_por_rede": {k: dict(v) for k, v in sentimento_por_rede.items()},
+        "comentarios_total": comentarios,
+        "total": len(itens),
+        "recentes": recentes_out,
+    }
+
 
 def slugify_cidade(cidade: str) -> str:
     cidade = normalize("NFKD", cidade).encode("ascii", "ignore").decode("utf-8")
@@ -380,6 +443,7 @@ def _agregar(clippings: list[dict]) -> dict:
             "total": sum(alertas_niveis.values()),
         },
         "cobertura": _cobertura_resumo(clippings, pares_data, sem_veiculo),
+        "redes_sociais": _redes_sociais(clippings),
     }
     agregado["insights"] = _insights(
         agregado, categorias_dict, veiculos, audiencia_por_veiculo, valor_por_veiculo

@@ -78,6 +78,8 @@ def construir_scrapers() -> list:
                 {
                     **CONFIG_BASE,
                     "coletar_transcricao": settings.YOUTUBE_COLETAR_TRANSCRICAO,
+                    "coletar_comentarios": settings.YOUTUBE_COLETAR_COMENTARIOS,
+                    "max_comentarios": settings.YOUTUBE_MAX_COMENTARIOS,
                     "max_videos": settings.YOUTUBE_MAX_VIDEOS,
                 }
             )
@@ -125,6 +127,20 @@ def construir_scrapers() -> list:
         from scraper.impresso_scraper import ImpressoScraper
 
         scrapers.append(ImpressoScraper({**CONFIG_BASE, "sites": settings.IMPRESSO_SITES}))
+    if settings.HABILITAR_BUSCA_SOCIAL:
+        from scraper.busca_social_scraper import BuscaSocialScraper
+
+        scrapers.append(
+            BuscaSocialScraper(
+                {
+                    **CONFIG_BASE,
+                    "max_consultas": settings.BUSCA_SOCIAL_MAX_CONSULTAS,
+                    "max_resultados": settings.BUSCA_SOCIAL_MAX_RESULTADOS,
+                    "rodizio": settings.BUSCA_SOCIAL_RODIZIO,
+                    "regiao": settings.BUSCA_SOCIAL_REGIAO,
+                }
+            )
+        )
     if not scrapers:
         logger.warning("Nenhum scraper habilitado no .env.")
     return scrapers
@@ -142,7 +158,7 @@ def construir_analisador():
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Motor de ingestao do ValorPublico.")
+    parser = argparse.ArgumentParser(description=f"Motor de ingestao do {settings.APP_NOME}.")
     parser.add_argument(
         "--apenas-sem-dados",
         action="store_true",
@@ -159,10 +175,18 @@ async def main() -> None:
         default=None,
         help="Processa apenas os N primeiros agentes (apos os filtros).",
     )
+    parser.add_argument(
+        "--cidades",
+        default="",
+        help="Escopos/cidades separados por virgula (ex.: 'Mato Grosso' para a ALMT).",
+    )
     args = parser.parse_args()
 
     db = init_firebase()
     agente_ids: list[str] | None = None
+    cidades: list[str] | None = None
+    if args.cidades.strip():
+        cidades = [c.strip() for c in args.cidades.split(",") if c.strip()]
 
     if args.agentes.strip():
         agente_ids = [a.strip() for a in args.agentes.split(",") if a.strip()]
@@ -187,6 +211,7 @@ async def main() -> None:
     )
     try:
         resumo = await orquestrador.executar(
+            cidades=cidades,
             limite_agentes=args.limite_agentes,
             agente_ids=agente_ids,
         )

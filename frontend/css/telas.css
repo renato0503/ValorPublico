@@ -656,3 +656,89 @@ html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(
 .casa-nome { color: var(--texto); text-decoration: none; }
 .casa-nome:hover { color: var(--verde); }
 .casa-partido { color: var(--texto-mutado); font-size: 0.72rem; text-align: right; }
+
+/* ---------- Redes sociais (agregado redes_sociais) ---------- */
+.redes-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
+.redes-filtros select {
+  border-radius: 10px;
+  border: 1px solid var(--border-forte);
+  background: var(--card);
+  color: var(--texto);
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+.redes-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+.rede-kpi {
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.rede-kpi span {
+  display: block;
+  color: var(--texto-mutado);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.rede-kpi strong { font-size: 1.3rem; color: var(--texto); }
+.redes-feed {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rede-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--card-hover);
+  min-width: 0;
+}
+.rede-item-topo {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+}
+.rede-badge {
+  background: var(--azul-soft);
+  color: var(--azul);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-weight: 600;
+}
+.rede-tipo {
+  color: var(--texto-mutado);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.rede-tipo-comentario { color: var(--ambar); border-color: var(--ambar); }
+.rede-agente { color: var(--texto); font-weight: 600; }
+.rede-data { margin-left: auto; color: var(--texto-mutado); }
+.rede-snippet { margin: 8px 0; color: var(--texto); font-size: 0.9rem; overflow-wrap: anywhere; }
+.rede-item-rodape {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.76rem;
+  color: var(--texto-mutado);
+}
+.rede-item-rodape a { color: var(--azul); font-weight: 600; text-decoration: none; }
+.rede-item-rodape a:hover { text-decoration: underline; }
+.rede-conf { opacity: 0.85; }
+.sent-positivo { color: var(--verde); }
+.sent-negativo { color: var(--vermelho); }
+.sent-neutro { color: var(--texto-mutado); }
+.redes-vazio { color: var(--texto-mutado); font-size: 0.85rem; }

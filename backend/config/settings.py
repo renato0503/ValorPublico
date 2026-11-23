@@ -70,6 +70,7 @@ WEB_ENRIQUECER = os.getenv("WEB_ENRIQUECER", "1") == "1"
 # YouTube
 YOUTUBE_COLETAR_TRANSCRICAO = os.getenv("YOUTUBE_COLETAR_TRANSCRICAO", "1") == "1"
 YOUTUBE_MAX_VIDEOS = int(os.getenv("YOUTUBE_MAX_VIDEOS", "5"))
+YOUTUBE_COLETAR_COMENTARIOS = os.getenv("YOUTUBE_COLETAR_COMENTARIOS", "1") == "1"
 
 # Telegram (Telethon)
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0") or "0")
@@ -94,6 +95,24 @@ MIDIA_VIDEOS_POR_CANAL = int(os.getenv("MIDIA_VIDEOS_POR_CANAL", "10"))
 # Impresso (jornais impressos com edicao digital)
 HABILITAR_IMPRESSO = os.getenv("HABILITAR_IMPRESSO", "1") == "1"
 IMPRESSO_SITES = [s.strip() for s in os.getenv("IMPRESSO_SITES", "").split(",") if s.strip()]
+
+# ---------------------------------------------------------------------------
+# Redes sociais via buscador (sem login). Consulta o buscador com site: por
+# rede e guarda o que a pagina de resultados ja exibe publicamente (titulo,
+# snippet e trecho de comentario). Motores, em ordem de preferencia:
+# Google CSE (GOOGLE_CSE_KEY+CX) > Serper > SerpAPI > DuckDuckGo (ddgs).
+# ---------------------------------------------------------------------------
+HABILITAR_BUSCA_SOCIAL = os.getenv("HABILITAR_BUSCA_SOCIAL", "1") == "1"
+BUSCA_SOCIAL_MAX_CONSULTAS = int(os.getenv("BUSCA_SOCIAL_MAX_CONSULTAS", "120"))
+BUSCA_SOCIAL_MAX_RESULTADOS = int(os.getenv("BUSCA_SOCIAL_MAX_RESULTADOS", "10"))
+BUSCA_SOCIAL_RODIZIO = os.getenv("BUSCA_SOCIAL_RODIZIO", "1") == "1"
+BUSCA_SOCIAL_REGIAO = os.getenv("BUSCA_SOCIAL_REGIAO", "br-pt")
+GOOGLE_CSE_KEY = os.getenv("GOOGLE_CSE_KEY", "")
+GOOGLE_CSE_CX = os.getenv("GOOGLE_CSE_CX", "")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
+SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
+# Comentarios publicos do YouTube (yt-dlp), por video.
+YOUTUBE_MAX_COMENTARIOS = int(os.getenv("YOUTUBE_MAX_COMENTARIOS", "15"))
 
 # Avaliacao IA do sentimento (alternativa ao VADER, OpenAI-compativel)
 # Quando desabilitado ou sem API key, o pipeline usa VADER + lexico PT.
