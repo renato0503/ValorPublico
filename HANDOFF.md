@@ -44,10 +44,12 @@ filtro por agente sem `permission-denied` · produção sem erros de JS.
 | `18ed375` | **C** 24 deputados ALMT (seed, radar, “Parlamentares por casa”) |
 | `167e603` | **B** redes sociais via buscador; seção na tela Mídia; `redes_almt.yml` (cron **desativado**); `redes_sociais` nas métricas |
 
-Estado: **74 agentes** (`count()`=74), métricas recalculadas sobre **7.228 clippings** (3 escopos:
-Cuiabá, Várzea Grande, Mato Grosso) e `metricas/geral.redes_sociais` presente (Instagram 6,
-Facebook 4, Twitter 1, TikTok 1; 12 recentes). O cron do `redes_almt.yml` só deve ser ativado
-após confirmação do dono. Não houve push/deploy.
+Estado: **74 agentes** (`count()`=74). O workflow `redes_almt.yml` (run **45283321859**, success)
+coletou **130 clippings sociais** dos 24 deputados e recalculou: **7.353 clippings, 74 no SoV,
+74 `metricas_por_agente`**, `redes_sociais` = `{Instagram 47, Facebook 26, Twitter 10, TikTok 6}`
+(5 comentários, 40 recentes) em `metricas/geral` e `mato-grosso`. O secret
+`FIREBASE_SERVICE_ACCOUNT_B64` estava com a chave revogada e foi atualizado; o **cron do
+`redes_almt.yml` está ativo** (06:00 Cuiabá). Push e deploy do Hosting feitos em 23/11.
 
 ## 2. Diferenças em relação ao Assessor Público
 
