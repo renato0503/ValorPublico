@@ -1,0 +1,257 @@
+{
+  "fonte": {
+    "orgao": "Assembleia Legislativa do Estado de Mato Grosso (ALMT)",
+    "url": "https://www.al.mt.gov.br/parlamento/deputados",
+    "url_dominio": "https://www.al.mt.gov.br",
+    "coletado_em": "2026-11-23",
+    "observacao": "Composi??o em exerc?cio, 20? legislatura (2023-2027), lida ao vivo da p?gina oficial de deputados da ALMT. A consulta automatizada ao TSE (divulgacandcontas/resultados) retornou 403/404 nesta sess?o; os votos de 2022 ficam nulos at? nova tentativa com fonte oficial do TSE. O partido reflete a filia??o atual publicada pela ALMT (pode diferir da elei??o de 2022)."
+  },
+  "casa": "ALMT",
+  "esfera": "estadual",
+  "cidade": "Mato Grosso",
+  "legislatura": "20? (2023-2027)",
+  "mandato_ate": "2027-01-31",
+  "total": 24,
+  "deputados": [
+    {
+      "id_almt": "401",
+      "nome_parlamentar": "Beto Dois A Um",
+      "nome_urna": "Beto Dois a Um",
+      "partido": "PODE",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/401/perfil"
+    },
+    {
+      "id_almt": "129",
+      "nome_parlamentar": "Carlos Avallone",
+      "nome_urna": "Carlos Avallone",
+      "partido": "PSDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/129/perfil"
+    },
+    {
+      "id_almt": "415",
+      "nome_parlamentar": "Chico Guarnieri",
+      "nome_urna": "Chico Guarnieri",
+      "partido": "PSDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/415/perfil"
+    },
+    {
+      "id_almt": "404",
+      "nome_parlamentar": "Diego Guimarães",
+      "nome_urna": "Diego Guimarães",
+      "partido": "Republicanos",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/404/perfil"
+    },
+    {
+      "id_almt": "52",
+      "nome_parlamentar": "Dilmar Dal Bosco",
+      "nome_urna": "Dilmar Dal Bosco",
+      "partido": "União",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/52/perfil"
+    },
+    {
+      "id_almt": "383",
+      "nome_parlamentar": "Dr. Eugênio",
+      "nome_urna": "Dr. Eugênio",
+      "partido": "Republicanos",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/383/perfil"
+    },
+    {
+      "id_almt": "392",
+      "nome_parlamentar": "Dr. João",
+      "nome_urna": "Dr. João",
+      "partido": "MDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/392/perfil"
+    },
+    {
+      "id_almt": "56",
+      "nome_parlamentar": "Eduardo Botelho",
+      "nome_urna": "Eduardo Botelho",
+      "partido": "MDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/56/perfil"
+    },
+    {
+      "id_almt": "377",
+      "nome_parlamentar": "Elizeu Nascimento",
+      "nome_urna": "Elizeu Nascimento",
+      "partido": "NOVO",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/377/perfil"
+    },
+    {
+      "id_almt": "402",
+      "nome_parlamentar": "Fabio Tardin - Fabinho",
+      "nome_urna": "Fabio Tardin - Fabinho",
+      "partido": "PODE",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/402/perfil"
+    },
+    {
+      "id_almt": "387",
+      "nome_parlamentar": "Faissal",
+      "nome_urna": "Faissal",
+      "partido": "PL",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/387/perfil"
+    },
+    {
+      "id_almt": "397",
+      "nome_parlamentar": "Gilberto Cattani",
+      "nome_urna": "Gilberto Cattani",
+      "partido": "PL",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/397/perfil"
+    },
+    {
+      "id_almt": "28",
+      "nome_parlamentar": "Janaina Riva",
+      "nome_urna": "Janaina Riva",
+      "partido": "MDB",
+      "genero": "F",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/28/perfil"
+    },
+    {
+      "id_almt": "406",
+      "nome_parlamentar": "Juca Do Guaraná",
+      "nome_urna": "Juca do Guaraná",
+      "partido": "PSDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/406/perfil"
+    },
+    {
+      "id_almt": "405",
+      "nome_parlamentar": "Júlio Campos",
+      "nome_urna": "Júlio Campos",
+      "partido": "União",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/405/perfil"
+    },
+    {
+      "id_almt": "393",
+      "nome_parlamentar": "Lúdio Cabral",
+      "nome_urna": "Lúdio Cabral",
+      "partido": "PT",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/393/perfil"
+    },
+    {
+      "id_almt": "35",
+      "nome_parlamentar": "Max Russi",
+      "nome_urna": "Max Russi",
+      "partido": "PODE",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/35/perfil"
+    },
+    {
+      "id_almt": "51",
+      "nome_parlamentar": "Nininho",
+      "nome_urna": "Nininho",
+      "partido": "Republicanos",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/51/perfil"
+    },
+    {
+      "id_almt": "384",
+      "nome_parlamentar": "Paulo Araújo",
+      "nome_urna": "Paulo Araújo",
+      "partido": "Republicanos",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/384/perfil"
+    },
+    {
+      "id_almt": "39",
+      "nome_parlamentar": "Sebastião Rezende",
+      "nome_urna": "Sebastião Rezende",
+      "partido": "União",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/39/perfil"
+    },
+    {
+      "id_almt": "386",
+      "nome_parlamentar": "Thiago Silva",
+      "nome_urna": "Thiago Silva",
+      "partido": "MDB",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/386/perfil"
+    },
+    {
+      "id_almt": "378",
+      "nome_parlamentar": "Valdir Barranco",
+      "nome_urna": "Valdir Barranco",
+      "partido": "PT",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/378/perfil"
+    },
+    {
+      "id_almt": "390",
+      "nome_parlamentar": "Valmir Moretto",
+      "nome_urna": "Valmir Moretto",
+      "partido": "Republicanos",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/390/perfil"
+    },
+    {
+      "id_almt": "32",
+      "nome_parlamentar": "Wilson Santos",
+      "nome_urna": "Wilson Santos",
+      "partido": "PSD",
+      "genero": "M",
+      "votos_2022": null,
+      "situacao": "em exerc?cio",
+      "perfil_url": "https://www.al.mt.gov.br/parlamento/deputados/32/perfil"
+    }
+  ]
+}

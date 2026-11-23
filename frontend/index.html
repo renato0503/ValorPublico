@@ -110,9 +110,9 @@
     <div class="filtros-barra">
       <div class="filtros" id="filtrosPainel" role="group" aria-label="Filtros do painel">
       <label class="filtro">
-        <span class="filtro-rotulo">Cidade</span>
-        <select id="filtroCidade" aria-label="Filtrar por cidade">
-          <option value="">Todas as cidades</option>
+        <span class="filtro-rotulo">Casa / escopo</span>
+        <select id="filtroCidade" aria-label="Filtrar por casa ou escopo">
+          <option value="">Todas as casas</option>
         </select>
       </label>
       <label class="filtro">
@@ -301,6 +301,17 @@
     </section>
 
     <section class="tela" id="tela-parlamentares" data-tela="parlamentares">
+    <section class="grade-secundaria" aria-label="Parlamentares por casa">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Parlamentares por casa</h2>
+            <span class="painel-sub">Câmaras de Cuiabá e Várzea Grande + Assembleia Legislativa (ALMT)</span>
+          </div>
+        </div>
+        <div id="parlamentaresPorCasa" class="parlamentares-casa"></div>
+      </article>
+    </section>
     <section class="grade-secundaria" aria-label="Share of voice entre agentes">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">

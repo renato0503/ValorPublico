@@ -5,21 +5,19 @@ institucionais usadas pelo radar:
 
   CUIABA          Prefeitura de Cuiaba + Camara Municipal de Cuiaba
   VARZEAGRANDE    Prefeitura de Varzea Grande (feed oficial, transparencia, DOE)
-  ALMT / ESTADO   Assembleia Legislativa (via DOE-MT/IOnews e Secom-MT),
-                  Secretaria de Comunicacao do Estado, CGE-MT e Transparecia MT
+  ALMT / ESTADO   Assembleia Legislativa (al.mt.gov.br: portal, midia/texto e
+                  agenda), DOE-MT/IOnews, Secom-MT, CGE-MT e Transparencia MT
 
 Todas as fontes sao publicas e nao exigem autenticacao. Os itens coletados
 sao marcados com `classe = propaganda_publica` e servem tanto para o radar
 (transparencia/prova) quanto para o compliance eleitoral (uso de simbolos
 publicos - art. 40 da Lei 9.504/1997).
 
-Observacao sobre a ALMT: o dominio institucional da Assembleia nao resolve
-publicamente (NXDOMAIN verificado em 23/11/2026 para almt.leg.br,
-assembleia.mt.gov.br e almt.mt.gov.br). Por isso o radar usa os canais
-oficiais que a Assembleia utiliza - o DOE-MT (IOnews), onde sao publicados os
-atos do Estado, e a Secom-MT, que veicula a agenda institucional. Basta
-incluir o dominio correto em FONTES_PROPAGANDA_PUBLICA quando ele for
-divulgado.
+Observacao sobre a ALMT: o dominio institucional oficial e
+``https://www.al.mt.gov.br`` (verificado HTTP 200 em 23/11/2026). Os
+dominios antigos almt.leg.br / assembleia.mt.gov.br / almt.mt.gov.br seguem
+sem resolver, mas o portal atual publica deputados, noticias (midia/texto) e
+a agenda da Assembleia. O radar tambem mantem o DOE-MT (IOnews) e a Secom-MT.
 """
 
 FONTES_CUIABA = [
@@ -35,6 +33,9 @@ FONTES_VARZEAGRANDE = [
 ]
 
 FONTES_ALMT_ESTADO = [
+    "https://www.al.mt.gov.br/",
+    "https://www.al.mt.gov.br/midia/texto",
+    "https://www.al.mt.gov.br/parlamento/agenda/assembleia",
     "https://www.iomat.mt.gov.br/clipping",
     "https://www.iomat.mt.gov.br/",
     "https://www.secom.mt.gov.br/inicio",

@@ -1,4 +1,4 @@
-/* Testes das Firestore Rules (Emulator Suite).
+﻿/* Testes das Firestore Rules (Emulator Suite).
 
 Uso (na pasta backend/tests):
     npm install
@@ -91,6 +91,8 @@ async function testarModoPublico() {
     db.collection("metricas").doc("geral").get());
   await devePermitir("ler metricas_por_cidade", () =>
     db.collection("metricas_por_cidade").doc("cuiaba").get());
+  await devePermitir("ler metricas_por_cidade/mato-grosso (ALMT)", () =>
+    db.collection("metricas_por_cidade").doc("mato-grosso").get());
   await devePermitir("ler metricas_por_agente", () =>
     db.collection("metricas_por_agente").doc("agente-a").get());
   await devePermitir("ler tabela_midia/geral", () =>

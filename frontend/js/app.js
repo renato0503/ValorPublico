@@ -127,6 +127,65 @@ function slugCidade(cidade) {
     .replace(/\s+/g, "-");
 }
 
+/* ---------- casa / escopo (Câmara Cuiabá, Câmara VG, ALMT) ---------- */
+
+const ROTULO_CASA = {
+  "Camara Cuiaba": "Câmara de Cuiabá",
+  "Camara VG": "Câmara de Várzea Grande",
+  ALMT: "Assembleia (ALMT)",
+};
+
+function casaDoAgente(a) {
+  if (a.casa) return a.casa;
+  if (a.esfera === "estadual" || a.cidade === "Mato Grosso") return "ALMT";
+  if (a.cidade === "Varzea Grande") return "Camara VG";
+  return "Camara Cuiaba";
+}
+
+function rotuloCasa(casa) {
+  return ROTULO_CASA[casa] || casa;
+}
+
+function renderizarParlamentaresPorCasa() {
+  const alvo = $("parlamentaresPorCasa");
+  if (!alvo) return;
+  if (!estado.agentes.length) {
+    alvo.innerHTML =
+      '<p class="lex-vazio">Nenhum agente carregado. Faça login para ver as casas.</p>';
+    return;
+  }
+  const grupos = {};
+  estado.agentes.forEach((a) => {
+    const casa = casaDoAgente(a);
+    (grupos[casa] = grupos[casa] || []).push(a);
+  });
+  const ordem = ["Camara Cuiaba", "Camara VG", "ALMT"];
+  const casas = ordem.filter((c) => grupos[c]).concat(
+    Object.keys(grupos).filter((c) => !ordem.includes(c))
+  );
+  alvo.innerHTML = casas
+    .map((casa) => {
+      const lista = grupos[casa]
+        .slice()
+        .sort((x, y) => String(x.nome_urna).localeCompare(String(y.nome_urna)));
+      const itens = lista
+        .map(
+          (a) =>
+            `<li><a href="#/parlamentares" class="casa-nome">${esc(a.nome_urna)}</a>` +
+            `<span class="casa-partido">${esc(a.partido || "")}${
+              a.cargo ? " · " + esc(a.cargo) : ""
+            }</span></li>`
+        )
+        .join("");
+      return (
+        `<div class="casa-grupo">` +
+        `<h3>${esc(rotuloCasa(casa))} <span class="casa-total">${lista.length}</span></h3>` +
+        `<ul class="casa-lista">${itens}</ul></div>`
+      );
+    })
+    .join("");
+}
+
 function categoria(plataforma) {
   if (REDES.has(plataforma)) return "Redes Sociais";
   if (plataforma === "Web") return "Web";
@@ -228,9 +287,10 @@ function popularFiltros() {
   cidades.forEach((c) => {
     const opt = document.createElement("option");
     opt.value = c;
-    opt.textContent = c;
+    opt.textContent = rotuloCasa(casaDoAgente({ cidade: c }));
     selCidade.appendChild(opt);
   });
+  renderizarParlamentaresPorCasa();
 }
 
 function atualizarParlamentares() {
@@ -1360,6 +1420,7 @@ window.__app_test = {
   renderizarKpisDsm,
   renderizarShareOfVoice,
   renderizarCamadaDsm,
+  renderizarParlamentaresPorCasa,
   irPara: (rota) => window.__router?.irPara(rota),
 };
 

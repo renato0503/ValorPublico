@@ -104,6 +104,15 @@ MOCK = {
     },
 }
 
+AGENTES_MOCK = [
+    {"id": "samantha-iris", "nome_urna": "Samantha Iris", "cidade": "Cuiaba", "casa": "Camara Cuiaba", "esfera": "municipal", "partido": "PL", "cargo": "Vereadora"},
+    {"id": "paula-calil", "nome_urna": "Paula Calil", "cidade": "Cuiaba", "casa": "Camara Cuiaba", "esfera": "municipal", "partido": "PL", "cargo": "Vereadora"},
+    {"id": "adilsinho", "nome_urna": "Adilsinho", "cidade": "Varzea Grande", "casa": "Camara VG", "esfera": "municipal", "partido": "Republicanos", "cargo": "Vereador"},
+    {"id": "janaina-riva", "nome_urna": "Janaina Riva", "cidade": "Mato Grosso", "casa": "ALMT", "esfera": "estadual", "partido": "MDB", "cargo": "Deputada Estadual"},
+    {"id": "eduardo-botelho", "nome_urna": "Eduardo Botelho", "cidade": "Mato Grosso", "casa": "ALMT", "esfera": "estadual", "partido": "MDB", "cargo": "Deputado Estadual"},
+    {"id": "ludio-cabral", "nome_urna": "Lúdio Cabral", "cidade": "Mato Grosso", "casa": "ALMT", "esfera": "estadual", "partido": "PT", "cargo": "Deputado Estadual"},
+]
+
 RUIDO = (
     "firebase",
     "gstatic",
@@ -179,10 +188,12 @@ def main():
                     pagina.wait_for_timeout(120)
                     # re-renderiza com a tela visivel (charts dimensionam certo)
                     pagina.evaluate(
-                        "(m) => { const mod=window.__app_test; mod.estado.ultimosDados=m;"
+                        "([m, ag]) => { const mod=window.__app_test; mod.estado.agentes=ag;"
+                        " mod.estado.ultimosDados=m;"
                         " if(mod.renderizar) try{mod.renderizar(m)}catch(e){}"
-                        " if(mod.renderizarCamadaDsm) try{mod.renderizarCamadaDsm()}catch(e){} }",
-                        MOCK,
+                        " if(mod.renderizarCamadaDsm) try{mod.renderizarCamadaDsm()}catch(e){}"
+                        " if(mod.renderizarParlamentaresPorCasa) try{mod.renderizarParlamentaresPorCasa()}catch(e){} }",
+                        [MOCK, AGENTES_MOCK],
                     )
                     pagina.wait_for_timeout(400)
                     # overflow horizontal

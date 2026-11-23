@@ -605,3 +605,54 @@ html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(
 }
 #tela-concorrencia .tabela,
 #tela-parlamentares .tabela { min-width: 0; }
+/* ---------- Parlamentares por casa (Câmaras + ALMT) ---------- */
+.parlamentares-casa {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.casa-grupo {
+  background: var(--card-hover);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.casa-grupo h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 0.86rem;
+  color: var(--texto);
+}
+.casa-total {
+  background: var(--azul-soft);
+  color: var(--azul);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+.casa-lista {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.casa-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+.casa-nome { color: var(--texto); text-decoration: none; }
+.casa-nome:hover { color: var(--verde); }
+.casa-partido { color: var(--texto-mutado); font-size: 0.72rem; text-align: right; }
