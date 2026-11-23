@@ -36,6 +36,19 @@ filtro por agente sem `permission-denied` · produção sem erros de JS.
 
 ---
 
+### 1.3 Sessão 23/11 (noite) — tema, ALMT e redes sociais
+
+| Commit | Entrega |
+|---|---|
+| `d473d9d` | **A** contraste AA (tokens Newsroom/Edição da noite; capa do login legível; banner mobile sem 404); `contraste.py` 0 violações |
+| `18ed375` | **C** 24 deputados ALMT (seed, radar, “Parlamentares por casa”) |
+| `167e603` | **B** redes sociais via buscador; seção na tela Mídia; `redes_almt.yml` (cron **desativado**); `redes_sociais` nas métricas |
+
+Estado: **74 agentes** (`count()`=74), métricas recalculadas sobre **7.228 clippings** (3 escopos:
+Cuiabá, Várzea Grande, Mato Grosso) e `metricas/geral.redes_sociais` presente (Instagram 6,
+Facebook 4, Twitter 1, TikTok 1; 12 recentes). O cron do `redes_almt.yml` só deve ser ativado
+após confirmação do dono. Não houve push/deploy.
+
 ## 2. Diferenças em relação ao Assessor Público
 
 | Item | ValorPublico | AssessorPublico |
