@@ -80,6 +80,11 @@ function contexto(canvasId) {
   const el = document.getElementById(canvasId);
   if (!el) return null;
   destruir(canvasId);
+  // Padrões globais do Chart.js acompanham o tema (legendas, tooltips, eixos).
+  if (window.Chart?.defaults) {
+    Chart.defaults.color = corTema("--texto-suave");
+    Chart.defaults.borderColor = corTema("--border");
+  }
   return el;
 }
 
@@ -333,6 +338,7 @@ export function criarGraficoDonut(canvasId, distribuicao, cores = paleta(), orde
                 const pct = total ? ((Number(valor) / total) * 100).toFixed(0) : "0";
                 return {
                   text: `${rotulo} · ${fmt(valor)} (${pct}%)`,
+                  fontColor: corTema("--texto-suave"),
                   fillStyle: ds.backgroundColor[i],
                   strokeStyle: ds.backgroundColor[i],
                   lineWidth: 1,

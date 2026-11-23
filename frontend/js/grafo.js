@@ -126,7 +126,7 @@ export function montarGrafo(canvas, grafo) {
       const n = mapa.get(destaque);
       if (n) {
         ctx.font = "600 12px Inter, sans-serif";
-        ctx.fillStyle = "#f59e0b";
+        ctx.fillStyle = corTema("--ambar");
         ctx.fillText(`${n.id} (${formatarNumero(n.peso)})`, n.x * w + 14, n.y * h - 10);
       }
     }

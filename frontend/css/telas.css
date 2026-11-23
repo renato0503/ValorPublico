@@ -374,7 +374,7 @@
   z-index: 2;
   padding: 18px 20px 14px;
   border-top: 2px solid #1d3557;
-  background: linear-gradient(180deg, rgba(247, 243, 232, 0.35), rgba(247, 243, 232, 0.94) 42%);
+  background: linear-gradient(180deg, rgba(247, 243, 232, 0.9), rgba(247, 243, 232, 0.99) 42%);
   border-radius: 0 0 4px 4px;
   backdrop-filter: blur(3px);
 }

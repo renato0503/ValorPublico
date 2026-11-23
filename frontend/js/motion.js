@@ -62,7 +62,7 @@ export function iniciarMotion() {
   // Banner do login: 9:16 no celular em pé, 16:9 no desktop.
   if (banner) {
     if (window.matchMedia("(max-width: 700px) and (orientation: portrait)").matches) {
-      banner.src = "assets/motion/hero-barras-vertical.mp4";
+      banner.src = "assets/motion/splash-vertical.mp4";
     }
     banner.play?.().catch(() => {});
   }

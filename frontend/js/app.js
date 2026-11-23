@@ -139,6 +139,11 @@ function esc(s) {
   );
 }
 
+function corToken(variavel, fallback = "#94a3b8") {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(variavel).trim();
+  return v || fallback;
+}
+
 /* ---------- tema claro/escuro ---------- */
 
 function aplicarTemaInicial() {
@@ -163,6 +168,7 @@ function alternarTema() {
   atualizarBotaoTema(atual);
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
   renderizarLexical();
+  renderizarCamadaDsm();
 }
 
 
@@ -847,7 +853,11 @@ function desenharNuvem() {
     span.className = "nuvem-palavra";
     span.style.fontSize = `${(14 + t * 28).toFixed(1)}px`;
     span.style.fontWeight = t > 0.75 ? 700 : t > 0.45 ? 600 : 500;
-    span.style.color = i < 8 ? "#f59e0b" : t > 0.5 ? "#38bdf8" : "#94a3b8";
+    span.style.color = i < 8
+      ? corToken("--ambar")
+      : t > 0.5
+        ? corToken("--azul")
+        : corToken("--texto-mutado");
     span.textContent = palavra;
     span.title = `${palavra}: ${formatarNumero(qtd)} menções`;
     container.appendChild(span);
@@ -1349,6 +1359,7 @@ window.__app_test = {
   renderizar,
   renderizarKpisDsm,
   renderizarShareOfVoice,
+  renderizarCamadaDsm,
   irPara: (rota) => window.__router?.irPara(rota),
 };
 
