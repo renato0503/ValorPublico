@@ -35,6 +35,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase  # noqa: E402
 from core.logger import get_logger  # noqa: E402
+from core.quota import main_com_cota  # noqa: E402
 from scripts.atualizar_metricas import coletar_clippings, slugify_cidade  # noqa: E402
 
 logger = get_logger(__name__)
@@ -250,4 +251,4 @@ def _disparar_webhook(payload: dict) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_com_cota(main, "gerar_newsletter")

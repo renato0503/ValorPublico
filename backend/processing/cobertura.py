@@ -23,6 +23,10 @@ TIER1_PADRAO = {
     "agencia brazil", "agencia rbs", "radio cuiaba", "tv cuiaba", "gazeta",
 }
 
+# Lags acima disso sao considerados inconsistentes (migracao/epoch) e ficam
+# fora do calculo de SLA.
+LAG_MAX_MINUTOS = 7 * 24 * 60
+
 TIER2_PADRAO = {
     "folha de cuiaba", "agora mt", "prima news", "midiastories", "loca news",
     "radio bandeirantes", "radio itatiaia", "radio sota", "tv local",
@@ -108,7 +112,9 @@ def analisar_cobertura(
         if publicacao and criado:
             com_data += 1
             delta = (criado - publicacao).total_seconds() / 60.0
-            if delta >= 0:
+            # Lags implausiveis (migracao de dados, epoch, datas divergentes)
+            # nao entram no SLA: so o que foi coletado em tempo real conta.
+            if 0 <= delta <= LAG_MAX_MINUTOS:
                 lags.append(delta)
         elif not publicacao:
             sem_data += 1
@@ -122,7 +128,7 @@ def analisar_cobertura(
             registro["itens"] += 1
             if publicacao and criado:
                 delta = (criado - publicacao).total_seconds() / 60.0
-                if delta >= 0:
+                if 0 <= delta <= LAG_MAX_MINUTOS:
                     registro["_lags"].append(delta)
 
     for veiculo, registro in por_veiculo.items():

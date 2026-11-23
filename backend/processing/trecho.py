@@ -81,7 +81,7 @@ def extrair_trecho(
 
     if not lista:
         # sem termos: usa as primeiras frases (resumo do inicio da materia)
-        escolhidas = frases[:max_frases]
+        escolhidas = [(0, inicio, frase) for frase, inicio in frases[:max_frases]]
     else:
         pontuadas = []
         for frase, inicio in frases:
@@ -90,7 +90,7 @@ def extrair_trecho(
             if peso:
                 pontuadas.append((peso, inicio, frase))
         if not pontuadas:
-            escolhidas = frases[:max_frases]
+            escolhidas = [(0, inicio, frase) for frase, inicio in frases[:max_frases]]
         else:
             pontuadas.sort(key=lambda item: (-item[0], item[1]))
             escolhidas = sorted(pontuadas[:max_frases], key=lambda item: item[1])

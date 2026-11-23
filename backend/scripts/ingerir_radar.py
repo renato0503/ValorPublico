@@ -26,6 +26,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase  # noqa: E402
 from core.logger import get_logger  # noqa: E402
+from core.quota import main_com_cota  # noqa: E402
 from processing.propaganda_publica import (  # noqa: E402
     CLASSE_PUBLICACAO_OFICIAL,
     detectar,
@@ -110,7 +111,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_com_cota(main, "ingerir_radar")
 
 
 

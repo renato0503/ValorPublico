@@ -1,6 +1,13 @@
 ﻿import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
 import {
+  agentesPermitidos,
+  estadoAuth,
+  iniciarAuth,
+  registrarBotaoAuth,
+} from "./auth.js";
+
+import {
   abrirNewsletter,
   carregarCamadaDsm,
   chaveEscopoDsm,
@@ -471,6 +478,109 @@ function renderizar(dados) {
   renderizarHistorico(dados.historico_ingestao || []);
   $("atualizadoEm").textContent = formatarData(dados.atualizado_em);
   renderizarUltimaExecucao(dados.ultima_execucao);
+  renderizarKpisDsm(view);
+  renderizarShareOfVoice(view, dados);
+}
+
+
+/* ---------- Camada DSM: KPIs e share of voice ---------- */
+
+function renderizarKpisDsm(view) {
+  const mencoes = view.distribuicao_mencoes || {};
+  const total = Object.values(mencoes).reduce((a, b) => a + (b || 0), 0);
+  const diretas = mencoes.direta || 0;
+  const pctDiretas = total ? Math.round((100 * diretas) / total) : 0;
+
+  const elDiretas = $("kpiMencoesDiretas");
+  if (elDiretas) {
+    elDiretas.textContent = total ? `${pctDiretas}%` : "–";
+    const nota = $("kpiMencoesDiretasNota");
+    if (nota) {
+      nota.textContent = total
+        ? `${diretas} diretas · ${mencoes.indireta || 0} indiretas · ${mencoes.indeterminada || 0} indeterminadas`
+        : "direta / indireta / indeterminada";
+    }
+  }
+
+  const alertas = view.alertas || {};
+  const niveisAlerta = alertas.niveis || {};
+  const elAlertas = $("kpiAlertasCriticos");
+  if (elAlertas) {
+    elAlertas.textContent = Number(niveisAlerta.critico || 0).toLocaleString("pt-BR");
+    const nota = $("kpiAlertasNota");
+    if (nota) {
+      const totalAlertas = alertas.total || 0;
+      nota.textContent = totalAlertas
+        ? `${totalAlertas} no total (${niveisAlerta.alto || 0} altos, ${niveisAlerta.atencao || 0} atenção)`
+        : "exigem ação imediata";
+    }
+  }
+
+  const cobertura = view.cobertura || {};
+  const elSla = $("kpiSlaMedio");
+  if (elSla) {
+    const medio = cobertura.sla_min_medio || 0;
+    elSla.textContent = medio ? `${Math.round(medio)} min` : "–";
+    const nota = $("kpiSlaNota");
+    if (nota) {
+      nota.textContent = cobertura.sla_min_p95
+        ? `p95 ${Math.round(cobertura.sla_min_p95)} min · cobertura ${cobertura.pct_cobertura || 0}%`
+        : "publicação → disponibilidade";
+    }
+  }
+
+  const elAvpe = $("kpiAvpe");
+  if (elAvpe) {
+    elAvpe.textContent = formatarValor(view.valor_avpe_total || 0);
+    const nota = $("kpiAvpeNota");
+    if (nota) {
+      const avpe = view.valor_avpe_total || 0;
+      const mercado = view.valoracao_total || 0;
+      nota.textContent = avpe && mercado
+        ? `${Math.round((100 * avpe) / mercado)}% do valor de mercado`
+        : "centimetragem estimada";
+    }
+  }
+}
+
+function renderizarShareOfVoice(view, dados) {
+  const canvas = $("graficoShareVoice");
+  const corpo = $("corpoShareVoice");
+  const share = (dados && dados.share_of_voice) || [];
+  if (!share.length) {
+    if (corpo) {
+      corpo.innerHTML = '<tr><td colspan="6" class="vazio">Sem dados de share of voice neste escopo.</td></tr>';
+    }
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    return;
+  }
+  const top = share.slice(0, 12);
+  if (canvas) {
+    charts.criarGraficoBarras(
+      "graficoShareVoice",
+      Object.fromEntries(top.map((s) => [s.nome || s.agente_id, s.pct_share || 0])),
+      (v) => `${v}%`,
+      true,
+      true
+    );
+  }
+  if (corpo) {
+    corpo.innerHTML = top
+      .map(
+        (s) => `<tr>
+          <td class="col-pos">${s.posicao}</td>
+          <td>${esc(s.nome || s.agente_id)}</td>
+          <td class="num">${formatarNumero(s.clippings)}</td>
+          <td class="num">${s.pct_share ?? 0}%</td>
+          <td class="num">${s.pct_positivo ?? 0}%</td>
+          <td class="num">${s.pct_negativo ?? 0}%</td>
+        </tr>`
+      )
+      .join("");
+  }
 }
 
 /* Retorna o subconjunto de dados correspondente ao período selecionado. */
@@ -1007,6 +1117,22 @@ function fecharModal(id) {
   el.setAttribute("aria-hidden", "true");
 }
 
+
+/* ---------- Escopo do usuário autenticado ---------- */
+
+function aplicarEscopoUsuario() {
+  const permitidos = agentesPermitidos();
+  const select = $("filtroParlamentar");
+  if (!select) return;
+  if (!permitidos.length) return;
+  const opcoes = Array.from(select.options).filter((o) => o.value && !permitidos.includes(o.value));
+  opcoes.forEach((o) => o.remove());
+  if (select.value && !permitidos.includes(select.value)) {
+    select.value = permitidos[0] || "";
+    estado.parlamentar = select.value;
+  }
+}
+
 /* ---------- eventos ---------- */
 
 $("filtroCidade").addEventListener("change", (e) => {
@@ -1030,6 +1156,11 @@ $("filtroPeriodo").addEventListener("change", (e) => {
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
   carregarLexical();
   definirJanelaDsm(estado.periodo || "30d");
+});
+
+window.addEventListener("auth:changed", () => {
+  aplicarEscopoUsuario();
+  aplicarFiltros();
 });
 
 $("filtroTipoTop").addEventListener("change", (e) => {
@@ -1114,4 +1245,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 inicializar();
+registrarBotaoAuth();
+iniciarAuth();
+
+// Gancho de depuracao (usado pelo smoke test do painel e pelo console do browser)
+window.__app_test = { estado, renderizar, renderizarKpisDsm, renderizarShareOfVoice };
+
 

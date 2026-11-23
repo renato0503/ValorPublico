@@ -1,4 +1,4 @@
-const CACHE_VERSION = "valorpublico-v9";
+const CACHE_VERSION = "valorpublico-v10";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const APP_SHELL = [
   "./js/charts.js",
   "./js/grafo.js",
   "./js/dsm.js",
+  "./js/auth.js",
   "./js/firebase-init.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

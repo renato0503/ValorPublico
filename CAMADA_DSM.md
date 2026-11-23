@@ -212,3 +212,61 @@ NEWSLETTER_ASSINATURA=
   `06_REGRAS_DE_NEGOCIO.md`).
 - Texto oficial da Lei 9.504/1997 (Planalto) foi conferido antes de codificar
   as regras de compliance.
+
+---
+
+## 8. Entrega, acesso e visualização (nov/2026)
+
+### 8.1 Entrega de alertas (`scripts/enviar_alertas.py`)
+Fecha o gap de "alerta que morre no painel":
+- lê `alertas/<escopo>`, filtra por **nível mínimo** (`ALERTA_NIVEL_MINIMO`) e janela;
+- **deduplica** pelo `chave` do alerta no estado `alertas_enviados/estado`;
+- envia por **SMTP** (e-mail, sem dependência externa) e/ou **webhook**
+  (`ALERTA_WEBHOOK_URL` — Make/Zapier/n8n → WhatsApp/Telegram/Slack);
+- `--dry-run` lista o que seria enviado; `--forcar` reenvia.
+
+### 8.2 Métricas da Camada DSM no agregado
+`metricas/geral`, `metricas_por_cidade/*` e `metricas_por_agente/*` passam a trazer:
+`valor_avpe_total`, `valor_avpe_por_plataforma`, `distribuicao_mencoes`,
+`distribuicao_papeis`, `porta_vozes`, `compliance` (artigos/níveis),
+`radar` (total/órgãos/símbolos), `alertas` (níveis/tipos) e `cobertura`
+(SLA médio/p95, % de cobertura). O escopo geral e o de cidade trazem
+**`share_of_voice`** (ranking de agentes por menções, share %, tom e valor).
+
+### 8.3 Dashboard
+- **4 KPIs da Camada DSM** no topo: menções diretas (%), alertas críticos,
+  SLA de coleta e valor AVPE (com nota de % sobre o valor de mercado).
+- **Painel "Share of Voice — espaço de mídia por agente"** (gráfico + tabela
+  com posição, menções, share, positivo e negativo).
+
+### 8.4 Acesso individual (RBAC)
+- `frontend/js/auth.js`: login/logout por e-mail e senha (Firebase Auth),
+  leitura do perfil em `usuarios/{uid}` e aplicação do escopo nos filtros.
+- `firestore.rules`: modo de acesso via `config_acesso/publico`
+  (`true` = painel aberto; `false` = exige login).
+  No modo restrito, cada usuário só lê o **próprio escopo**
+  (`metricas_por_agente/<id>`, `alertas/agente-<id>`, `radares`, `cobertura`,
+  `newsletters`, `releases_ia`, `analise_lexical`); `geral` fica para quem tem perfil.
+- `scripts/seed_acesso.py` cria/ajusta o modo (público ou restrito).
+
+### 8.5 PDF, CSV e release
+- **PDF** (`gerar_relatorio_pdf.py`): novas seções de **menções**, **papéis**,
+  **porta-vozes**, **compliance**, **radar**, **alertas**, **cobertura/SLA**,
+  **AVPE** e **share of voice**; branding parametrizado (`APP_NOME`/`--app`).
+- **CSV** (`exportar_clippings.py`): colunas `tipo_mencao`, `papel_mencao`,
+  `porta_vozes`, `trecho_citado`, `compliance_*`, `radar_*`, `simbolos_publicos`,
+  `valor_avpe`, `espaco_cm2`, `duracao_seg`.
+- **`exportar_camada_dsm.py`**: CSV de auditoria de `radar_publico`, `alertas` e `cobertura`.
+- **Release de IA**: o contexto enviado ao modelo agora inclui menções, papéis,
+  porta-vozes, compliance (com artigo), radar, alertas e AVPE; o prompt orienta
+  o modelo a usar cada bloco.
+
+### 8.6 Operação e robustez
+- Rotina diária: `ingerir_radar` → `enriquecer_clippings` → `atualizar_radares`
+  → `enviar_alertas` → `gerar_newsletter`.
+- **Escrita em lote** no backfill (400 docs/lote) + retry com backoff.
+- **Cota do Firestore**: `core/quota.py` converte `429/ResourceExhausted` em
+  saída limpa com código **75** (EX_TEMPFAIL); o workflow trata 75 como aviso e
+  repete no ciclo seguinte (não abre issue de falha).
+- CI roda os **testes** (Camada DSM + regras do Firestore no emulador) antes da
+  ingestão, e há workflow manual de deploy do Hosting.

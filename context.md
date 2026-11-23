@@ -83,3 +83,28 @@ Esta documentação reúne todas as informações essenciais da **Versão 100 
 ---
 
 > **Nota**: Esta documentação foi criada como artefato para que você possa revisá‑la, compartilhá‑la com a equipe e mantê‑la atualizada ao longo do desenvolvimento.
+
+## Camada DSM (nov/2026) — inteligência de clipping institucional
+
+Camada incorporada a partir do estudo de mercado de clipping (Dinâmica
+Clipping/DSM, Knewin, SimpliNG, Sinopress, Interclip, CWA, Preview News) e das
+regras da Lei 9.504/1997. **Detalhes em `CAMADA_DSM.md`.**
+
+Backend: `processing/{mencao,trecho,compliance_eleitoral,propaganda_publica,alertas,cobertura,enriquecimento}.py`,
+`processing/valoracao.py` (AVPE + centimetragem), `scraper/propaganda_publica_scraper.py`,
+`config/fontes_radar.py` (fonte oficial de Cuiabá, Várzea Grande e Assembleia/Estado de MT).
+
+Scripts: `ingerir_radar.py` · `enriquecer_clippings.py` · `atualizar_radares.py` ·
+`gerar_newsletter.py` · `enviar_alertas.py` (e-mail/webhook) · `exportar_camada_dsm.py` ·
+`seed_acesso.py` (modo público x restrito).
+
+Métricas: o agregado agora traz `valor_avpe_total`, `distribuicao_mencoes`,
+`distribuicao_papeis`, `porta_vozes`, `compliance`, `radar`, `alertas`, `cobertura` (SLA)
+e `share_of_voice` (espaço de mídia por agente).
+
+Frontend: `frontend/js/dsm.js` (painel da Camada DSM) e `frontend/js/auth.js`
+(login + escopo por agente), KPIs da Camada DSM e painel de Share of Voice.
+
+Segurança: `firestore.rules` com modo de acesso (`config_acesso/publico`) — no modo
+restrito cada usuário só lê o próprio escopo. Testes: `backend/tests/teste_camada_dsm.py`
+(23 casos) e `backend/tests/rules.test.js` (33 casos, emulador).

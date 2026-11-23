@@ -132,7 +132,19 @@ function janelaAtiva() {
 
 function bloco(doc, chave) {
   if (!doc) return null;
-  return doc[chave] || null;
+  // Degrada para janelas mais largas quando a selecionada está vazia
+  const ordem = [chave, "periodo-30d", "periodo-15d", "periodo-7d", "periodo-hoje", "periodo-todas"];
+  const temConteudo = (b) =>
+    !!b &&
+    ((b.radar?.itens || []).length > 0 ||
+      (b.alertas?.itens || []).length > 0 ||
+      (b.cobertura?.total || 0) > 0 ||
+      (b.mencoes?.total || 0) > 0);
+  for (const chaveAlternativa of ordem) {
+    const candidato = doc[chaveAlternativa];
+    if (candidato && temConteudo(candidato)) return candidato;
+  }
+  return doc[chave] || doc[ordem[ordem.length - 1]] || null;
 }
 
 export function definirJanelaDsm(periodo) {

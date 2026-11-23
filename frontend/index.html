@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -18,7 +18,8 @@
     {
       "imports": {
         "firebase/app": "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js",
-        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
       }
     }
   </script>
@@ -73,6 +74,14 @@
         <span class="btn-tema-icone">☾</span>
       </button>
       <button
+        id="btnAuth"
+        class="btn-tema"
+        type="button"
+        title="Entrar com e-mail e senha"
+      >
+        Entrar
+      </button>
+      <button
         id="btnAtualizar"
         class="btn-atualizar"
         type="button"
@@ -115,6 +124,38 @@
           <span class="kpi-tendencia" id="tendenciaClippings" data-base="0">—</span>
         </div>
         <span class="kpi-valor" id="kpiClippings">–</span>
+      </article>
+    </section>
+
+
+    <section class="kpis kpis-dsm" aria-label="Indicadores da Camada DSM">
+      <article class="card kpi kpi-ambar">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Menções Diretas</span>
+        </div>
+        <span class="kpi-valor" id="kpiMencoesDiretas">–</span>
+        <span class="kpi-nota" id="kpiMencoesDiretasNota">direta / indireta / indeterminada</span>
+      </article>
+      <article class="card kpi kpi-verde">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Alertas Críticos</span>
+        </div>
+        <span class="kpi-valor" id="kpiAlertasCriticos">–</span>
+        <span class="kpi-nota" id="kpiAlertasNota">exigem ação imediata</span>
+      </article>
+      <article class="card kpi kpi-azul">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">SLA de Coleta</span>
+        </div>
+        <span class="kpi-valor" id="kpiSlaMedio">–</span>
+        <span class="kpi-nota" id="kpiSlaNota">publicação → disponibilidade</span>
+      </article>
+      <article class="card kpi kpi-roxo">
+        <div class="kpi-cabecalho">
+          <span class="kpi-rotulo">Valor AVPE</span>
+        </div>
+        <span class="kpi-valor" id="kpiAvpe">–</span>
+        <span class="kpi-nota" id="kpiAvpeNota">centimetragem estimada</span>
       </article>
     </section>
 
@@ -165,6 +206,38 @@
           <span class="painel-sub">Em reais (R$)</span>
         </div>
         <div class="canvas-box"><canvas id="graficoValoracao" aria-label="Gráfico de valoração por plataforma"></canvas></div>
+      </article>
+    </section>
+
+
+    <section class="grade-secundaria" aria-label="Share of voice entre agentes">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Share of Voice — Espaço de Mídia por Agente</h2>
+            <span class="painel-sub">Quem ocupa a atenção do período (menções, share e tom)</span>
+          </div>
+        </div>
+        <div class="grade-secundaria">
+          <div class="canvas-box canvas-box-sm">
+            <canvas id="graficoShareVoice" aria-label="Gráfico de share of voice entre agentes"></canvas>
+          </div>
+          <div class="tabela-wrapper">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th class="col-pos">#</th>
+                  <th>Agente</th>
+                  <th class="num">Menções</th>
+                  <th class="num">Share</th>
+                  <th class="num">Positivo</th>
+                  <th class="num">Negativo</th>
+                </tr>
+              </thead>
+              <tbody id="corpoShareVoice"></tbody>
+            </table>
+          </div>
+        </div>
       </article>
     </section>
 
@@ -334,6 +407,30 @@
       </article>
     </section>
 
+
+    <div class="modal-overlay" id="modalLogin" role="dialog" aria-modal="true" aria-labelledby="loginTitulo">
+      <div class="modal modal-sm">
+        <div class="modal-cabecalho">
+          <h3 id="loginTitulo">Entrar</h3>
+          <button class="modal-fechar" id="btnFecharLogin" type="button" aria-label="Fechar">×</button>
+        </div>
+        <form id="formLogin" class="modal-conteudo">
+          <label class="filtro-rotulo" for="loginEmail">E-mail</label>
+          <input id="loginEmail" type="email" autocomplete="email" placeholder="seu@email.com" required>
+          <label class="filtro-rotulo" for="loginSenha">Senha</label>
+          <input id="loginSenha" type="password" autocomplete="current-password" placeholder="••••••••" required>
+          <p class="aviso erro oculto" id="loginErro" role="alert"></p>
+          <div class="modal-acoes">
+            <button class="btn-atualizar" id="btnEntrar" type="submit">Entrar</button>
+          </div>
+          <p class="modal-dica">
+            O acesso individual do agente é liberado pelo administrador do painel
+            (coleção <code>usuarios</code> do Firestore).
+          </p>
+        </form>
+      </div>
+    </div>
+
   </main>
 
   <!-- Modal: Detalhe de notícia (Sprint 24) -->
@@ -410,3 +507,4 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+

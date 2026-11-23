@@ -31,6 +31,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase  # noqa: E402
 from core.logger import get_logger  # noqa: E402
+from core.quota import main_com_cota  # noqa: E402
 from processing.alertas import detectar_alertas  # noqa: E402
 from processing.alertas import resumir as _resumir_alertas  # noqa: E402
 from processing.cobertura import TIER1_PADRAO, analisar_cobertura  # noqa: E402
@@ -207,7 +208,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_com_cota(main, "atualizar_radares")
 
 
 

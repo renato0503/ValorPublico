@@ -2,15 +2,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ---------------------------------------------------------------
-    // Regras de Seguranca (RBAC) - ValorPublico
+    // Regras de Seguranca (RBAC) - Valor Publico
     // ---------------------------------------------------------------
-    // O dashboard PWA e PUBLICO (BI de monitoramento de midia): leitura
-    // liberada para as colecoes de leitura leve. Toda escrita e feita
-    // pelo backend via Admin SDK (que ignora estas regras), entao o
-    // cliente web nao precisa de permissao de escrita em nenhum lugar.
+    // O dashboard PWA le dados agregados. Toda escrita e feita pelo backend
+    // via Admin SDK (que ignora estas regras).
+    //
+    // MODO DE ACESSO (documento `config_acesso/publico`):
+    //   publico = true  -> painel aberto (demo/comercializacao)
+    //   publico = false -> exige login; cada usuario ve apenas o escopo
+    //                      do proprio agente (colecao `usuarios`).
     // ---------------------------------------------------------------
 
-    // Agentes publicos (roster de parlamentares) - leitura publica.
+    function acessoPublico() {
+      return get(/databases/$(database)/documents/config_acesso/publico).data.publico == true;
+    }
+
+    // Usuario autenticado com escopo de agente(s)
+    function usuarioAgente(agenteId) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.agente_id == agenteId;
+    }
+
+    function usuarioComAcesso() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    // Documento de configuracao de acesso (somente backend escreve)
+    match /config_acesso/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Agentes publicos (roster) - leitura publica.
     // Clippings ficam em subcolecao e NAO sao expostos ao cliente.
     match /agentes_publicos/{docId} {
       allow read: if true;
@@ -32,8 +56,9 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Metricas por agente: escopo do proprio agente quando o acesso e restrito.
     match /metricas_por_agente/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || usuarioAgente(docId);
       allow write: if false;
     }
 
@@ -59,36 +84,38 @@ service cloud.firestore {
     // ------------------------------------------------------------------
     // Radar de propaganda publica/institucional (transparencia e prova).
     match /radares/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
       allow write: if false;
     }
 
     // Alertas acionaveis (negativa direta, compliance eleitoral, valor alto).
     match /alertas/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
       allow write: if false;
     }
 
     // Cobertura e SLA do monitoramento (latencia, veiculos por tier, falhas).
     match /cobertura/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
       allow write: if false;
     }
 
     // Newsletter consolidada (HTML + texto para WhatsApp).
     match /newsletters/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
       allow write: if false;
     }
 
-    // Usuarios: cada usuario le/edita apenas o proprio documento
-    // (o owner e definido pelo backend via Admin SDK).
+    // ------------------------------------------------------------------
+    // Controle de acesso
+    // ------------------------------------------------------------------
+    // Perfil do proprio usuario (mapeia uid -> agente).
     match /usuarios/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
     }
 
-    // Registros de execucao do motor de ingestao - apenas backend.
+    // Registro de execucao do motor de ingestao - apenas backend.
     match /execucoes_ingestao/{docId} {
       allow read, write: if false;
     }

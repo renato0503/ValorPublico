@@ -51,6 +51,20 @@ COLUNAS_BASE = [
     "created_at",
     "id_externo",
     "texto_limpo",
+    # --- Camada DSM ---
+    "tipo_mencao",
+    "papel_mencao",
+    "porta_vozes",
+    "trecho_citado",
+    "compliance_nivel",
+    "compliance_artigos",
+    "radar_classe",
+    "radar_orgao",
+    "radar_tipo",
+    "simbolos_publicos",
+    "valor_avpe",
+    "espaco_cm2",
+    "duracao_seg",
 ]
 
 
@@ -116,6 +130,24 @@ def exportar(caminho: Path) -> Path:
                     "created_at": _iso(clip.get("created_at")),
                     "id_externo": clip.get("id_externo", ""),
                     "texto_limpo": clip.get("texto_limpo", ""),
+                    # --- Camada DSM ---
+                    "tipo_mencao": clip.get("tipo_mencao", ""),
+                    "papel_mencao": clip.get("papel_mencao", ""),
+                    "porta_vozes": ";".join((clip.get("mencao") or {}).get("porta_vozes") or []),
+                    "trecho_citado": ((clip.get("trecho") or {}).get("trecho") or ""),
+                    "compliance_nivel": clip.get("compliance_nivel", ""),
+                    "compliance_artigos": ";".join(
+                        sorted({a.get("artigo", "") for a in clip.get("compliance") or []})
+                    ),
+                    "radar_classe": (clip.get("propaganda_publica") or {}).get("classe", ""),
+                    "radar_orgao": (clip.get("propaganda_publica") or {}).get("orgao", ""),
+                    "radar_tipo": (clip.get("propaganda_publica") or {}).get("tipo", ""),
+                    "simbolos_publicos": "sim" if (clip.get("propaganda_publica") or {}).get(
+                        "simbolos_publicos"
+                    ) else "",
+                    "valor_avpe": clip.get("valor_avpe", 0.0),
+                    "espaco_cm2": clip.get("espaco_cm2", 0.0),
+                    "duracao_seg": clip.get("duracao_seg", 0.0),
                     **{f"md_{k}": _valor_metadados(md.get(k)) for k in chaves_metadados},
                 }
             )
@@ -150,4 +182,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main_com_cota(main, "exportar_clippings")

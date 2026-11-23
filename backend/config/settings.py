@@ -95,6 +95,23 @@ IA_SENTIMENTO_TAMANHO_LOTE = int(os.getenv("IA_SENTIMENTO_TAMANHO_LOTE", "20"))
 IA_SENTIMENTO_TIMEOUT = int(os.getenv("IA_SENTIMENTO_TIMEOUT", "30"))
 IA_SENTIMENTO_TEMPERATURA = float(os.getenv("IA_SENTIMENTO_TEMPERATURA", "0.0"))
 
+# Release de IA (resumo executivo por escopo/periodo, OpenAI-compativel).
+# Reusa a mesma API key do sentimento quando IA_RELEASE_API_KEY nao for informada.
+IA_RELEASE_ENABLED = os.getenv("IA_RELEASE_ENABLED", "1") == "1"
+IA_RELEASE_BASE_URL = os.getenv(
+    "IA_RELEASE_BASE_URL",
+    os.getenv("IA_SENTIMENTO_BASE_URL", "https://api.openai.com/v1"),
+)
+IA_RELEASE_API_KEY = os.getenv(
+    "IA_RELEASE_API_KEY",
+    os.getenv("IA_SENTIMENTO_API_KEY", ""),
+)
+IA_RELEASE_MODEL = os.getenv("IA_RELEASE_MODEL", "gpt-4o-mini")
+IA_RELEASE_TIMEOUT = int(os.getenv("IA_RELEASE_TIMEOUT", "60"))
+IA_RELEASE_TEMPERATURA = float(os.getenv("IA_RELEASE_TEMPERATURA", "0.4"))
+# Maximo de trechos (clippings) enviados como contexto ao modelo por release
+IA_RELEASE_MAX_TRECHOS = int(os.getenv("IA_RELEASE_MAX_TRECHOS", "15"))
+
 # Nomes das colecoes Firestore
 COLLECTION_AGENTES = "agentes_publicos"
 SUBCOLLECTION_CLIPPINGS = "clippings"
@@ -105,10 +122,13 @@ SUBCOLLECTION_CLIPPINGS = "clippings"
 # ---------------------------------------------------------------------------
 
 # Fontes oficiais/institucionais monitoradas pelo radar de propaganda publica.
-# Formato: URL1,URL2 (paginas ou feeds RSS de orgaos publicos).
+# Padrao: lista curada de Cuiaba, Varzea Grande e Assembleia/Estado de MT
+# (ver config/fontes_radar.py). Formato: URL1,URL2 (paginas ou feeds RSS).
+from config.fontes_radar import FONTES_RADAR_PADRAO  # noqa: E402
+
 FONTES_PROPAGANDA_PUBLICA = [
     u.strip() for u in os.getenv("FONTES_PROPAGANDA_PUBLICA", "").split(",") if u.strip()
-]
+] or list(FONTES_RADAR_PADRAO)
 HABILITAR_PROPAGANDA_PUBLICA = os.getenv("HABILITAR_PROPAGANDA_PUBLICA", "1") == "1"
 PROPAGANDA_PUBLICA_MAX_ITENS = int(os.getenv("PROPAGANDA_PUBLICA_MAX_ITENS", "20"))
 
@@ -148,3 +168,30 @@ COLLECTION_ALERTAS = "alertas"
 COLLECTION_RADARES = "radares"
 COLLECTION_COBERTURA = "cobertura"
 COLLECTION_NEWSLETTERS = "newsletters"
+
+# ---------------------------------------------------------------------------
+# Entrega de alertas (e-mail SMTP + webhook) e configuracoes de relatorio.
+# ---------------------------------------------------------------------------
+ALERTA_NIVEL_MINIMO = os.getenv("ALERTA_NIVEL_MINIMO", "alto")
+ALERTA_WEBHOOK_URL = os.getenv("ALERTA_WEBHOOK_URL", "")
+ALERTA_WEBHOOK_SECRET = os.getenv("ALERTA_WEBHOOK_SECRET", "")
+ALERTA_DESTINATARIOS = [
+    d.strip() for d in os.getenv("ALERTA_DESTINATARIOS", "").split(",") if d.strip()
+]
+
+# Envio por e-mail (SMTP)
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587") or "587")
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_TLS = os.getenv("SMTP_TLS", "1") == "1"
+EMAIL_FROM = os.getenv("EMAIL_FROM", "")
+EMAIL_PARA = [
+    d.strip() for d in os.getenv("EMAIL_PARA", "").split(",") if d.strip()
+]
+
+# Relatorio PDF
+PDF_ASSINATURA = os.getenv("PDF_ASSINATURA", "")
+PDF_INCLUIR_CAMADA_DSM = os.getenv("PDF_INCLUIR_CAMADA_DSM", "1") == "1"
+# Nome do produto usado em relatorios e cabecalhos
+APP_NOME = os.getenv("APP_NOME", "Valor Público")

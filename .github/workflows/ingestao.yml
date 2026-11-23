@@ -64,6 +64,18 @@ jobs:
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}" | base64 --decode > backend/serviceAccountKey.json
           test -s backend/serviceAccountKey.json
 
+      - name: Testes da Camada DSM (python)
+        working-directory: backend
+        run: |
+          python tests/teste_camada_dsm.py
+
+      - name: Testes das regras do Firestore (emulador)
+        working-directory: backend/tests
+        continue-on-error: true
+        run: |
+          npm install --silent
+          npx firebase emulators:exec --only firestore "node rules.test.js"
+
       - name: Ingestão de clippings
         working-directory: backend
         run: |
@@ -73,12 +85,88 @@ jobs:
         working-directory: backend
         run: |
           python scripts/atualizar_metricas.py
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
+
 
       - name: Análise lexical por escopo (AFC, CHD, grafo, dendrograma)
         continue-on-error: true
         working-directory: backend
         run: |
           python scripts/analise_lexical_escopos.py --n-classes 4 --niveis 8
+
+      - name: Radar de propaganda pública (fontes oficiais de MT)
+        continue-on-error: true
+        working-directory: backend
+        env:
+          HABILITAR_PROPAGANDA_PUBLICA: "1"
+        run: |
+          python scripts/ingerir_radar.py
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
+
+
+      - name: Enriquecer clippings (menção, trecho, compliance, radar)
+        continue-on-error: true
+        working-directory: backend
+        run: |
+          python scripts/enriquecer_clippings.py
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
+
+
+      - name: Camada DSM (radar de propaganda pública, alertas e cobertura/SLA)
+        continue-on-error: true
+        working-directory: backend
+        run: |
+          python scripts/atualizar_radares.py
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
+
+
+      - name: Newsletter consolidada (e-mail/WhatsApp)
+        continue-on-error: true
+        working-directory: backend
+        run: |
+          python scripts/gerar_newsletter.py
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
+
+
+      - name: Enviar alertas (e-mail/webhook)
+        continue-on-error: true
+        working-directory: backend
+        env:
+          ALERTA_WEBHOOK_URL: ${{ secrets.ALERTA_WEBHOOK_URL }}
+          ALERTA_NIVEL_MINIMO: ${{ vars.ALERTA_NIVEL_MINIMO || 'alto' }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PARA: ${{ vars.EMAIL_PARA }}
+        run: |
+          python scripts/enviar_alertas.py --periodo hoje
 
       - name: Abrir issue automática em caso de falha
         if: failure()
