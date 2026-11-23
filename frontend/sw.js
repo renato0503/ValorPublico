@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v13";
+﻿const CACHE_VERSION = "valorpublico-v14";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -90,3 +90,4 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+

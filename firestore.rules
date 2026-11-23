@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ---------------------------------------------------------------
-    // Regras de Seguranca (RBAC) - Valor Publico
+    // Regras de Seguranca (RBAC) - Assessor Publico
     // ---------------------------------------------------------------
     // O dashboard PWA le dados agregados. Toda escrita e feita pelo backend
     // via Admin SDK (que ignora estas regras).
@@ -11,21 +11,51 @@ service cloud.firestore {
     //   publico = true  -> painel aberto (demo/comercializacao)
     //   publico = false -> exige login; cada usuario ve apenas o escopo
     //                      do proprio agente (colecao `usuarios`).
+    //
+    // Perfil do usuario (usuarios/{uid}):
+    //   {email, papel, agente_id, agente_ids: [...], chaves: [...]}
+    //   - agente_id  : id do agente (usado em metricas_por_agente/{id})
+    //   - agente_ids : lista de ids de agentes permitidos
+    //   - chaves     : chaves de escopo ("agente-<id>") da Camada DSM
     // ---------------------------------------------------------------
 
     function acessoPublico() {
       return get(/databases/$(database)/documents/config_acesso/publico).data.publico == true;
     }
 
-    // Usuario autenticado com escopo de agente(s)
-    function usuarioAgente(agenteId) {
-      return request.auth != null
-        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.agente_id == agenteId;
+    function perfilUsuario() {
+      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
     }
 
     function usuarioComAcesso() {
       return request.auth != null
         && exists(/databases/$(database)/documents/usuarios/$(request.auth.uid));
+    }
+
+    // Administradores enxergam qualquer escopo (operacao do painel).
+    function usuarioEhAdmin() {
+      return usuarioComAcesso()
+        && perfilUsuario().papel in ['admin', 'owner'];
+    }
+
+    // O usuario e dono do agente (id puro, ex.: "fulano-de-tal")
+    function usuarioEhDonoDoAgente(agenteId) {
+      return usuarioEhAdmin()
+        || (usuarioComAcesso() && perfilUsuario().agente_ids.hasAny([agenteId]));
+    }
+
+    // O usuario e dono do escopo ("agente-<id>", "cidade-<slug>", "geral")
+    function usuarioEhDonoDoEscopo(chave) {
+      return usuarioComAcesso()
+        && perfilUsuario().chaves.hasAny([chave]);
+    }
+
+    // Leitura de um documento "por escopo" (geral | cidade-<slug> | agente-<id>).
+    // Regras do Firestore exigem expressao unica por funcao (sem if/else).
+    function leituraPorEscopo(chave) {
+      return acessoPublico()
+        || (request.auth != null
+            && (chave == 'geral' || usuarioEhAdmin() || usuarioEhDonoDoEscopo(chave)));
     }
 
     // Documento de configuracao de acesso (somente backend escreve)
@@ -52,13 +82,13 @@ service cloud.firestore {
     }
 
     match /metricas_por_cidade/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || (request.auth != null);
       allow write: if false;
     }
 
     // Metricas por agente: escopo do proprio agente quando o acesso e restrito.
     match /metricas_por_agente/{docId} {
-      allow read: if acessoPublico() || usuarioAgente(docId);
+      allow read: if acessoPublico() || usuarioEhDonoDoAgente(docId);
       allow write: if false;
     }
 
@@ -67,9 +97,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Analises lexicais (IRAMUTEQ) publicadas pelo backend - leitura publica.
+    // Analises lexicais (IRAMUTEQ) publicadas pelo backend.
     match /analise_lexical/{docId} {
-      allow read: if true;
+      allow read: if leituraPorEscopo(docId);
+      allow write: if false;
+    }
+
+    // Releases de IA (resumo executivo por escopo/período).
+    match /releases_ia/{docId} {
+      allow read: if leituraPorEscopo(docId);
       allow write: if false;
     }
 
@@ -84,25 +120,25 @@ service cloud.firestore {
     // ------------------------------------------------------------------
     // Radar de propaganda publica/institucional (transparencia e prova).
     match /radares/{docId} {
-      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
+      allow read: if leituraPorEscopo(docId);
       allow write: if false;
     }
 
     // Alertas acionaveis (negativa direta, compliance eleitoral, valor alto).
     match /alertas/{docId} {
-      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
+      allow read: if leituraPorEscopo(docId);
       allow write: if false;
     }
 
     // Cobertura e SLA do monitoramento (latencia, veiculos por tier, falhas).
     match /cobertura/{docId} {
-      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
+      allow read: if leituraPorEscopo(docId);
       allow write: if false;
     }
 
     // Newsletter consolidada (HTML + texto para WhatsApp).
     match /newsletters/{docId} {
-      allow read: if acessoPublico() || docId == 'geral' || usuarioAgente(docId.replace('agente-', ''));
+      allow read: if leituraPorEscopo(docId);
       allow write: if false;
     }
 
@@ -111,6 +147,12 @@ service cloud.firestore {
     // ------------------------------------------------------------------
     // Perfil do proprio usuario (mapeia uid -> agente).
     match /usuarios/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Administradores: leitura do perfil de qualquer usuario.
+    match /owners/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }

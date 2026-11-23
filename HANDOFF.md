@@ -82,6 +82,11 @@ O Valor deixou de ser uma cópia do Assessor. Estrutura e visual próprios:
 - **Login em página inteira** com capa 3D isométrica própria (`assets/motion/hero-valor.mp4`).
 - **Dois temas**: `Newsroom` claro (padrão) e `Edição da noite` (carvão + bronze); alternador no
   masthead e em Sistema, persistido em `localStorage.vp_tema`.
+- **Gráficos**: rótulos nos pontos/barras, % nas fatias e total no centro, com as cores da identidade
+  (tokens do tema). No mobile nada estoura a largura (tabelas rolam dentro do cartão).
+- **Diagnóstico**: `?debug=1` liga o log do Firestore; erros vão para o console com contexto
+  (`window.__erros`) e as leituras negadas logam coleção/escopo.
+- **Regras**: admin/owner leem qualquer escopo (corrige o `permission-denied` ao filtrar por agente).
 - **Esqueci minha senha** na tela de login (link do Firebase; template em `docs/emails/README.md`).
 - **Ativos próprios**: `icons/favicon.svg` (pórtico), PNGs 192/512, maskable, apple-touch.
 - **Motion**: assets em `frontend/assets/motion/`; splash do PWA próprio

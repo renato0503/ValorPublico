@@ -115,8 +115,12 @@ export async function carregarCamadaDsm(db, chave, firestore) {
           aoReceber(snap);
           renderizarCamadaDsm();
         },
-        () => {
-          /* colecao ausente ou sem permissao: painel fica em estado vazio */
+        (erro) => {
+          // Ajuda a diagnosticar permissao no console do navegador.
+          console.warn(
+            `[DSM] sem acesso a ${colecao}/${chave}:`,
+            erro?.code || erro?.message || erro
+          );
         }
       )
     );

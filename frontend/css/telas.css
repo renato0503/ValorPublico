@@ -560,3 +560,48 @@ html[data-tema="escuro"] .btn-filtros {
   border-color: var(--border-forte);
 }
 html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(--bronze); color: var(--bronze); }
+/* cabeçalhos de painel no mobile: filtros quebram em vez de estourar a tela */
+@media (max-width: 860px) {
+  .painel-cabecalho {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .painel-cabecalho > * { min-width: 0; }
+
+  .painel-cabecalho .filtro,
+  .painel-cabecalho .filtro-mes {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .painel-cabecalho .filtro select,
+  .painel-cabecalho select {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+}
+/* Grid/flex: impede que tabelas e canvas estiquem o cartão (min-content) */
+.grade-principal > *,
+.grade-secundaria > *,
+.grade-detalhe > *,
+.insights > *,
+.rel-grid > *,
+.conta-grid > *,
+.sistema-grid > * { min-width: 0; }
+
+.card,
+.painel,
+.canvas-box,
+.tabela-wrapper { min-width: 0; }
+
+.tabela-wrapper { overflow-x: auto; }
+/* Share of Voice: mais espaco para a tabela no desktop */
+@media (min-width: 861px) {
+  .tela .painel-full .grade-secundaria {
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  }
+}
+#tela-concorrencia .tabela,
+#tela-parlamentares .tabela { min-width: 0; }

@@ -57,15 +57,24 @@ function mostrarAviso(mensagem, tipo = "") {
 
 let ultimoErro = "";
 
+const historicoErros = [];
+window.__erros = historicoErros;
+
 function capturarErro(mensagem, fonte = "erro") {
   const msg = String(mensagem || "Erro desconhecido");
-  if (msg === ultimoErro) return; // evita repetição infinita no mesmo erro
-  ultimoErro = msg;
+  const semPermissao = /permission|insufficient/i.test(msg);
+  const detalhe = semPermissao
+    ? "Sem permissão para este escopo. Confira o perfil do usuário em usuarios/{uid}."
+    : msg;
+  if (detalhe === ultimoErro) return; // evita repetição infinita no mesmo erro
+  ultimoErro = detalhe;
+  historicoErros.push({ quando: new Date().toISOString(), fonte, mensagem: detalhe });
+  if (historicoErros.length > 30) historicoErros.shift();
   const aviso = $("aviso");
-  aviso.textContent = `⚠ ${fonte === "rede" ? "Falha de rede/banco" : "Falha no sistema"}: ${msg}`;
+  aviso.textContent = `⚠ ${fonte === "rede" ? "Falha de rede/banco" : "Falha no sistema"}: ${detalhe}`;
   aviso.className = "aviso erro";
   aviso.classList.remove("oculto");
-  console.error(`[ValorPúblico] ${fonte}:`, mensagem);
+  console.error(`[ValorPúblico] ${fonte}:`, mensagem, { escopo: estado.cidade, agente: estado.parlamentar });
 }
 
 if (typeof window !== "undefined") {
@@ -156,10 +165,28 @@ function alternarTema() {
   renderizarLexical();
 }
 
+
+/* ---------- debug do Firestore (?debug=1) ---------- */
+
+async function ativarDebugFirestore() {
+  if (!new URLSearchParams(window.location.search).has("debug")) return;
+  try {
+    const temImportmap = !!document.querySelector('script[type="importmap"]');
+    const modulo = temImportmap
+      ? await import("firebase/firestore")
+      : await import("https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js");
+    modulo.setLogLevel("debug");
+    console.info("[App] Firestore em modo debug (remova ?debug=1 para desligar).");
+  } catch (e) {
+    console.warn("[App] nao foi possivel ativar o debug do Firestore:", e?.message || e);
+  }
+}
+
 /* ---------- inicializacao ---------- */
 
 async function inicializar() {
   aplicarTemaInicial();
+  await ativarDebugFirestore();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(console.warn);
   }
@@ -248,7 +275,8 @@ async function carregarLexical() {
     const chave = chaveLexical();
     const snap = await getDoc(doc(estado.db, "analise_lexical", chave));
     estado.lexical = snap.exists() ? snap.data() : null;
-  } catch {
+  } catch (erro) {
+    console.warn("[Lexical] falha ao carregar analise:", erro?.code || erro?.message || erro);
     estado.lexical = null;
   }
   renderizarLexical();
