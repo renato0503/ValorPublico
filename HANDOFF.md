@@ -68,6 +68,19 @@ python scripts/enviar_alertas.py --dry-run
 
 ---
 
+## 3.2 Interface e movimento (23/11)
+
+Mesmo cabeçalho do Assessor Público (uma linha no desktop, filtros recolhíveis e KPIs 2×2
+no mobile), com a camada de motion portada:
+
+- `frontend/assets/motion/` — hero 16:9 e 9:16, splash do PWA (versão Valor: "ValorPúblico ·
+  BI e monitoramento de mídia"), faixa de escopo e transição de aba (WebM alfa).
+- `frontend/js/motion.js` — splash só em `display-mode: standalone` (1× por sessão), faixa na
+  troca de cidade/parlamentar/período, transição de aba na análise e `prefers-reduced-motion`.
+- O estúdio Remotion é o do app principal (`AssessorPublico/motion`); os renders do Valor são
+  `SplashValor`/`SplashValorDesktop`. Regerar e copiar para `frontend/assets/motion/`.
+- Publicado em `valorpublico.web.app` (hosting; regras não mudaram). Service worker v11.
+
 ## 4. Pendências
 
 1. **Decidir o futuro**: operar de forma independente ou descontinuar (§3).

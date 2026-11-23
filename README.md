@@ -225,3 +225,11 @@ completa e o que já foi entregue.
   cookies/sessões/proxies (ver `.gitignore`).
 - A API key web do Firebase (em `frontend/js/firebase-init.js`) é **pública por
   design** e não é um segredo.
+
+## Interface e movimento (nov/2026)
+
+- Layout: cabeçalho em uma linha no desktop (filtros no centro, ações à direita); no mobile
+  os filtros viram um painel recolhível e os KPIs ficam em 2 colunas.
+- Motion: assets em `frontend/assets/motion/` (hero 3D do login, splash do PWA, faixa de
+  escopo e transição de aba); `frontend/js/motion.js` controla tudo e respeita
+  `prefers-reduced-motion`. Os renders vêm do estúdio `AssessorPublico/motion`.
