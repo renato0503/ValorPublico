@@ -1,18 +1,21 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="claro">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ValorPúblico - BI e Monitoramento</title>
-  <meta name="theme-color" content="#0f172a" />
-  <meta name="description" content="Inteligência política: monitoramento de mídia, alcance e análise de sentimento." />
+  <title>ValorPúblico — painel institucional de mídia</title>
+  <meta name="theme-color" content="#f2ecdf" />
+  <meta name="description" content="BI institucional de mídia: audiência, valoração, parlamentares e inteligência de clipping." />
   <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="icons/icon-192.png" type="image/png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate icon" href="icons/icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/identidade.css" />
+  <link rel="stylesheet" href="css/telas.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script type="importmap">
     {
@@ -25,10 +28,18 @@
   </script>
 </head>
 <body>
+    <svg class="svg-sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-painel" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 8.5h6M7 12h6M7 15.5h4M16.5 8.5h2M16.5 12h2M16.5 15.5h2"/></symbol>
+    <symbol id="i-midia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><path d="M7.7 7.7a6 6 0 0 0 0 8.6M16.3 7.7a6 6 0 0 1 0 8.6M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
+    <symbol id="i-parlamentares" viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="2.8"/><path d="M3.5 19c.9-3 3.1-4.6 5.5-4.6s4.6 1.6 5.5 4.6"/><path d="M15.8 6.2a2.6 2.6 0 0 1 0 4.8M17 14.6c1.9.5 3.2 1.9 3.8 4.4"/></symbol>
+    <symbol id="i-inteligencia" viewBox="0 0 24 24"><path d="M12 12 18 7.5"/><path d="M5.2 16a7.5 7.5 0 1 1 11.6 0"/><circle cx="12" cy="12" r="1.4"/></symbol>
+    <symbol id="i-relatorios" viewBox="0 0 24 24"><path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M9.8 12.5h5.4M9.8 16h5.4"/></symbol>
+    <symbol id="i-sistema" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="1.6"/></symbol>
+  </svg>
+
   <div id="splashPwa" class="splash-pwa" aria-hidden="true">
     <video muted playsinline preload="none"></video>
   </div>
-
   <div id="transicaoFaixa" class="transicao-faixa" aria-hidden="true">
     <video src="assets/motion/transicao-faixa.webm" muted playsinline preload="none"></video>
   </div>
@@ -36,28 +47,65 @@
     <video src="assets/motion/transicao-aba.webm" muted playsinline preload="none"></video>
   </div>
 
-  <header class="topo">
-    <div class="topo-marca">
-      <span class="logo-marca" aria-hidden="true">
-        <img src="icons/icon-192.png" alt="" width="40" height="40" />
-      </span>
-      <div class="topo-titulo">
-        <h1>ValorPúblico</h1>
-        <p>BI &amp; Monitoramento de Mídia · Cuiabá e Várzea Grande (MT)</p>
+  <header class="masthead">
+    <div class="masthead-topo">
+      <a class="marca" href="#/painel" data-rota="painel">
+        <img src="icons/favicon.svg" alt="" width="40" height="40" />
+        <div>
+          <h1>ValorPúblico</h1>
+          <span class="marca-sub">Painel institucional de mídia</span>
+        </div>
+      </a>
+
+      <div class="edicao">
+        <span class="edicao-rotulo">Edição de hoje</span>
+        <span class="edicao-data" id="edicaoData">—</span>
+        <span class="edicao-hora" id="edicaoHora">atualizado —</span>
+      </div>
+
+      <div class="acoes-topo">
+        <button id="btnFiltros" class="btn-filtros" type="button" aria-expanded="false" aria-controls="filtrosPainel">
+          <span aria-hidden="true">☰</span> Filtros
+        </button>
+        <button
+        id="btnRelatorio"
+        class="btn-atualizar btn-relatorio"
+        type="button"
+        title="Pesquisa avançada e relatório"
+      >
+        Relatório
+      </button>
+      <button
+        id="btnAuth"
+        class="btn-tema"
+        type="button"
+        title="Entrar com e-mail e senha"
+      >
+        Entrar
+      </button>
+      <button
+        id="btnAtualizar"
+        class="btn-atualizar"
+        type="button"
+        title="Limpa o cache e recarrega os dados mais recentes"
+      >
+        <span aria-hidden="true">↻</span>
+        <span class="btn-atualizar-texto">Atualizar</span>
+      </button>
       </div>
     </div>
-    <button
-      id="btnFiltros"
-      class="btn-filtros"
-      type="button"
-      aria-expanded="false"
-      aria-controls="filtrosPainel"
-    >
-      <span aria-hidden="true">☰</span>
-      <span>Filtros</span>
-      <span class="btn-filtros-resumo" id="filtrosResumo">Todos os parlamentares · todo o período</span>
-    </button>
-    <div class="filtros" id="filtrosPainel" role="group" aria-label="Filtros do painel">
+
+    <nav class="nav-jornal" aria-label="Seções">
+      <a href="#/painel" data-rota="painel" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-painel"/></svg><span>Painel</span></a>
+        <a href="#/midia" data-rota="midia" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-midia"/></svg><span>Mídia</span></a>
+        <a href="#/parlamentares" data-rota="parlamentares" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-parlamentares"/></svg><span>Parlamentares</span></a>
+        <a href="#/inteligencia" data-rota="inteligencia" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-inteligencia"/></svg><span>Inteligência</span></a>
+        <a href="#/relatorios" data-rota="relatorios" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-relatorios"/></svg><span>Relatórios</span></a>
+        <a href="#/sistema" data-rota="sistema" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-sistema"/></svg><span>Sistema</span></a>
+    </nav>
+
+    <div class="filtros-barra">
+      <div class="filtros" id="filtrosPainel" role="group" aria-label="Filtros do painel">
       <label class="filtro">
         <span class="filtro-rotulo">Cidade</span>
         <select id="filtroCidade" aria-label="Filtrar por cidade">
@@ -79,48 +127,18 @@
           <option value="30d">Últimos 30 dias</option>
         </select>
       </label>
-    </div>
-    <div class="acoes-topo">
-      <button
-        id="btnRelatorio"
-        class="btn-atualizar btn-relatorio"
-        type="button"
-        title="Pesquisa avançada e relatório"
-      >
-        Relatório
-      </button>
-      <button
-        id="btnTema"
-        class="btn-tema"
-        type="button"
-        title="Mudar para o tema escuro"
-      >
-        <span class="btn-tema-icone">☾</span>
-      </button>
-      <button
-        id="btnAuth"
-        class="btn-tema"
-        type="button"
-        title="Entrar com e-mail e senha"
-      >
-        Entrar
-      </button>
-      <button
-        id="btnAtualizar"
-        class="btn-atualizar"
-        type="button"
-        title="Limpa o cache e recarrega os dados mais recentes"
-      >
-        <span aria-hidden="true">↻</span>
-        <span class="btn-atualizar-texto">Atualizar</span>
-      </button>
-    </div>
+      </div>
     </div>
   </header>
 
   <main class="conteudo">
     <div id="aviso" class="aviso oculto" role="status"></div>
 
+    <section class="tela ativa" id="tela-painel" data-tela="painel">
+      <div class="faixa-edicao">
+        <span>Última ingestão <strong id="ultimaExecucao">—</strong> · dados de <strong id="atualizadoEm">—</strong> · <span id="saudeIngestao" class="saude saude-ok">● OK</span></span>
+        <span>Cuiabá · Várzea Grande · Assembleia de MT</span>
+      </div>
     <section class="kpis" aria-label="Indicadores principais">
       <article class="card kpi kpi-verde">
         <div class="kpi-cabecalho">
@@ -150,9 +168,8 @@
         </div>
         <span class="kpi-valor" id="kpiClippings">–</span>
       </article>
+  
     </section>
-
-
     <section class="kpis kpis-dsm" aria-label="Indicadores da Camada DSM">
       <article class="card kpi kpi-ambar">
         <div class="kpi-cabecalho">
@@ -183,7 +200,6 @@
         <span class="kpi-nota" id="kpiAvpeNota">centimetragem estimada</span>
       </article>
     </section>
-
     <section class="insights" aria-label="Insights principais">
       <article class="card insight">
         <span class="insight-rotulo">Maior Cobertura</span>
@@ -198,7 +214,18 @@
         <span class="insight-valor" id="insightTendencia">—</span>
       </article>
     </section>
+    <div class="grade-secundaria">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <h2>Últimas Notícias</h2>
+          <span class="painel-sub">Menções mais recentes · clique para ver detalhes</span>
+        </div>
+        <div class="noticias" id="noticiasLista"></div>
+      </article>
+</div>
+</section>
 
+    <section class="tela" id="tela-midia" data-tela="midia">
     <section class="grade-principal" aria-label="Série temporal e sentimento">
       <article class="card painel painel-temporal">
         <div class="painel-cabecalho">
@@ -216,7 +243,6 @@
         <div class="sentimento-lista" id="sentimentoLista"></div>
       </article>
     </section>
-
     <section class="grade-secundaria" aria-label="Distribuição de mídia e valoração">
       <article class="card painel">
         <div class="painel-cabecalho">
@@ -233,61 +259,6 @@
         <div class="canvas-box"><canvas id="graficoValoracao" aria-label="Gráfico de valoração por plataforma"></canvas></div>
       </article>
     </section>
-
-
-    <section class="grade-secundaria" aria-label="Share of voice entre agentes">
-      <article class="card painel painel-full">
-        <div class="painel-cabecalho">
-          <div>
-            <h2>Share of Voice — Espaço de Mídia por Agente</h2>
-            <span class="painel-sub">Quem ocupa a atenção do período (menções, share e tom)</span>
-          </div>
-        </div>
-        <div class="grade-secundaria">
-          <div class="canvas-box canvas-box-sm">
-            <canvas id="graficoShareVoice" aria-label="Gráfico de share of voice entre agentes"></canvas>
-          </div>
-          <div class="tabela-wrapper">
-            <table class="tabela">
-              <thead>
-                <tr>
-                  <th class="col-pos">#</th>
-                  <th>Agente</th>
-                  <th class="num">Menções</th>
-                  <th class="num">Share</th>
-                  <th class="num">Positivo</th>
-                  <th class="num">Negativo</th>
-                </tr>
-              </thead>
-              <tbody id="corpoShareVoice"></tbody>
-            </table>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section class="grade-secundaria" aria-label="Distribuição de temas e top veículos">
-      <article class="card painel">
-        <div class="painel-cabecalho">
-          <h2>Temas em Destaque</h2>
-          <span class="painel-sub">Principais assuntos dos clippings</span>
-        </div>
-        <div class="canvas-box canvas-box-sm"><canvas id="graficoTemas" aria-label="Gráfico de temas"></canvas></div>
-      </article>
-      <article class="card painel">
-        <div class="painel-cabecalho">
-          <h2>Análise de Mídia</h2>
-          <span class="painel-sub">Estatística / Qualitativa / Repercussão negativa</span>
-        </div>
-        <div class="analise-tabs" role="tablist" aria-label="Abas de análise de mídia">
-          <button class="analise-tab ativo" data-aba="estatistica" role="tab">Estatística</button>
-          <button class="analise-tab" data-aba="qualitativa" role="tab">Qualitativa</button>
-          <button class="analise-tab" data-aba="negativa" role="tab">Repercussão Negativa</button>
-        </div>
-        <div class="analise-conteudo" id="analiseConteudo"></div>
-      </article>
-    </section>
-
     <section class="grade-detalhe" aria-label="Top fontes">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
@@ -323,57 +294,64 @@
         </div>
       </article>
     </section>
-  <section class="grade-detalhe" aria-label="Nuvem de palavras">
-      <article class="card painel painel-full">
-        <div class="painel-cabecalho nuvem-cabecalho">
-          <div>
-            <h2>Nuvem de Palavras</h2>
-            <span class="painel-sub">Principais termos no período</span>
-          </div>
-          <label class="filtro filtro-mes">
-            <span class="filtro-rotulo">Período</span>
-            <select id="filtroMes" aria-label="Filtrar nuvem por mês">
-              <option value="">Todos os meses</option>
-            </select>
-          </label>
-        </div>
-        <div class="nuvem-box" id="nuvemPalavras" aria-label="Nuvem de palavras"></div>
-      </article>
+
     </section>
-    <section class="grade-detalhe" aria-label="Análise lexical">
+
+    <section class="tela" id="tela-parlamentares" data-tela="parlamentares">
+    <section class="grade-secundaria" aria-label="Share of voice entre agentes">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
-            <h2>Análise Lexical (IRAMUTEQ)</h2>
-            <span class="painel-sub">Mapa fatorial · Classes temáticas · Dendrograma · Grafo de similaridade</span>
+            <h2>Share of Voice — Espaço de Mídia por Agente</h2>
+            <span class="painel-sub">Quem ocupa a atenção do período (menções, share e tom)</span>
           </div>
-          <span id="lexicalEscopo" class="lexical-escopo">Escopo: Todos</span>
         </div>
-        <div class="lex-tabs" role="tablist" aria-label="Abas de análise lexical">
-          <button class="lex-tab ativo" data-lex="afc" role="tab">Mapa Fatorial (AFC)</button>
-          <button class="lex-tab" data-lex="chd" role="tab">Classes (CHD)</button>
-          <button class="lex-tab" data-lex="dendrograma" role="tab">Dendrograma</button>
-          <button class="lex-tab" data-lex="grafo" role="tab">Grafo de Similaridade</button>
+        <div class="grade-secundaria">
+          <div class="canvas-box canvas-box-sm">
+            <canvas id="graficoShareVoice" aria-label="Gráfico de share of voice entre agentes"></canvas>
+          </div>
+          <div class="tabela-wrapper">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th class="col-pos">#</th>
+                  <th>Agente</th>
+                  <th class="num">Menções</th>
+                  <th class="num">Share</th>
+                  <th class="num">Positivo</th>
+                  <th class="num">Negativo</th>
+                </tr>
+              </thead>
+              <tbody id="corpoShareVoice"></tbody>
+            </table>
+          </div>
         </div>
-        <div class="lexical-conteudo" id="lexicalConteudo"></div>
       </article>
     </section>
-<section class="grade-secundaria" aria-label="Últimas notícias e histórico de ingestão">
+    <section class="grade-secundaria" aria-label="Distribuição de temas e top veículos">
       <article class="card painel">
         <div class="painel-cabecalho">
-          <h2>Últimas Notícias</h2>
-          <span class="painel-sub">Menções mais recentes · clique para ver detalhes</span>
+          <h2>Temas em Destaque</h2>
+          <span class="painel-sub">Principais assuntos dos clippings</span>
         </div>
-        <div class="noticias" id="noticiasLista"></div>
+        <div class="canvas-box canvas-box-sm"><canvas id="graficoTemas" aria-label="Gráfico de temas"></canvas></div>
       </article>
       <article class="card painel">
         <div class="painel-cabecalho">
-          <h2>Histórico de Ingestão</h2>
-          <span class="painel-sub">Últimas execuções do motor de coleta</span>
+          <h2>Análise de Mídia</h2>
+          <span class="painel-sub">Estatística / Qualitativa / Repercussão negativa</span>
         </div>
-        <div class="historico" id="historicoIngestao"></div>
+        <div class="analise-tabs" role="tablist" aria-label="Abas de análise de mídia">
+          <button class="analise-tab ativo" data-aba="estatistica" role="tab">Estatística</button>
+          <button class="analise-tab" data-aba="qualitativa" role="tab">Qualitativa</button>
+          <button class="analise-tab" data-aba="negativa" role="tab">Repercussão Negativa</button>
+        </div>
+        <div class="analise-conteudo" id="analiseConteudo"></div>
       </article>
     </section>
+    </section>
+
+    <section class="tela" id="tela-inteligencia" data-tela="inteligencia">
 <section class="grade-detalhe" aria-label="Camada DSM">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
@@ -431,45 +409,90 @@
         </div>
       </article>
     </section>
-
-
-    <div class="modal-overlay" id="modalLogin" role="dialog" aria-modal="true" aria-labelledby="loginTitulo">
-      <div class="modal modal-sm">
-        <div class="login-banner" aria-hidden="true">
-          <video
-            src="assets/motion/hero-barras.mp4"
-            poster="assets/motion/hero-poster.png"
-            autoplay
-            loop
-            muted
-            playsinline
-          ></video>
-        </div>
-        <div class="modal-cabecalho">
-          <h3 id="loginTitulo">Entrar</h3>
-          <button class="modal-fechar" id="btnFecharLogin" type="button" aria-label="Fechar">×</button>
-        </div>
-        <form id="formLogin" class="modal-conteudo">
-          <label class="filtro-rotulo" for="loginEmail">E-mail</label>
-          <input id="loginEmail" type="email" autocomplete="email" placeholder="seu@email.com" required>
-          <label class="filtro-rotulo" for="loginSenha">Senha</label>
-          <input id="loginSenha" type="password" autocomplete="current-password" placeholder="••••••••" required>
-          <p class="aviso erro oculto" id="loginErro" role="alert"></p>
-          <div class="modal-acoes">
-            <button class="btn-atualizar" id="btnEntrar" type="submit">Entrar</button>
+    <section class="grade-detalhe" aria-label="Análise lexical">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Análise Lexical (IRAMUTEQ)</h2>
+            <span class="painel-sub">Mapa fatorial · Classes temáticas · Dendrograma · Grafo de similaridade</span>
           </div>
-          <p class="modal-dica">
-            O acesso individual do agente é liberado pelo administrador do painel
-            (coleção <code>usuarios</code> do Firestore).
-          </p>
-        </form>
+          <span id="lexicalEscopo" class="lexical-escopo">Escopo: Todos</span>
+        </div>
+        <div class="lex-tabs" role="tablist" aria-label="Abas de análise lexical">
+          <button class="lex-tab ativo" data-lex="afc" role="tab">Mapa Fatorial (AFC)</button>
+          <button class="lex-tab" data-lex="chd" role="tab">Classes (CHD)</button>
+          <button class="lex-tab" data-lex="dendrograma" role="tab">Dendrograma</button>
+          <button class="lex-tab" data-lex="grafo" role="tab">Grafo de Similaridade</button>
+        </div>
+        <div class="lexical-conteudo" id="lexicalConteudo"></div>
+      </article>
+    </section>
+  <section class="grade-detalhe" aria-label="Nuvem de palavras">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho nuvem-cabecalho">
+          <div>
+            <h2>Nuvem de Palavras</h2>
+            <span class="painel-sub">Principais termos no período</span>
+          </div>
+          <label class="filtro filtro-mes">
+            <span class="filtro-rotulo">Período</span>
+            <select id="filtroMes" aria-label="Filtrar nuvem por mês">
+              <option value="">Todos os meses</option>
+            </select>
+          </label>
+        </div>
+        <div class="nuvem-box" id="nuvemPalavras" aria-label="Nuvem de palavras"></div>
+      </article>
+    </section>
+    </section>
+
+    <section class="tela" id="tela-relatorios" data-tela="relatorios">
+      <div class="rel-grid">
+        <article class="card rel-card">
+          <span class="rel-numero">PRANCHA 01</span>
+          <h3>Relatório executivo</h3>
+          <p>Recorte por cidade, parlamentar e período, com valoração, menções e exportação em PDF.</p>
+          <button class="btn-atualizar btn-relatorio" id="btnAbrirRelatorio" type="button">Abrir relatório</button>
+        </article>
+        <article class="card rel-card">
+          <span class="rel-numero">PRANCHA 02</span>
+          <h3>Newsletter institucional</h3>
+          <p>Síntese do período pronta para circular no WhatsApp e no e-mail da Câmara.</p>
+          <button class="btn-atualizar" id="btnAbrirNewsletter" type="button">Abrir newsletter</button>
+        </article>
+        <article class="card rel-card">
+          <span class="rel-numero">PRANCHA 03</span>
+          <h3>Operação da coleta</h3>
+          <p>Histórico de execuções, volume coletado e modo de acesso do painel.</p>
+          <a class="btn-atualizar" href="#/sistema" data-rota="sistema">Ir para o sistema</a>
+        </article>
       </div>
-    </div>
+    </section>
 
-  </main>
+    <section class="tela" id="tela-sistema" data-tela="sistema">
+      <div class="sistema-grid">
+        <article class="card conta-card">
+          <h2>Acesso</h2>
+          <dl class="conta-dados">
+            <dt>E-mail</dt><dd id="contaEmail">—</dd>
+            <dt>Papel</dt><dd id="contaPapel">—</dd>
+            <dt>Escopo</dt><dd id="contaEscopo">—</dd>
+          </dl>
+          <div class="conta-acoes">
+            <button class="btn-atualizar" id="btnSairConta" type="button">Sair</button>
+          </div>
+        </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Histórico de Ingestão</h2>
+          <span class="painel-sub">Últimas execuções do motor de coleta</span>
+        </div>
+        <div class="historico" id="historicoIngestao"></div>
+      </article>
+      </div>
+    </section>
 
-  <!-- Modal: Detalhe de notícia (Sprint 24) -->
-  <div class="modal-overlay oculto" id="modalDetalhe" aria-hidden="true">
+    <div class="modal-overlay oculto" id="modalDetalhe" aria-hidden="true">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
       <button class="modal-fechar" id="fecharDetalhe" aria-label="Fechar">&times;</button>
       <h2 id="modalTitulo" class="modal-titulo"></h2>
@@ -481,9 +504,7 @@
       <a class="modal-link" id="modalLink" target="_blank" rel="noopener">Ver original</a>
     </div>
   </div>
-
-  <!-- Modal: Relatório / Pesquisa avançada (Sprint 25) -->
-  <div class="modal-overlay oculto" id="modalRelatorio" aria-hidden="true">
+    <div class="modal-overlay oculto" id="modalRelatorio" aria-hidden="true">
     <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="relatorioTitulo">
       <button class="modal-fechar" id="fecharRelatorio" aria-label="Fechar">&times;</button>
       <div class="painel-cabecalho relatorio-cabecalho">
@@ -530,16 +551,42 @@
       <div class="tabela-wrapper relatorio-lista" id="relLista"></div>
     </div>
   </div>
+  </main>
 
   <footer class="rodape">
-    <span>Dados atualizados em <span id="atualizadoEm">–</span></span>
+    <span>ValorPúblico · painel institucional</span>
     <span class="rodape-sep">·</span>
-    <span>Última ingestão <span id="ultimaExecucao">–</span></span>
-    <span class="rodape-sep">·</span>
-    <span id="saudeIngestao" class="saude saude-ok">● OK</span>
+    <span>Dados de mídia de Cuiabá e Várzea Grande</span>
   </footer>
+
+  <div id="telaLogin" class="tela-login" aria-hidden="true">
+    <div class="login-folha">
+      <a class="login-marca" href="#/painel">
+        <img src="icons/favicon.svg" alt="" width="44" height="44" />
+        <div><strong>ValorPúblico</strong><span>Painel institucional</span></div>
+      </a>
+      <h2>A edição de hoje da mídia.</h2>
+      <p class="login-sub">Audiência, valoração, parlamentares e inteligência de clipping em um só painel institucional.</p>
+      <div class="login-regua" aria-hidden="true"></div>
+      <form id="formLogin" class="login-form" novalidate>
+        <label for="loginEmail">E-mail</label>
+        <input id="loginEmail" type="email" autocomplete="email" placeholder="seu@email.com" required />
+        <label for="loginSenha">Senha</label>
+        <input id="loginSenha" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        <p class="login-erro oculto" id="loginErro" role="alert"></p>
+        <button class="btn-atualizar" id="btnEntrar" type="submit">Entrar</button>
+      </form>
+      <p class="login-pe">Acesso restrito a usuários autorizados. Dados no projeto Firebase da instituição (LGPD).</p>
+    </div>
+    <div class="login-capa" aria-hidden="true">
+      <video src="assets/motion/hero-valor.mp4" autoplay loop muted playsinline></video>
+      <div class="login-capa-texto">
+        <p>O que a cidade leu, ouviu e assistiu — organizado para a instituição.</p>
+        <span>Edição diária · Cuiabá e Várzea Grande</span>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
-

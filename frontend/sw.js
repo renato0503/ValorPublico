@@ -1,17 +1,23 @@
-const CACHE_VERSION = "valorpublico-v11";
+const CACHE_VERSION = "valorpublico-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/styles.css",
+  "./css/identidade.css",
+  "./css/telas.css",
   "./js/app.js",
   "./js/charts.js",
   "./js/grafo.js",
   "./js/dsm.js",
+  "./js/router.js",
   "./js/auth.js",
   "./js/motion.js",
   "./js/firebase-init.js",
+  "./icons/favicon.svg",
   "./icons/icon-192.png",
+  "./icons/icon-maskable-512.png",
+  "./icons/apple-touch-icon.png",
   "./icons/icon-512.png",
 ];
 

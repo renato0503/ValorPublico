@@ -68,20 +68,32 @@ python scripts/enviar_alertas.py --dry-run
 
 ---
 
-## 3.2 Interface e movimento (23/11)
+## 3.2 Interface e movimento (23/11) — identidade "Newsroom institucional"
 
-Mesmo cabeçalho do Assessor Público (uma linha no desktop, filtros recolhíveis e KPIs 2×2
-no mobile), com a camada de motion portada:
+O Valor deixou de ser uma cópia do Assessor. Estrutura e visual próprios:
 
-- `frontend/assets/motion/` — hero 16:9 e 9:16, splash do PWA (versão Valor: "ValorPúblico ·
-  BI e monitoramento de mídia"), faixa de escopo e transição de aba (WebM alfa).
-- `frontend/js/motion.js` — splash só em `display-mode: standalone` (1× por sessão), faixa na
-  troca de cidade/parlamentar/período, transição de aba na análise e `prefers-reduced-motion`.
-- O estúdio Remotion é o do app principal (`AssessorPublico/motion`); os renders do Valor são
-  `SplashValor`/`SplashValorDesktop`. Regerar e copiar para `frontend/assets/motion/`.
-- Publicado em `valorpublico.web.app` (hosting; regras não mudaram). Service worker v11.
+- **Masthead** com edição do dia, nav horizontal (`#/painel`, `#/midia`, `#/parlamentares`,
+  `#/inteligencia`, `#/relatorios`, `#/sistema`) e filtros em faixa.
+- **Papel + serifa**: Newsreader nos títulos/números, IBM Plex Mono nos rótulos, azul-marinho
+  (`#1d3557`) e bronze (`#a8792f`). KPIs em faixa com filetes (sem cartões coloridos).
+- **Telas**: Painel (edição + KPIs + notícias), Mídia (séries, share, valoração, top fontes),
+  Parlamentares (Share of Voice + temas), Inteligência (radar/alertas + lexical + nuvem),
+  Relatórios ("pranchas": PDF e newsletter) e Sistema (acesso + histórico).
+- **Login em página inteira** com capa 3D isométrica própria (`assets/motion/hero-valor.mp4`).
+- **Ativos próprios**: `icons/favicon.svg` (pórtico), PNGs 192/512, maskable, apple-touch.
+- **Motion**: assets em `frontend/assets/motion/`; splash do PWA próprio
+  (`splash-vertical.mp4`, gerado de `SplashValorNovo` no estúdio do app principal).
 
-## 4. Pendências
+### 3.2.1 Acesso e regras (23/11)
+
+- As regras do `valorpublico-b1e6d` **não estavam publicadas** (o `config_acesso` dava
+  `permission-denied`). Publicadas via Firebase Rules API com a service account (o deploy do
+  CLI falhava com 403 nesta conta).
+- `config_acesso/publico` = **restrito**; usuário `gestor.renatorosa@gmail.com` (papel admin,
+  `chaves: ["geral"]`) com senha redefinida e provedor E-mail/Senha habilitado.
+- O app agora **não inicializa** antes do login quando o modo é restrito.
+
+## 4. Pendências## 4. Pendências
 
 1. **Decidir o futuro**: operar de forma independente ou descontinuar (§3).
 2. Se operar: configurar `.env`/secrets, rodar a rotina acima e o deploy

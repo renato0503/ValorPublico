@@ -12,7 +12,7 @@ export function iniciarMotion() {
   const topo = document.querySelector(".topo");
   const btnFiltros = document.getElementById("btnFiltros");
   const resumo = document.getElementById("filtrosResumo");
-  const banner = document.querySelector(".login-banner video");
+  const banner = document.querySelector(".login-capa video, .login-cena video, .login-banner video");
 
   const videos = Array.from(document.querySelectorAll("video")).filter(
     (v) => v.closest(".transicao-faixa, .splash-pwa") || v === banner

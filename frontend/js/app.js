@@ -1,10 +1,15 @@
 import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
+import { iniciarRouter } from "./router.js";
 import { iniciarMotion } from "./motion.js";
 import {
+  abrirLogin,
   agentesPermitidos,
+  alternarAuth,
   estadoAuth,
+  fecharLogin,
   iniciarAuth,
+  lerModoAcesso,
   registrarBotaoAuth,
 } from "./auth.js";
 
@@ -128,10 +133,9 @@ function esc(s) {
 /* ---------- tema claro/escuro ---------- */
 
 function aplicarTemaInicial() {
-  const salvo = localStorage.getItem("vp_tema");
-  const tema = salvo === "escuro" ? "escuro" : "claro";
-  document.documentElement.dataset.tema = tema;
-  atualizarBotaoTema(tema);
+  // Identidade "newsroom": claro fixo.
+  document.documentElement.dataset.tema = "claro";
+  localStorage.setItem("vp_tema", "claro");
 }
 
 function atualizarBotaoTema(tema) {
@@ -1159,7 +1163,18 @@ $("filtroPeriodo").addEventListener("change", (e) => {
   definirJanelaDsm(estado.periodo || "30d");
 });
 
-window.addEventListener("auth:changed", () => {
+window.addEventListener("auth:changed", async () => {
+  atualizarConta();
+  if (estadoAuth.autenticado && !appIniciado) {
+    fecharLogin();
+    await iniciarApp();
+    return;
+  }
+  if (!estado.db) return;
+  if (!estadoAuth.autenticado && !modoPublico) {
+    abrirLogin();
+    return;
+  }
   aplicarEscopoUsuario();
   aplicarFiltros();
 });
@@ -1169,7 +1184,7 @@ $("filtroTipoTop").addEventListener("change", (e) => {
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
 });
 
-$("btnTema").addEventListener("click", alternarTema);
+$("btnTema")?.addEventListener("click", alternarTema);
 
 $("btnAtualizar").addEventListener("click", async () => {
   const btn = $("btnAtualizar");
@@ -1245,12 +1260,66 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-inicializar();
-iniciarMotion();
-registrarBotaoAuth();
-iniciarAuth();
+let appIniciado = false;
+let modoPublico = true;
+
+function atualizarConta() {
+  const perfil = estadoAuth.perfil;
+  const email = $("contaEmail");
+  if (email) email.textContent = perfil?.email || estadoAuth.usuario?.email || "—";
+  const papel = $("contaPapel");
+  if (papel) papel.textContent = perfil?.papel || (estadoAuth.autenticado ? "usuario" : "visitante");
+  const escopo = $("contaEscopo");
+  if (escopo) {
+    const ids = perfil?.agente_ids || [];
+    escopo.textContent = ids.length ? ids.join(", ") : (estadoAuth.autenticado ? "geral" : "—");
+  }
+  const sair = $("btnSairConta");
+  if (sair) sair.textContent = estadoAuth.autenticado ? "Sair" : "Entrar";
+}
+
+function atualizarEdicao() {
+  const agora = new Date();
+  const data = $("edicaoData");
+  const hora = $("edicaoHora");
+  if (data) data.textContent = agora.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  if (hora) hora.textContent = "atualizado " + agora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+async function iniciarApp() {
+  if (appIniciado) return;
+  appIniciado = true;
+  await inicializar();
+  atualizarConta();
+  atualizarEdicao();
+}
+
+async function bootstrap() {
+  aplicarTemaInicial();
+  iniciarRouter();
+  registrarBotaoAuth();
+  iniciarMotion();
+  $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
+  $("btnAbrirNewsletter")?.addEventListener("click", abrirNewsletter);
+  $("btnSairConta")?.addEventListener("click", alternarAuth);
+  await iniciarAuth();
+  modoPublico = await lerModoAcesso();
+  if (!modoPublico && !estadoAuth.autenticado) {
+    abrirLogin();
+    return;
+  }
+  await iniciarApp();
+}
+
+bootstrap();
 
 // Gancho de depuracao (usado pelo smoke test do painel e pelo console do browser)
-window.__app_test = { estado, renderizar, renderizarKpisDsm, renderizarShareOfVoice };
+window.__app_test = {
+  estado,
+  renderizar,
+  renderizarKpisDsm,
+  renderizarShareOfVoice,
+  irPara: (rota) => window.__router?.irPara(rota),
+};
 
 

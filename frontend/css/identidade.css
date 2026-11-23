@@ -1,0 +1,284 @@
+/* ============================================================
+   ValorPúblico — IDENTIDADE "Newsroom institucional" (papel)
+   Serifada, azul-marinho + bronze, filetes finos, tabelas densas.
+   ============================================================ */
+
+:root,
+html[data-tema="claro"] {
+  --bg: #f2ecdf;
+  --bg-deep: #ece5d6;
+  --card: #fffdf7;
+  --card-hover: #faf6ea;
+  --border: #e2dac9;
+  --border-forte: #cdc3ad;
+
+  --texto: #1a2432;
+  --texto-suave: #55606f;
+  --texto-mutado: #8b8578;
+
+  --verde: #1f7a5c;
+  --verde-soft: rgba(31, 122, 92, 0.1);
+  --azul: #2b5b8a;
+  --azul-soft: rgba(43, 91, 138, 0.1);
+  --ambar: #a8792f;
+  --ambar-soft: rgba(168, 121, 47, 0.12);
+  --roxo: #6b4f8a;
+  --roxo-soft: rgba(107, 79, 138, 0.1);
+  --vermelho: #a83a2f;
+
+  --navy: #1d3557;
+  --bronze: #a8792f;
+  --papel: #fffdf7;
+  --regua: #d9d0bd;
+
+  --raio: 6px;
+  --sombra: 0 1px 0 rgba(26, 36, 50, 0.05);
+  --fonte: "Inter", "Segoe UI", system-ui, sans-serif;
+  --fonte-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --fonte-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  background:
+    linear-gradient(0deg, rgba(29, 53, 87, 0.02), rgba(29, 53, 87, 0.02)),
+    var(--bg);
+  color: var(--texto);
+}
+
+h1, h2, h3 {
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+h1 { font-size: 1.9rem; }
+h2 { font-size: 1.22rem; }
+
+/* ---------- cartões: papel, filete, canto discreto ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.card:hover { border-color: var(--border-forte); }
+
+.painel { padding: 20px 22px 22px; }
+
+.painel-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.painel-cabecalho h2 {
+  color: var(--navy);
+  font-size: 1.18rem;
+  line-height: 1.2;
+}
+
+.painel-sub {
+  color: var(--texto-mutado);
+  font-family: var(--fonte-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- indicadores: faixa com filetes, sem cartão por KPI ---------- */
+.kpis {
+  gap: 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--raio);
+  overflow: hidden;
+}
+
+.kpi {
+  border: 0;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 16px 20px 18px;
+}
+
+.kpi:first-child { border-left: 0; }
+.kpi::before { display: none; }
+.kpi:hover { background: var(--card-hover); }
+
+.kpi-rotulo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--texto-mutado);
+  font-family: var(--fonte-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+}
+
+.kpi-rotulo::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.kpi-verde .kpi-rotulo { color: var(--verde); }
+.kpi-azul .kpi-rotulo { color: var(--azul); }
+.kpi-ambar .kpi-rotulo { color: var(--ambar); }
+.kpi-roxo .kpi-rotulo { color: var(--roxo); }
+
+.kpi-valor {
+  margin-top: 6px;
+  font-family: var(--fonte-display);
+  font-weight: 600;
+  font-size: clamp(1.5rem, 2.1vw, 2.1rem);
+  line-height: 1.1;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-verde .kpi-valor { color: var(--verde); }
+.kpi-azul .kpi-valor { color: var(--azul); }
+.kpi-ambar .kpi-valor { color: var(--ambar); }
+.kpi-roxo .kpi-valor { color: var(--roxo); }
+
+.kpi-nota {
+  color: var(--texto-mutado);
+  font-family: var(--fonte-mono);
+  font-size: 0.66rem;
+}
+
+.kpi-tendencia { border-radius: 3px; font-family: var(--fonte-mono); font-size: 0.66rem; }
+
+/* ---------- insights ---------- */
+.insights { gap: 12px; }
+.insight { background: var(--card); }
+.insight h3, .insight .insight-titulo, .insight .insight-valor { font-family: var(--fonte-display); }
+
+/* ---------- botões ---------- */
+.btn-atualizar {
+  border-radius: 4px;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--fonte);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 9px 15px;
+  box-shadow: none;
+}
+
+.btn-atualizar:hover { background: #16233a; filter: none; }
+
+.btn-relatorio { background: var(--bronze); }
+.btn-relatorio:hover { background: #936a26; }
+
+.btn-tema {
+  border-radius: 4px;
+  border: 1px solid var(--border-forte);
+  background: var(--card);
+  color: var(--navy);
+}
+
+.btn-tema:hover { border-color: var(--bronze); color: var(--bronze); }
+
+/* ---------- filtros ---------- */
+.filtro-rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  color: var(--texto-mutado);
+}
+
+.filtro select {
+  border-radius: 4px;
+  background: var(--card);
+  border-color: var(--border-forte);
+  color: var(--texto);
+  font-size: 0.84rem;
+  padding: 8px 11px;
+}
+
+.filtro select:focus {
+  outline: none;
+  border-color: var(--bronze);
+  box-shadow: 0 0 0 3px rgba(168, 121, 47, 0.16);
+}
+
+/* ---------- tabelas ---------- */
+.tabela {
+  font-size: 0.82rem;
+}
+
+.tabela thead th {
+  background: #f7f2e6;
+  color: var(--texto-mutado);
+  font-family: var(--fonte-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  border-bottom: 1px solid var(--border-forte);
+}
+
+.tabela td {
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela tbody tr:nth-child(even) { background: #fbf8ef; }
+.tabela tbody tr:hover { background: #f6f0e0; }
+.tabela .num { font-family: var(--fonte-mono); }
+
+.tabela-wrapper { border-color: var(--border); border-radius: 4px; }
+
+/* painéis que ocupam a linha inteira */
+.painel-full { grid-column: 1 / -1; }
+
+/* Share of Voice: tabela inteira, sem corte */
+#tela-parlamentares .tabela-wrapper { max-height: none; }
+
+/* radar + alertas + menções: a tabela de publicações na linha inteira */
+#tela-inteligencia .dsm-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#tela-inteligencia .dsm-grade > .dsm-bloco:first-child { grid-column: 1 / -1; }
+#tela-inteligencia .dsm-bloco table { table-layout: fixed; width: 100%; }
+#tela-inteligencia .dsm-bloco th:first-child,
+#tela-inteligencia .dsm-bloco td:first-child { width: 46%; }
+#tela-inteligencia .dsm-bloco td { overflow-wrap: anywhere; }
+#tela-inteligencia .dsm-bloco a { color: var(--azul); font-weight: 600; text-decoration: none; }
+
+/* ---------- aviso ---------- */
+.aviso {
+  background: #fbf5e4;
+  border: 1px solid #e6d6ac;
+  color: #6f5418;
+  border-radius: 4px;
+}
+
+.aviso.erro { background: #fbeceb; border-color: #e6c1bc; color: #8a2f25; }
+
+/* ---------- modais ---------- */
+.modal {
+  border-radius: 6px;
+  background: var(--card);
+  border-color: var(--border-forte);
+}
+
+.modal-fechar { border-radius: 4px; }
+
+/* ---------- rodapé ---------- */
+.rodape {
+  color: var(--texto-mutado);
+  border-top: 1px solid var(--border);
+  font-family: var(--fonte-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+}
+
+:focus-visible { outline: 2px solid var(--bronze); outline-offset: 2px; }
+::selection { background: rgba(168, 121, 47, 0.25); }

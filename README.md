@@ -226,10 +226,13 @@ completa e o que já foi entregue.
 - A API key web do Firebase (em `frontend/js/firebase-init.js`) é **pública por
   design** e não é um segredo.
 
-## Interface e movimento (nov/2026)
 
-- Layout: cabeçalho em uma linha no desktop (filtros no centro, ações à direita); no mobile
-  os filtros viram um painel recolhível e os KPIs ficam em 2 colunas.
-- Motion: assets em `frontend/assets/motion/` (hero 3D do login, splash do PWA, faixa de
-  escopo e transição de aba); `frontend/js/motion.js` controla tudo e respeita
-  `prefers-reduced-motion`. Os renders vêm do estúdio `AssessorPublico/motion`.
+## Interface e movimento (nov/2026) — "Newsroom institucional"
+
+- Masthead com edição do dia e nav horizontal; papel, serifa (Newsreader) e bronze.
+- Telas: `#/painel`, `#/midia`, `#/parlamentares`, `#/inteligencia`, `#/relatorios`,
+  `#/sistema` (`js/router.js`).
+- Login em página inteira, com capa 3D isométrica própria; em modo restrito o painel só inicia
+  depois do login.
+- Ativos próprios em `frontend/icons/` (SVG, PNGs e maskable).
+- Motion em `frontend/assets/motion/` (hero do login, splash, faixa e transição de aba).
