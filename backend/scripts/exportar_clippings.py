@@ -22,6 +22,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from core.quota import main_com_cota  # noqa: E402
 from processing.classificador_midia import classificar_clipping
 
 logger = get_logger(__name__)

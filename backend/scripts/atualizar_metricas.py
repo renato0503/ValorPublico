@@ -1,4 +1,4 @@
-﻿"""Recalcula metricas agregadas do dashboard e grava no Firestore.
+"""Recalcula metricas agregadas do dashboard e grava no Firestore.
 
 Produz documentos otimizados para leitura em tempo real no PWA:
   metricas/geral               -> visao global (KPIs + series + top fontes)
@@ -23,6 +23,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from core.quota import main_com_cota  # noqa: E402
 from processing.alertas import detectar_alertas  # noqa: E402
 from processing.classificador_midia import classificar_clipping
 from processing.nuvem import frequencia
