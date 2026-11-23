@@ -1459,3 +1459,314 @@ html[data-tema="claro"] .modal-conteudo input[type="password"] {
   border-color: #cbd5e1;
   color: #0f172a;
 }
+/* ============================================================
+   Motion (Remotion + three.js) e layout responsivo — 23/11/2026
+   ============================================================ */
+
+/* Faixa 3D de transição entre escopos (vídeo com canal alfa) */
+.transicao-faixa {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  contain: strict;
+}
+
+.transicao-faixa video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.transicao-faixa.tocando {
+  opacity: 0.72;
+}
+
+.transicao-aba {
+  z-index: 61;
+}
+
+/* Splash do PWA (só em display-mode standalone, via JS) */
+.splash-pwa {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: #0b1120;
+}
+
+.splash-pwa.ativo {
+  display: flex;
+}
+
+.splash-pwa.saindo {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.splash-pwa video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Banner 3D do login (hero do estúdio de motion) */
+.login-banner {
+  position: relative;
+  height: 156px;
+  margin: -24px -24px 14px;
+  overflow: hidden;
+  border-radius: 13px 13px 0 0;
+  background: #0b1120;
+}
+
+.login-banner video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 32%;
+}
+
+#modalLogin .modal-fechar {
+  color: #f8fafc;
+  text-shadow: 0 2px 8px rgba(3, 7, 18, 0.8);
+}
+
+.login-banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(11, 17, 32, 0) 46%, var(--card) 100%);
+}
+
+@media (max-width: 560px) {
+  .login-banner { height: 124px; }
+}
+/* Entrada em cascata dos cartões */
+@keyframes cartao-sobe {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.kpis > .card,
+.insights > .card,
+.grade-principal > .card,
+.grade-secundaria > .card,
+.grade-detalhe > .card {
+  animation: cartao-sobe 0.5s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.kpis > .card:nth-child(1) { animation-delay: 0.02s; }
+.kpis > .card:nth-child(2) { animation-delay: 0.06s; }
+.kpis > .card:nth-child(3) { animation-delay: 0.1s; }
+.kpis > .card:nth-child(4) { animation-delay: 0.14s; }
+.insights > .card:nth-child(1) { animation-delay: 0.18s; }
+.insights > .card:nth-child(2) { animation-delay: 0.22s; }
+.insights > .card:nth-child(3) { animation-delay: 0.26s; }
+
+/* Tendência neutra não polui o cartão */
+.kpi-tendencia:not(.trend-alta):not(.trend-baixa) {
+  display: none;
+}
+
+/* Aviso vazio não ocupa espaço */
+.aviso:empty {
+  display: none;
+}
+
+/* Cabeçalho: filtros e ações em grupos */
+.topo {
+  gap: 12px 18px;
+}
+
+.filtros {
+  flex: 1 1 560px;
+  justify-content: center;
+  align-items: end;
+}
+
+.acoes-topo {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.btn-filtros {
+  display: none;
+}
+
+@media (max-width: 1080px) {
+  .filtros { flex-basis: 100%; justify-content: flex-start; }
+}
+
+@media (max-width: 860px) {
+  .topo {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 10px 14px;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .topo-marca { gap: 10px; min-width: 0; }
+  .topo-titulo { min-width: 0; }
+  .topo-titulo h1 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .filtros,
+  .acoes-topo { grid-column: 1 / -1; }
+
+  .btn-filtros { width: auto; min-width: 0; }
+  .logo-marca { padding: 4px; }
+  .logo-marca img { width: 30px; height: 30px; }
+  .topo-titulo h1 { font-size: 1.05rem; }
+  .topo-titulo p { display: none; }
+
+  .btn-filtros {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 100%;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border-forte);
+    background: var(--card);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-filtros[aria-expanded="true"] {
+    border-color: var(--azul);
+    box-shadow: 0 0 0 2px var(--azul-soft);
+  }
+
+  .btn-filtros-resumo {
+    max-width: 46vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--texto-suave);
+    font-weight: 500;
+    font-size: 0.74rem;
+  }
+
+  .filtros { display: none; }
+
+  .topo.filtros-aberto .filtros {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--border-forte);
+  }
+
+  .topo.filtros-aberto .filtro,
+  .topo.filtros-aberto .filtro select {
+    width: 100%;
+  }
+
+  .acoes-topo {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .acoes-topo #btnReleaseIA,
+  .acoes-topo #btnRelatorio {
+    flex: 1 1 calc(50% - 4px);
+    width: auto;
+    justify-content: center;
+    padding: 10px;
+    font-size: 0.82rem;
+  }
+
+  .acoes-topo #btnTema {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .acoes-topo #btnAuth {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 92px;
+  }
+
+  .acoes-topo #btnAtualizar {
+    flex: 1 1 auto;
+    width: auto;
+    justify-content: center;
+    padding: 10px 12px;
+  }
+
+  .conteudo { padding: 14px 14px 32px; }
+}
+
+@media (min-width: 1281px) {
+  .topo { padding: 12px 20px; gap: 10px 12px; }
+  .topo-marca { gap: 10px; }
+  .logo-marca { padding: 4px; }
+  .logo-marca img { width: 34px; height: 34px; }
+  .topo-titulo h1 { font-size: 1.18rem; }
+  .filtros { flex: 0 1 auto; gap: 9px; }
+  .filtro select { min-width: 158px; padding: 9px 11px; font-size: 0.84rem; }
+  .acoes-topo { flex-wrap: nowrap; gap: 6px; }
+  .acoes-topo > * { flex-shrink: 0; }
+  .acoes-topo .btn-atualizar { padding: 9px 12px; font-size: 0.82rem; }
+  .acoes-topo #btnTema { width: 38px; height: 38px; }
+}
+
+@media (max-width: 560px) {
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .kpi {
+    padding: 11px 11px 12px;
+    border-radius: 12px;
+  }
+
+  .kpi-rotulo { font-size: 0.6rem; letter-spacing: 0.4px; }
+  .kpi-valor { font-size: clamp(1.05rem, 4.6vw, 1.35rem); }
+  .kpi-nota { display: none; }
+  .insights { gap: 10px; }
+  .btn-atualizar-texto { display: none; }
+  .btn-filtros-resumo { display: none; }
+  .btn-filtros { justify-self: end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transicao-faixa,
+  .splash-pwa { display: none; }
+  .kpis > .card,
+  .insights > .card,
+  .grade-principal > .card,
+  .grade-secundaria > .card,
+  .grade-detalhe > .card {
+    animation: none;
+  }
+}
+/* ValorPublico: sem o botão Release de IA, o Relatório ocupa a linha */
+@media (max-width: 860px) {
+  .acoes-topo #btnRelatorio { flex: 1 1 100%; }
+}

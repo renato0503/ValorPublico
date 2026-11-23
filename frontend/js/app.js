@@ -1,5 +1,6 @@
-﻿import * as charts from "./charts.js";
+import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
+import { iniciarMotion } from "./motion.js";
 import {
   agentesPermitidos,
   estadoAuth,
@@ -1245,6 +1246,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 inicializar();
+iniciarMotion();
 registrarBotaoAuth();
 iniciarAuth();
 

@@ -21,6 +21,11 @@ def _e_cota(exc: Exception) -> bool:
     return "quota exceeded" in texto or "resource_exhausted" in texto or "429" in texto
 
 
+def erro_de_cota(exc: Exception) -> bool:
+    """Versao publica de `_e_cota` para scripts que tratam a cota por conta propria."""
+    return _e_cota(exc)
+
+
 def tolerar_cota(nome_operacao: str = "operacao"):
     """Decorator: converte erro de cota em saida limpa (codigo 75)."""
 
