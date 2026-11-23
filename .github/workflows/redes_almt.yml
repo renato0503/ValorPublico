@@ -88,7 +88,14 @@ jobs:
       - name: Busca social + comentarios dos deputados (Mato Grosso)
         working-directory: backend
         run: |
+          set +e
           python scripts/run_ingestao.py --cidades "Mato Grosso"
+          code=$?
+          if [ $code -eq 75 ]; then
+            echo "::warning::Cota do Firestore esgotada - repetir no proximo ciclo."
+            exit 0
+          fi
+          exit $code
 
       - name: Recalcular metricas (inclui redes_sociais)
         working-directory: backend

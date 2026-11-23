@@ -8,6 +8,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from core.quota import main_com_cota
 from scraper.orchestrator import Orchestrator
 from storage.firestore_repo import FirestoreRepo
 
@@ -221,4 +222,4 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main_com_cota(lambda: asyncio.run(main()), "run_ingestao")
