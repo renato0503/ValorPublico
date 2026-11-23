@@ -7,16 +7,32 @@
 
 ## 1. Onde paramos
 
-O ValorPublico recebeu a mesma base do app principal (Assessor Público) e está sincronizado
-em código. Commits:
+O ValorPublico está em produção (`valorpublico.web.app`) com **identidade própria**
+("Newsroom", claro/escuro), **modo restrito**, 6 telas por rota e regras publicadas.
+
+### 1.1 Base
 
 | Commit | Entrega |
 |---|---|
 | `9272640` | **Camada DSM** — menção, trecho, compliance eleitoral, radar de propaganda pública, alertas, cobertura/SLA, AVPE, newsletter, painel `dsm.js`, regras. Inclui o **`frontend/index.html` reconstruído** (estava truncado em 17 bytes na working tree). |
 | `93fa3ba` | **Completude** — entrega de alertas (SMTP/webhook), RBAC por agente, share of voice, PDF/CSV completos, testes + CI |
 
-**Validado:** compilação OK · 23/23 testes da Camada DSM · 33/33 testes de regras ·
-smoke test do painel no Chrome sem erros de JS.
+### 1.2 Sessão de 23/11
+
+| Commit | Entrega |
+|---|---|
+| `ffb25e3` | Repõe `core/quota.py`, trava de projeto e caminho relativo da chave |
+| `d8ec582` | `main_com_cota` importado em `atualizar_metricas`/`exportar_clippings` |
+| `b0930f5` | Sanitização NaT/NaN no Firestore e `criar_usuario.py` |
+| `02d755a` | Layout responsivo + motion 3D (transições, splash) |
+| `d1e965c` | Docs de layout/motion |
+| `67a4925` | **Identidade "Newsroom"**: masthead, 6 telas por rota, login em página inteira, marca/ícones próprios; regras publicadas |
+| `96a3be4` | Tema "Edição da noite", "Esqueci minha senha" e templates de e-mail |
+| `4663802` | Admin lê qualquer escopo; gráficos com valores/cores; diagnóstico no console |
+
+**Validado no fim da sessão:** DSM 23/23 · guarda 4/4 · imports 3/3 · sanitize 10/10 ·
+rules 30/30 · login gate · 6 rotas · temas claro/escuro · 8 gráficos · sem overflow ·
+filtro por agente sem `permission-denied` · produção sem erros de JS.
 
 ---
 
@@ -149,3 +165,22 @@ Mesma estrutura do app principal. O que vale abrir primeiro:
   é o estado real.
 - `implementation.md` — roadmap por sprints (histórico).
 - `D:\Dev\CerraClipping\STATUS_PROJETO.md` — master (inclui o Assessor Público).
+
+---
+
+## 8. Diário da sessão — 23/11/2026
+
+- `core/quota.py` reposto; `main_com_cota` importado em `atualizar_metricas`/`exportar_clippings`;
+  sanitização de `NaT/NaN` na gravação (mesma correção do app principal).
+- **Regras publicadas pela primeira vez** via Rules API (o CLI desta conta dava 403); o
+  `config_acesso` passou a responder sem `permission-denied`.
+- Modo **restrito** ativo, com admin `gestor.renatorosa@gmail.com` (papel admin, `chaves:["geral"]`);
+  provedor E-mail/Senha habilitado; `criar_usuario.py` disponível.
+- Regras: admin/owner leem qualquer escopo — filtro por agente deixou de dar erro.
+- **Identidade "Newsroom"** (claro + "Edição da noite"): masthead com edição, 6 telas por rota,
+  Newsreader + Plex Mono, marca de pórtico, favicons/ícones próprios.
+- Login em página inteira com capa 3D isométrica (hero reduzido), "Esqueci minha senha".
+- Gráficos com valores/%/total e cores da identidade; sem overflow em 390/1440 nos dois temas.
+- Diagnóstico: `window.__erros`, log contextual e `?debug=1`.
+- Templates de e-mail prontos em `docs/emails/` (prévia + copiar); a API Admin recusa alterar o
+  template (colagem no Console é manual).

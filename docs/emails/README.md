@@ -11,6 +11,8 @@ alterá-lo** (`EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`) — a troca é manual, uma ve
 1. Firebase Console → **Authentication** → aba **Templates** → **Redefinição de senha**.
 2. Assunto: `Redefinir a senha · ValorPúblico` .
 3. Cole o conteúdo de [`reset-password.html`](./reset-password.html) no corpo (modo HTML).
+   Para copiar com um clique, abra [`preview.html`](./preview.html): mostra a prévia e tem
+   os botões **Copiar assunto** e **Copiar HTML do e-mail**.
 4. Confira o “Nome do remetente” em **Configurações do projeto → Nome público**
    (é o `%APP_NAME%` que aparece no e-mail).
 5. Envie um teste para o seu próprio e-mail.

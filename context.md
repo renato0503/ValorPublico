@@ -108,3 +108,21 @@ Frontend: `frontend/js/dsm.js` (painel da Camada DSM) e `frontend/js/auth.js`
 Segurança: `firestore.rules` com modo de acesso (`config_acesso/publico`) — no modo
 restrito cada usuário só lê o próprio escopo. Testes: `backend/tests/teste_camada_dsm.py`
 (23 casos) e `backend/tests/rules.test.js` (33 casos, emulador).
+
+## Estado Atual (23/11/2026)
+
+- **Publicado em:** https://valorpublico.web.app, em **modo restrito** (regras publicadas).
+- **Frontend próprio:** identidade “Newsroom” (claro, com tema “Edição da noite”), 6 telas por rota
+  (`#/painel`, `#/midia`, `#/parlamentares`, `#/inteligencia`, `#/relatorios`, `#/sistema`),
+  login em página inteira com capa 3D isométrica e gráficos com valores.
+- **Auth:** E-mail/Senha habilitado; admin `gestor.renatorosa@gmail.com`; `scripts/criar_usuario.py`.
+- **Dados:** cópia do acervo migrado (7.216 clippings + 53 escopos DSM); a coleta automática deste
+  repositório segue **desligada de propósito** (o coletor ativo é o do Assessor).
+
+## Pendências
+
+1. 👤 Colar o template de e-mail (`docs/emails/preview.html`) no Console.
+2. Decidir o futuro do produto (Fase 5): descontinuar ou operar de forma independente com coleta
+   própria (hoje os dados vêm do acervo migrado).
+3. Se operar: canais de alerta (`ALERTA_WEBHOOK_URL`/SMTP) e revisão dos dados (métricas DSM
+   incompletas no projeto — várias vêm zeradas).
