@@ -64,18 +64,27 @@ class ImpressoScraper(BaseScraper):
             if not self._menciona(f"{titulo} {resumo}", termos):
                 continue
             link = entrada.get("link", "")
+            # Espaco estimado p/ valoracao: caracteres do texto (site) e uma
+            # estimativa de cm² equivalente de pagina impressa (12 chars ~ 1 cm²).
+            texto = f"{titulo} {resumo}".strip()
+            n_carac = len(texto)
             itens.append(
                 RawItem(
                     agente_id="",  # preenchido no coletar
                     id_externo=self._hash_id(link),
                     plataforma=self.plataforma,
                     tipo=TIPO_NOTICIA,
-                    texto_limpo=f"{titulo} {resumo}".strip(),
+                    texto_limpo=texto,
                     data_publicacao=self._data_publicacao(entrada),
                     autor=site,
                     url=link,
                     alcance=0,
-                    metadados={"veiculo": site, "origem": "rss"},
+                    metadados={
+                        "veiculo": site,
+                        "origem": "rss",
+                        "espaco_carac": n_carac,
+                        "espaco_cm2": round(n_carac / 12, 1),
+                    },
                 )
             )
         return itens
@@ -95,6 +104,7 @@ class ImpressoScraper(BaseScraper):
         texto = self._cache_homepage[site]
         if not texto or not self._menciona(texto, termos):
             return []
+        n_carac = len(texto[:4000])
         return [
             RawItem(
                 agente_id="",  # preenchido no coletar
@@ -106,7 +116,12 @@ class ImpressoScraper(BaseScraper):
                 autor=site,
                 url=site,
                 alcance=0,
-                metadados={"veiculo": site, "origem": "homepage"},
+                metadados={
+                    "veiculo": site,
+                    "origem": "homepage",
+                    "espaco_carac": n_carac,
+                    "espaco_cm2": round(n_carac / 12, 1),
+                },
             )
         ]
 

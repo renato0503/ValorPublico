@@ -65,6 +65,14 @@
         Relatório
       </button>
       <button
+        id="btnTema"
+        class="btn-tema"
+        type="button"
+        title="Mudar para o tema escuro"
+      >
+        <span class="btn-tema-icone">☾</span>
+      </button>
+      <button
         id="btnAtualizar"
         class="btn-atualizar"
         type="button"
@@ -234,6 +242,98 @@
         <div class="nuvem-box" id="nuvemPalavras" aria-label="Nuvem de palavras"></div>
       </article>
     </section>
+    <section class="grade-detalhe" aria-label="Análise lexical">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Análise Lexical (IRAMUTEQ)</h2>
+            <span class="painel-sub">Mapa fatorial · Classes temáticas · Dendrograma · Grafo de similaridade</span>
+          </div>
+          <span id="lexicalEscopo" class="lexical-escopo">Escopo: Todos</span>
+        </div>
+        <div class="lex-tabs" role="tablist" aria-label="Abas de análise lexical">
+          <button class="lex-tab ativo" data-lex="afc" role="tab">Mapa Fatorial (AFC)</button>
+          <button class="lex-tab" data-lex="chd" role="tab">Classes (CHD)</button>
+          <button class="lex-tab" data-lex="dendrograma" role="tab">Dendrograma</button>
+          <button class="lex-tab" data-lex="grafo" role="tab">Grafo de Similaridade</button>
+        </div>
+        <div class="lexical-conteudo" id="lexicalConteudo"></div>
+      </article>
+    </section>
+<section class="grade-secundaria" aria-label="Últimas notícias e histórico de ingestão">
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Últimas Notícias</h2>
+          <span class="painel-sub">Menções mais recentes · clique para ver detalhes</span>
+        </div>
+        <div class="noticias" id="noticiasLista"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Histórico de Ingestão</h2>
+          <span class="painel-sub">Últimas execuções do motor de coleta</span>
+        </div>
+        <div class="historico" id="historicoIngestao"></div>
+      </article>
+    </section>
+<section class="grade-detalhe" aria-label="Camada DSM">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Camada DSM — Radar, Alertas, Menções e Cobertura</h2>
+            <span class="painel-sub">Radar de propaganda pública · alertas acionáveis · menção direta/indireta · SLA de coleta</span>
+          </div>
+          <div class="dsm-acoes">
+            <button id="btnNewsletterDsm" class="btn-atualizar btn-relatorio" type="button" title="Abrir a newsletter consolidada do período">
+              Newsletter
+            </button>
+            <button id="btnCopiarNewsletter" class="btn-atualizar" type="button" title="Copiar o texto da newsletter para WhatsApp">
+              Copiar texto
+            </button>
+          </div>
+        </div>
+
+        <div class="dsm-grade">
+          <section class="dsm-bloco">
+            <h3>Radar de propaganda pública</h3>
+            <div class="dsm-kpis" id="dsmRadarResumo"></div>
+            <div class="tabela-wrapper">
+              <table class="tabela">
+                <thead>
+                  <tr>
+                    <th>Publicação</th>
+                    <th>Órgão</th>
+                    <th>Tipo</th>
+                    <th class="num">Valor</th>
+                    <th>Simbolo</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="dsmRadarCorpo"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="dsm-bloco">
+            <h3>Alertas acionáveis</h3>
+            <div id="dsmAlertasLista" class="dsm-alertas"></div>
+          </section>
+
+          <section class="dsm-bloco">
+            <h3>Menções e porta-vozes</h3>
+            <div class="canvas-box canvas-box-sm"><canvas id="graficoMencoes" aria-label="Gráfico de menções diretas e indiretas"></canvas></div>
+            <div id="dsmPortaVozes" class="dsm-porta-vozes"></div>
+          </section>
+
+          <section class="dsm-bloco">
+            <h3>Cobertura e SLA</h3>
+            <div class="dsm-kpis" id="dsmCoberturaResumo"></div>
+            <div id="dsmCoberturaFaltantes" class="dsm-faltantes"></div>
+          </section>
+        </div>
+      </article>
+    </section>
+
   </main>
 
   <!-- Modal: Detalhe de notícia (Sprint 24) -->

@@ -550,7 +550,7 @@ body {
 }
 
 /* ---------- Gráfico de temas ---------- */
-.canvas-box-sm { height: 260px; }
+.canvas-box-sm { height: 400px; }
 
 /* ---------- Análise de mídia (abas) ---------- */
 .analise-tabs {
@@ -606,6 +606,124 @@ body {
 .analise-conteudo li .num {
   font-variant-numeric: tabular-nums;
   color: var(--texto);
+}
+
+/* ---------- Análise lexical (IRAMUTEQ) ---------- */
+.lex-tabs { margin-bottom: 14px; }
+
+.lexical-escopo {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  background: var(--azul-soft);
+  border: 1px solid var(--border-forte);
+  border-radius: 999px;
+  padding: 3px 12px;
+  letter-spacing: 0.3px;
+}
+
+.lexical-conteudo { min-height: 200px; }
+
+.lex-afc-box { height: 420px; }
+
+.lex-grafo-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-deep);
+  overflow: hidden;
+}
+
+.lex-grafo-box canvas {
+  width: 100%;
+  height: 420px;
+  display: block;
+}
+
+.lex-dica {
+  color: var(--texto-mutado);
+  font-size: 0.78rem;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.lex-vazio {
+  color: var(--texto-mutado);
+  font-size: 0.85rem;
+  padding: 20px 0;
+}
+
+.lex-vazio code {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  color: var(--texto-suave);
+}
+
+.lex-chd {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lex-classe {
+  border: 1px solid var(--border-forte);
+  border-left: 4px solid var(--lex-cor, var(--azul));
+  border-radius: 10px;
+  background: var(--bg-deep);
+  padding: 12px 14px;
+}
+
+.lex-classe-cab {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.lex-classe-num {
+  font-weight: 700;
+  color: var(--lex-cor, var(--azul));
+  font-size: 0.9rem;
+}
+
+.lex-classe-pct {
+  color: var(--texto-mutado);
+  font-size: 0.78rem;
+}
+
+.lex-classe-palavras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: baseline;
+}
+
+.lex-chip {
+  font-weight: 600;
+  cursor: help;
+  transition: transform 0.12s ease;
+}
+
+.lex-chip:hover { transform: translateY(-1px); }
+
+.lex-dendro-box {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-deep);
+  height: 420px;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.lex-dendro-box svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 /* ---------- Modais ---------- */
@@ -789,3 +907,366 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* ---------- Botão de tema ---------- */
+.btn-tema {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  color: var(--texto);
+  border: 1px solid var(--border-forte);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.btn-tema:hover {
+  border-color: var(--azul);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   Tema claro (data-tema="claro" no <html>)
+   ============================================================ */
+html[data-tema="claro"] {
+  --bg: #f1f5f9;                 /* Slate 100 */
+  --bg-deep: #ffffff;
+  --card: #ffffff;
+  --card-hover: #e8edf4;
+  --border: rgba(15, 23, 42, 0.08);
+  --border-forte: #cbd5e1;
+  --texto: #0f172a;
+  --texto-suave: #475569;
+  --texto-mutado: #64748b;
+  --sombra: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+html[data-tema="claro"] body {
+  background:
+    radial-gradient(1100px 520px at 85% -10%, rgba(59, 130, 246, 0.08), transparent 60%),
+    radial-gradient(800px 400px at -10% 20%, rgba(139, 92, 246, 0.06), transparent 55%),
+    var(--bg);
+}
+
+html[data-tema="claro"] .topo { background: rgba(255, 255, 255, 0.88); }
+html[data-tema="claro"] .aviso { color: #92400e; }
+html[data-tema="claro"] .aviso.erro { color: #b91c1c; }
+html[data-tema="claro"] .modal-overlay { background: rgba(15, 23, 42, 0.5); }
+html[data-tema="claro"] .lex-vazio code { color: var(--texto-suave); }
+html[data-tema="claro"] .topo-marca p,
+html[data-tema="claro"] .painel-sub { color: var(--texto-mutado); }
+
+/* ---------- Impressão / PDF do relatório ---------- */
+@media print {
+  body * { visibility: hidden !important; }
+  .modal-overlay#modalRelatorio,
+  .modal-overlay#modalRelatorio * {
+    visibility: visible !important;
+  }
+  .modal-overlay#modalRelatorio {
+    position: static !important;
+    inset: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+    display: block !important;
+    backdrop-filter: none !important;
+  }
+  .modal-overlay#modalRelatorio .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: #0f172a !important;
+  }
+  .modal-overlay#modalRelatorio .modal-fechar,
+  .modal-overlay#modalRelatorio .btn-atualizar { display: none !important; }
+  .modal-overlay#modalRelatorio .soma-card,
+  .modal-overlay#modalRelatorio .tabela {
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+  }
+}
+/* ============================================================
+   Camada DSM — Radar, Alertas, Menções e Cobertura/SLA
+   ============================================================ */
+
+.dsm-acoes {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dsm-grade {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin-top: 14px;
+}
+
+.dsm-bloco {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.dsm-bloco h3 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+  margin-bottom: 10px;
+}
+
+.dsm-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dsm-kpi {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dsm-kpi span {
+  font-size: 11px;
+  color: var(--texto-mutado);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dsm-kpi strong {
+  font-size: 16px;
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.dsm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  border: 1px solid var(--border-forte);
+  color: var(--texto-suave);
+  background: rgba(255, 255, 255, 0.03);
+  margin: 0 4px 4px 0;
+}
+
+.dsm-chip-alerta {
+  border-color: var(--vermelho);
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.dsm-chip-ok {
+  border-color: var(--verde);
+  color: #bbf7d0;
+  background: var(--verde-soft);
+}
+
+.dsm-chip-porta-voz {
+  border-color: var(--azul);
+  color: #bfdbfe;
+  background: var(--azul-soft);
+}
+
+.dsm-alertas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.dsm-alerta {
+  border-left: 3px solid var(--texto-mutado);
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 9px 12px;
+}
+
+.dsm-alerta-critico { border-left-color: var(--vermelho); }
+.dsm-alerta-alto { border-left-color: var(--ambar); }
+.dsm-alerta-atencao { border-left-color: var(--azul); }
+.dsm-alerta-info { border-left-color: var(--texto-mutado); }
+
+.dsm-alerta-topo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dsm-alerta-topo strong {
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.dsm-alerta-detalhe {
+  font-size: 12.5px;
+  color: var(--texto-suave);
+  margin-top: 5px;
+}
+
+.dsm-alerta-rodape {
+  font-size: 11.5px;
+  color: var(--texto-mutado);
+  margin-top: 5px;
+}
+
+.dsm-alerta-acao {
+  font-size: 12px;
+  color: var(--ambar);
+  margin-top: 5px;
+}
+
+.dsm-porta-vozes {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.dsm-faltantes {
+  margin-top: 10px;
+}
+
+.dsm-vazio {
+  font-size: 12.5px;
+  color: var(--texto-mutado);
+  padding: 10px 0;
+}
+
+html[data-tema="claro"] .dsm-bloco {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+html[data-tema="claro"] .dsm-kpi {
+  background: #fff;
+  border-color: #e2e8f0;
+}
+
+html[data-tema="claro"] .dsm-chip {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+html[data-tema="claro"] .dsm-alerta {
+  background: #fff;
+}
+
+
+/* --- blocos faltantes (paridade com o app irmao) --- */
+/* ---------- Notícias recentes ---------- */
+.noticias { display: flex;
+  flex-direction: column;
+  gap: 8px; }
+.noticia { display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--texto);
+  font-family: var(--fonte);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, transform 0.12s ease; }
+.noticia:hover { border-color: var(--azul);
+  transform: translateY(-1px); }
+.noticia-sent { width: 4px;
+  align-self: stretch;
+  border-radius: 999px;
+  flex-shrink: 0; }
+.noticia-txt { display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0; }
+.noticia-titulo { color: var(--texto);
+  font-weight: 600;
+  line-height: 1.35; }
+.noticia-meta { color: var(--texto-mutado);
+  font-size: 0.74rem; }
+.noticia-valor { color: var(--texto-suave);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  white-space: nowrap; }
+.hist-row { display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 0.82rem; }
+.hist-dot { width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0; }
+.hist-dot.ok { background: var(--verde); }
+.hist-dot.erro { background: var(--vermelho); }
+.hist-info { display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1; }
+.hist-data { color: var(--texto); }
+.hist-status { font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px; }
+.hist-status.ok { color: var(--verde); }
+.hist-status.erro { color: var(--vermelho); }
+.hist-qtd { color: var(--texto-suave);
+  font-variant-numeric: tabular-nums; }
+body.print-relatorio .modal-overlay#modalRelatorio,
+  body.print-relatorio .modal-overlay#modalRelatorio *,
+  body.print-release .modal-overlay#modalRelease,
+  body.print-release .modal-overlay#modalRelease * { visibility: visible !important; }
+body.print-relatorio .modal-overlay#modalRelatorio,
+  body.print-release .modal-overlay#modalRelease { position: static !important;
+    inset: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+    display: block !important;
+    backdrop-filter: none !important; }
+body.print-relatorio .modal-overlay#modalRelatorio .modal,
+  body.print-release .modal-overlay#modalRelease .modal { width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    color: #0f172a !important; }
+body.print-relatorio .modal-overlay#modalRelatorio .modal-fechar,
+  body.print-relatorio .modal-overlay#modalRelatorio .btn-atualizar,
+  body.print-release .modal-overlay#modalRelease .modal-fechar,
+  body.print-release .modal-overlay#modalRelease .btn-atualizar,
+  body.print-release .modal-overlay#modalRelease .release-dica { display: none !important; }
+body.print-relatorio .modal-overlay#modalRelatorio .soma-card,
+  body.print-relatorio .modal-overlay#modalRelatorio .tabela,
+  body.print-release .modal-overlay#modalRelease .release-conteudo,
+  body.print-release .modal-overlay#modalRelease .release-bloco { color: #0f172a !important;
+    border-color: #cbd5e1 !important; }
+body.print-release .modal-overlay#modalRelease .release-titulo,
+  body.print-release .modal-overlay#modalRelease .release-bloco li,
+  body.print-release .modal-overlay#modalRelease .release-resumo,
+  body.print-release .modal-overlay#modalRelease .release-negativa p { color: #0f172a !important; }
+body.print-release .modal-overlay#modalRelease .release-bloco li::before { color: #3b82f6 !important; }

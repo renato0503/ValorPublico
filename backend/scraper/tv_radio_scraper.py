@@ -45,7 +45,7 @@ class _TranscricaoScraper(BaseScraper):
             "--flat-playlist", "--skip-download", "--no-warnings",
             "--playlist-end", str(n),
             "--socket-timeout", "15", "--retries", "2",
-            "--print", "%(id)s\t%(title)s\t%(timestamp)s\t%(view_count)s",
+            "--print", "%(id)s\t%(title)s\t%(timestamp)s\t%(view_count)s\t%(duration)s",
             f"https://www.youtube.com/{canal}/videos",
         ]
         if self.proxies:
@@ -67,6 +67,7 @@ class _TranscricaoScraper(BaseScraper):
                         "title": parts[1],
                         "timestamp": int(ts) if ts not in ("", "NA") else None,
                         "view_count": int(parts[3]) if parts[3].isdigit() else None,
+                        "duration": int(parts[4]) if len(parts) > 4 and parts[4].isdigit() else None,
                     }
                 )
         except Exception as e:  # noqa: BLE001
@@ -177,6 +178,9 @@ class _TranscricaoScraper(BaseScraper):
                             metadados={
                                 "canal": canal,
                                 "transcricao": True,
+                                # duracao em segundos (base de valoracao de tempo)
+                                "duracao_seg": int(v.get("duration") or 0),
+                                "duracao_min": round(int(v.get("duration") or 0) / 60, 1),
                             },
                         )
                     )

@@ -364,4 +364,227 @@ Educação, CPI, Eleições), como a DSM faz com "Categorias".
 
 - E-mail/SMS de alerta (hoje a notificação é por issue no GitHub; e-mail exige um provedor SMTP).
 - Monitoramento externo de uptime (ex.: UptimeRobot) para detectar queda do site.
-- Dashboard da última execução com histórico (ex.: gráfico de sucesso/erro ao longo do tempo).
+- ~~Dashboard da última execução com histórico~~ ✅ **Histórico da Ingestão** implementado:
+  `metricas/geral.historico_ingestao` (últimas 15 execuções) + painel no dashboard.
+- ✅ **Detalhe de notícia acessível** — `metricas.*.noticias_recentes` (10 clippings mais
+  recentes com veículo/agente/sentimento/valor) + painel "Últimas Notícias" clicável que
+  abre o modal de detalhe (fecha a Sprint 24, que estava sem ponto de entrada no dashboard).
+- ✅ **Gráficos aprimorados** — paleta ampliada (14 cores), Share de Mídia e Temas ordenados
+  do maior para o menor, Temas sempre com os 16 nomes (zero-fill + acentos), rótulos de
+  valor nas barras e altura adequada para todas as categorias.
+
+---
+
+# Fase 4 — Melhorias Contínuas (sessão 21/08/2026)
+
+> Sessão de evolução contínua pós Fase 3: análise lexical **visual e filtrada**,
+> IA de sentimento, auditoria ampliada (notícias recentes + histórico), gráficos e
+> preparação do Telegram. Este documento lista o **que foi feito** e o **que falta**,
+> sem remover o histórico anterior.
+
+## Arquitetura da Plataforma (diagrama Mermaid)
+
+```mermaid
+flowchart LR
+    subgraph Fontes["Fontes de Mídia"]
+        Web["Web · Google News RSS + Trafilatura"]
+        YT["YouTube · yt-dlp + legendas automáticas"]
+        TVR["TV · Rádio · Impresso (transcrição de falas)"]
+        Soc["Redes Sociais · Twitter · Instagram · Facebook · Telegram"]
+    end
+
+    subgraph Backend["Backend Python 3.12"]
+        ORC["Orquestrador async + semáforo (4 agentes)"]
+        NLP["Cleaner → Sentimento VADER/IA → Valoração"]
+        CLS["Classificador de mídia + Temas (16)"]
+        LEX["Análises lexicais IRAMUTEQ (AFC · CHD · grafo · dendrograma)"]
+    end
+
+    subgraph Firebase["Google Firebase"]
+        FS[("Firestore · agentes_publicos/{id}/clippings · metricas · analise_lexical/{escopo}")]
+    end
+
+    subgraph Frontend["Frontend PWA"]
+        DASH["Dashboard BI · onSnapshot em tempo real"]
+    end
+
+    Fontes --> ORC
+    ORC --> NLP --> CLS --> FS
+    ORC --> LEX --> FS
+    FS --> DASH
+```
+
+## Entregue nesta sessão
+
+| # | Item | Status |
+|---|---|---|
+| 1 | GitHub Actions `ingestao.yml` (cron 06:30/18:30 UTC, secrets, **issue automática em falha**) | ✅ |
+| 2 | TV/Rádio/Impresso ampliado (canais oficiais + `MIDIA_VIDEOS_POR_CANAL=10`) | ✅ |
+| 3 | Tabela CPM/valores: 10 plataformas + 51 veículos (`fonte`/`unidade`/`bases_valoracao`) | ✅ |
+| 4 | IA de sentimento (`processing/sentimento_ia.py`, OpenAI-compatível, fallback VADER) | ✅ |
+| 5 | Análise lexical **visual** no dashboard (AFC · CHD · grafo · dendrograma) | ✅ |
+| 6 | Backfill IA — `scripts/reclassificar_sentimentos.py` (`--plano`/`--aplicar`) | ✅ |
+| 7 | "Últimas Notícias" clicável (abre o modal de detalhe) + "Histórico da Ingestão" | ✅ |
+| 8 | Gráficos aprimorados (14 cores, ordenação desc, rótulos de valor, 16 temas sempre visíveis) | ✅ |
+| 9 | Setup Telegram (phone + `login_telegram.py`) — **aguardando API_ID/API_HASH** | ⏳ |
+| 10 | Análise lexical **filtrada pelos filtros** (`analise_lexical_escopos.py`) | ✅ |
+| 11 | **Tema claro/escuro** (toggle, padrão claro, gráficos tema-conscientes) | ✅ |
+| 12 | **Somatório de espaço real** (caracteres · minutos · cm²) | ✅ |
+| 13 | **PDF do relatório** (imprime só o modal via `@media print`) | ✅ |
+| 14 | **Testes de regras** no Emulator Suite (`backend/tests/`) | ✅ |
+| 15 | **PDF nativo via backend** (`gerar_relatorio_pdf.py`, reportlab) | ✅ |
+
+## Pipeline de ingestão (diagrama Mermaid)
+
+```mermaid
+flowchart TD
+    A["scripts/run_ingestao.py"] --> B["carregar agentes (50)"]
+    B --> C["agentes em paralelo · semáforo = 4"]
+    C --> D["coletar por plataforma (scrapers)"]
+    D --> E["padronizar DataFrame (limpeza/dedupe)"]
+    E --> F["sentimento · VADER + léxico PT ou IA"]
+    F --> G["valoração · CPM / tabela de veículos"]
+    G --> H["salvar clippings (batch 500, merge)"]
+    H --> I["scripts/atualizar_metricas.py"]
+    I --> J["metricas/geral · por_cidade · por_agente"]
+    I --> K["noticias_recentes + historico_ingestao"]
+    I --> L["analise_lexical por escopo (geral/cidade/agente/período)"]
+    J --> M["Frontend PWA · onSnapshot"]
+    K --> M
+    L --> M
+```
+
+## Pendências após esta sessão
+
+1. ✅ **Análise lexical filtrada (concluída)** — `analise_lexical_escopos.py` publicou
+   **56 escopos** (geral + 2 cidades + 50 agentes + 3 períodos) em `analise_lexical/<chave>`;
+   o frontend resolve a chave pelos filtros (parlamentar > cidade > período > geral), exibe
+   o **rótulo do escopo ativo** e trata escopos sem dados (aviso do corpus pequeno).
+   Layout da seção: badges de escopo, mensagens de estado e alturas consistentes.
+2. ✅ **Tema claro/escuro** — botão de alternância (☀/☾) no header; o **claro é o padrão**;
+   persistido em `localStorage`; os gráficos (Chart.js e grafo em canvas) usam cores
+   lidas das CSS vars (`corTema`), acompanhando o tema; re-render ao alternar.
+3. ✅ **Somatório de espaço real** — scrapers registram metadados: Web/Impresso
+   (`espaco_carac`/`espaco_cm2`), TV/Rádio/YouTube (`duracao_seg`/`duracao_min` via
+   `yt-dlp`); `atualizar_metricas.py` agrega `espaco_total {caracteres, duracao_seg, cm2}`;
+   o Relatório exibe **caracteres · minutos · cm²** reais (antes era uma estimativa fixa).
+4. ✅ **PDF do relatório** — botão "Exportar PDF" agora imprime **apenas o modal do
+   relatório** via `@media print` (antes imprimia a página toda).
+5. ✅ **Testes de regras (Emulator Suite)** — `backend/tests/` com `rules.test.js`
+   (`npm test` sobe o emulador e valida: leitura pública das coleções do dashboard,
+   clippings/execuções bloqueadas, escrita bloqueada, RBAC de `usuarios`). Todos passam.
+6. ✅ **PDF nativo via backend** — `scripts/gerar_relatorio_pdf.py` (reportlab) gera um
+   PDF brandado a partir de `metricas/*` (KPIs, sentimento, share, temas, top veículos,
+   somatório de espaço/valor). Opção por `--agente`, `--cidade` ou geral.
+7. **Redes sociais** (Twitter/Instagram/Facebook) — extrair cookies de contas existentes e configurar no `.env`.
+8. **Telegram** — preencher `TELEGRAM_API_ID`/`TELEGRAM_API_HASH` (my.telegram.org), rodar `login_telegram.py` e ativar `HABILITAR_TELEGRAM=1`.
+9. **Fase 3:** e-mail/SMS de alerta + monitoramento externo de uptime (exigem SMTP/UptimeRobot).
+10. **Backfill IA no corpus histórico** — rodar `reclassificar_sentimentos.py --aplicar` (decisão de custo).
+
+---
+
+# Fase 5 — Correções de Legibilidade e UX das Análises Lexicais
+
+> Sessão de correção da visualização das análises lexicais (AFC, CHD, dendrograma e
+> grafo de similaridade). Problemas relatados: grafo e dendrograma quase **ilegíveis**
+> (sem zoom), classes temáticas **aparentemente fixas** (não variando de forma clara com
+> o filtro) e falta de interação para explorar os dados. As sprints abaixo estão em
+> **ordem cronológica**, cada uma fechando em uma entrega testável.
+
+## Diagnóstico (causa raiz)
+
+| Problema | Causa | Componente |
+|---|---|---|
+| Grafo de similaridade ilegível | Desenho em canvas único de 420px, sem **zoom/pan**; 80 nós + 80 arestas se sobrepõem; rótulos só nos top 14 | `frontend/js/grafo.js` |
+| Dendrograma ilegível | SVG com `preserveAspectRatio="xMidYMid meet"` comprime toda a árvore em 420px; sem zoom; rótulos de folhas ausentes | `renderizarDendrograma()` em `app.js` |
+| Mapa AFC com sobreposição | Dispersão estática; sem zoom; rótulos só em alguns períodos | `criarGraficoDispersao()` em `charts.js` |
+| Classes "parecem fixas" | (a) Muitos escopos de agente têm **0 classes** (corpus < 100 segmentos) e exibem só aviso, dando impressão de "sempre igual"; (b) o rótulo do escopo muda, mas não há indicador claro de **quantos clippings/segmentos** o escopo tem; (c) ao alternar abas sem mudar filtro, nada muda (correto, mas confuso) | `renderizarChd()` em `app.js` + backend `analise_lexical_escopos.py` |
+
+## Sprint 29 — Controle de zoom/pan nos gráficos canvas (grafo)
+
+**Objetivo:** tornar o grafo de similaridade navegável (zoom + arrastar para mover).
+
+- **Frontend** — reescrever `montarGrafo()` (`js/grafo.js`) para manter um **viewport**
+  (`{ scale, offsetX, offsetY }`) aplicado via `ctx.setTransform(dpr*scale, 0, 0, dpr*scale, dx, dy)`:
+  - **Roda do mouse** → zoom centrado no cursor (limites de escala, ex.: 0.5× a 5×).
+  - **Arrastar com o mouse/clique** → pan (deslocar viewport), distinguindo clique (hover) de drag.
+  - **Botão de reset** (⊕ ↺) e dica "use a roda para dar zoom · arraste para mover".
+  - Desenhar rótulos de **todos** os nós com peso relevante quando o zoom ≥ 1.5× (não só top 14).
+  - Manter hover com tooltip e cores tema-conscientes.
+- **CSS** — cursor `grab`/`grabbing`, `touch-action: none` no canvas (habilitar gestos em mobile).
+- **Teste:** zoom em nó pequeno deixa o rótulo legível; arrastar move sem quebrar o layout.
+
+## Sprint 30 — Zoom/pan no dendrograma (SVG → canvas ou SVG com viewBox dinâmico)
+
+**Objetivo:** dendrograma legível e explorável.
+
+- **Frontend** — substituir o SVG estático por uma **visualização com viewport**:
+  - **Opção A (recomendada): canvas** — desenhar as polilinhas (x/y já em espaço de
+    coordenadas) com zoom/pan igual ao Sprint 29, reutilizando o mecanismo.
+  - **Opção B: SVG com `viewBox` controlado por JS** — mantém nitidez vetorial e permite
+    zoom; implementar pan com `onPointerDown/Move/Up` + zoom via roda ajustando o `viewBox`.
+  - Exibir **rótulos das folhas** (ou "n filhos" nos ramos truncados) quando o zoom permitir.
+  - Controles de zoom/reset + escala de altura (distância de fusão) indicada no eixo Y.
+- **Teste:** dendrograma com 210 ramos legível ao dar zoom; pan fluido.
+
+## Sprint 31 — Zoom no mapa fatorial (AFC)
+
+**Objetivo:** dispersão AFC navegável e com rótulos legíveis.
+
+- **Frontend** — `criarGraficoDispersao()` em `charts.js`: habilitar **zoom** (Chart.js 4
+  `zoom`/`pan` plugin ou reimplementação leve por transform de escala) e tooltip já existente.
+  - Mostrar rótulos de palavras quando o zoom permitir (dica: usar plugin de `datalabels`
+    ou desenhar via callback `afterDraw`).
+  - Limitar ainda mais os outliers para o mapa inicial ficar legível (percentil já usado).
+- **Backend** — (opcional) expor o **% de inércia** de cada eixo (valores singulares já
+  calculados) para exibir "Eixo 1: 62% · Eixo 2: 18%" na legenda.
+- **Teste:** zoom em agrupamento de palavras revela rótulos sem sobreposição.
+
+## Sprint 32 — Classes temáticas (CHD) variando claramente com o filtro
+
+**Objetivo:** eliminar a percepção de "classes fixas" e melhorar a comunicação do escopo.
+
+- **Backend** (`analise_lexical_escopos.py`): garantir que o doc de cada escopo exponha
+  também `n_clippings`, `n_segmentos` e um `resumo` claro — já existe; garantir que escopos
+  pequenos produzam **aviso explícito** com o motivo (corpus < 100 segmentos) em vez de silêncio.
+- **Frontend** (`renderizarChd()` + cabeçalho da seção):
+  - Exibir no **rótulo do escopo** a contagem: `Escopo: <nome> · 1960 clippings · 5715 segmentos`.
+  - Quando o escopo tiver **0 classes**, mostrar cartão informativo explicando que o corpus
+    do escopo é pequeno demais para a CHD (com o nº de clippings), em vez de só uma linha.
+  - Destacar visualmente quando o escopo **mudou** (ex.: badge "atualizado") para reforçar
+    que os dados respondem ao filtro.
+  - (Correção) Garantir que `carregarLexical()` re-renderize a aba ativa após mudar o filtro
+    (hoje recarrega, mas revalidar fluxo quando o usuário está numa aba específica).
+- **Teste:** filtrar por cidade/agente altera claramente o nº de clippings/segmentos e as
+  classes exibidas; escopo pequeno mostra aviso explicativo.
+
+## Sprint 33 — Consistência visual e controles compartilhados das análises
+
+**Objetivo:** unificar a UX das quatro visualizações.
+
+- **Frontend** — criar uma **barra de controles** comum acima do conteúdo (Zoom + / −,
+  reset, dica de interação, contagem de nós/classes/ramos) reutilizada pelas abas.
+- Ajustar alturas mínimas responsivas (mobile: menos altura, controles acessíveis por toque).
+- **Teste:** quatro abas com a mesma linguagem visual e controles; mobile operável.
+
+## Melhorias futuras previstas (após as correções)
+
+Estas são possibilidades **planejadas**, não bloqueadas por credenciais, a priorizar depois
+das sprints 29–33:
+
+- **Sprint 34 (candidata)** — **Tabela de co-ocorrência interativa**: ao clicar num nó do
+  grafo, destacar as arestas e listar os pares ordenados por peso (reuso dos dados de `grafo`).
+- **Sprint 35 (candidata)** — **Destaque cruzado AFC × CHD**: colorir as palavras do mapa
+  AFC pela classe temática (CHD) a que pertencem, unindo as duas visualizações.
+- **Sprint 36 (candidata)** — **Filtros de top-N e mínimo de frequência** nas visualizações
+  lexicais (ex.: "mostrar só as 60 palavras mais frequentes" ou "χ² ≥ 10") para reduzir ruído.
+- **Sprint 37 (candidata)** — **Busca de palavra** nas análises: campo que localiza e
+  destaca um termo no grafo, AFC, CHD e dendrograma.
+- **Sprint 38 (candidata)** — **Análise lexical por período personalizado** (além de hoje/7d/30d),
+  exigindo endpoint dinâmico no backend para calcular o escopo sob demanda.
+- **Sprint 39 (candidata)** — **Exportação das análises lexicais em PDF** (aproveitar o
+  `gerar_relatorio_pdf.py`) com os gráficos/classes atuais do escopo selecionado.
+
+> **Dependências entre sprints:** 29 e 30 podem ser feitas em paralelo (mesmo mecanismo de
+> viewport); 31 depende do mecanismo de zoom; 32 é independente (backend + CHD); 33 fecha a
+> consistência sobre 29–31.

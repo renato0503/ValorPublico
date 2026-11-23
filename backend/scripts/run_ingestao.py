@@ -130,6 +130,17 @@ def construir_scrapers() -> list:
     return scrapers
 
 
+def construir_analisador():
+    """Retorna o analisador de sentimento (IA ou VADER conforme .env)."""
+    if settings.IA_SENTIMENTO_ENABLED:
+        from processing.sentimento_ia import AnalisadorSentimentoIA
+
+        return AnalisadorSentimentoIA()
+    from processing.sentiment import AnalisadorSentimento
+
+    return AnalisadorSentimento()
+
+
 async def main() -> None:
     parser = argparse.ArgumentParser(description="Motor de ingestao do ValorPublico.")
     parser.add_argument(
@@ -169,6 +180,7 @@ async def main() -> None:
     orquestrador = Orchestrator(
         db,
         scrapers=construir_scrapers(),
+        analisador=construir_analisador(),
         limite_por_agente=settings.LIMITE_ITENS_POR_AGENTE,
         max_workers=settings.MAX_WORKERS,
         concorrencia_agentes=settings.PARALELISMO_AGENTES,

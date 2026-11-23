@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from core.logger import get_logger
 from processing.cleaner import padronizar_dataframe
+from processing.enriquecimento import enriquecer_dataframe
 from processing.sentiment import AnalisadorSentimento
 from processing.valoracao import Valorador
 from scraper.base import AsyncScraper, BaseScraper
@@ -65,6 +66,7 @@ class Orchestrator:
                 df = padronizar_dataframe(itens)
                 self.analisador.aplicar_dataframe(df)
                 self.valorador.aplicar_dataframe(df)
+                df = enriquecer_dataframe(df, agente=agente)
                 gravados = self.repo.salvar_lote(df)
                 logger.info(
                     "(%d/%d) %s: %d clippings gravados.",

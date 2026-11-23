@@ -64,6 +64,8 @@ YOUTUBE_MAX_VIDEOS = int(os.getenv("YOUTUBE_MAX_VIDEOS", "5"))
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "0") or "0")
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "")
 TELEGRAM_SESSION_FILE = os.getenv("TELEGRAM_SESSION_FILE", "")
+# Numero (com DDI) usado no primeiro login para gerar a sessao
+TELEGRAM_PHONE = os.getenv("TELEGRAM_PHONE", "")
 TELEGRAM_CANAIS = [
     c.strip()
     for c in os.getenv("TELEGRAM_CANAIS", "").split(",")
@@ -82,6 +84,67 @@ MIDIA_VIDEOS_POR_CANAL = int(os.getenv("MIDIA_VIDEOS_POR_CANAL", "10"))
 HABILITAR_IMPRESSO = os.getenv("HABILITAR_IMPRESSO", "1") == "1"
 IMPRESSO_SITES = [s.strip() for s in os.getenv("IMPRESSO_SITES", "").split(",") if s.strip()]
 
+# Avaliacao IA do sentimento (alternativa ao VADER, OpenAI-compativel)
+# Quando desabilitado ou sem API key, o pipeline usa VADER + lexico PT.
+IA_SENTIMENTO_ENABLED = os.getenv("IA_SENTIMENTO_ENABLED", "0") == "1"
+IA_SENTIMENTO_BASE_URL = os.getenv("IA_SENTIMENTO_BASE_URL", "https://api.openai.com/v1")
+IA_SENTIMENTO_API_KEY = os.getenv("IA_SENTIMENTO_API_KEY", "")
+IA_SENTIMENTO_MODEL = os.getenv("IA_SENTIMENTO_MODEL", "gpt-4o-mini")
+IA_SENTIMENTO_MAX_ITENS = int(os.getenv("IA_SENTIMENTO_MAX_ITENS", "200"))
+IA_SENTIMENTO_TAMANHO_LOTE = int(os.getenv("IA_SENTIMENTO_TAMANHO_LOTE", "20"))
+IA_SENTIMENTO_TIMEOUT = int(os.getenv("IA_SENTIMENTO_TIMEOUT", "30"))
+IA_SENTIMENTO_TEMPERATURA = float(os.getenv("IA_SENTIMENTO_TEMPERATURA", "0.0"))
+
 # Nomes das colecoes Firestore
 COLLECTION_AGENTES = "agentes_publicos"
 SUBCOLLECTION_CLIPPINGS = "clippings"
+
+# ---------------------------------------------------------------------------
+# Camada DSM: radar de propaganda publica, compliance eleitoral, alertas,
+# cobertura/SLA e newsletter (recursos de mercado estudados em 2026).
+# ---------------------------------------------------------------------------
+
+# Fontes oficiais/institucionais monitoradas pelo radar de propaganda publica.
+# Formato: URL1,URL2 (paginas ou feeds RSS de orgaos publicos).
+FONTES_PROPAGANDA_PUBLICA = [
+    u.strip() for u in os.getenv("FONTES_PROPAGANDA_PUBLICA", "").split(",") if u.strip()
+]
+HABILITAR_PROPAGANDA_PUBLICA = os.getenv("HABILITAR_PROPAGANDA_PUBLICA", "1") == "1"
+PROPAGANDA_PUBLICA_MAX_ITENS = int(os.getenv("PROPAGANDA_PUBLICA_MAX_ITENS", "20"))
+
+# Veiculos considerados de alto impacto (Tier 1) - usados no SLA, alertas e
+# priorizacao de escopo. Sobreponivel por env.
+TIER1_VEICULOS = [
+    v.strip().lower()
+    for v in os.getenv("TIER1_VEICULOS", "").split(",")
+    if v.strip()
+]
+# Lista de veiculos que o escopo se compromete a monitorar (contrato).
+# Se um deles nao aparece no periodo, o painel reporta "faltando".
+VEICULOS_ESPERADOS = [
+    v.strip().lower()
+    for v in os.getenv("VEICULOS_ESPERADOS", "").split(",")
+    if v.strip()
+]
+
+# Limiar (R$) a partir do qual uma mencao direta vira alerta de alto valor.
+ALERTA_VALOR_ALTO = float(os.getenv("ALERTA_VALOR_ALTO", "1500"))
+
+# Compliance eleitoral (Lei 9.504/1997). Ano do ciclo eleitoral em referencia.
+COMPLIANCE_ELEITORAL_ENABLED = os.getenv("COMPLIANCE_ELEITORAL_ENABLED", "1") == "1"
+ELEICAO_ANO = os.getenv("ELEICAO_ANO", "2026")
+ELEICAO_1O_TURNO = os.getenv("ELEICAO_1O_TURNO", "")
+ELEICAO_2O_TURNO = os.getenv("ELEICAO_2O_TURNO", "")
+
+# Newsletter consolidada (HTML + texto para WhatsApp).
+NEWSLETTER_ENABLED = os.getenv("NEWSLETTER_ENABLED", "1") == "1"
+# Webhook generico para entrega (Make/Zapier/n8n): recebe {escopo, periodo, texto, html}
+NEWSLETTER_WEBHOOK = os.getenv("NEWSLETTER_WEBHOOK", "")
+NEWSLETTER_MAX_ITENS = int(os.getenv("NEWSLETTER_MAX_ITENS", "15"))
+NEWSLETTER_ASSINATURA = os.getenv("NEWSLETTER_ASSINATURA", "Valor Publico - Monitoramento de Midia")
+
+# Colecoes novas (radar, alertas, cobertura, newsletters)
+COLLECTION_ALERTAS = "alertas"
+COLLECTION_RADARES = "radares"
+COLLECTION_COBERTURA = "cobertura"
+COLLECTION_NEWSLETTERS = "newsletters"

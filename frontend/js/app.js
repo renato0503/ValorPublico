@@ -1,4 +1,13 @@
-import * as charts from "./charts.js";
+﻿import * as charts from "./charts.js";
+import { montarGrafo } from "./grafo.js";
+import {
+  abrirNewsletter,
+  carregarCamadaDsm,
+  chaveEscopoDsm,
+  copiarNewsletter,
+  definirJanelaDsm,
+  renderizarCamadaDsm,
+} from "./dsm.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -10,6 +19,7 @@ const estado = {
   periodo: "",
   tipoTop: "",
   ultimosDados: null,
+  lexical: null,
   desinscrever: [],
 };
 
@@ -101,9 +111,42 @@ function categoria(plataforma) {
   return plataforma;
 }
 
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
+/* ---------- tema claro/escuro ---------- */
+
+function aplicarTemaInicial() {
+  const salvo = localStorage.getItem("vp_tema");
+  const tema = salvo === "escuro" ? "escuro" : "claro";
+  document.documentElement.dataset.tema = tema;
+  atualizarBotaoTema(tema);
+}
+
+function atualizarBotaoTema(tema) {
+  const el = $("btnTema");
+  if (!el) return;
+  const icone = el.querySelector(".btn-tema-icone");
+  icone.textContent = tema === "claro" ? "☾" : "☀";
+  el.title = tema === "claro" ? "Mudar para o tema escuro" : "Mudar para o tema claro";
+}
+
+function alternarTema() {
+  const atual = document.documentElement.dataset.tema === "claro" ? "escuro" : "claro";
+  document.documentElement.dataset.tema = atual;
+  localStorage.setItem("vp_tema", atual);
+  atualizarBotaoTema(atual);
+  if (estado.ultimosDados) renderizar(estado.ultimosDados);
+  renderizarLexical();
+}
+
 /* ---------- inicializacao ---------- */
 
 async function inicializar() {
+  aplicarTemaInicial();
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(console.warn);
   }
@@ -160,6 +203,178 @@ function atualizarParlamentares() {
   sel.value = estado.agentes.some((a) => a.id === valorAtual) ? valorAtual : "";
 }
 
+/* ---------- análise lexical (IRAMUTEQ) ---------- */
+
+function chaveLexical() {
+  if (estado.parlamentar) return `agente-${estado.parlamentar}`;
+  if (estado.cidade) return `cidade-${slugCidade(estado.cidade)}`;
+  if (estado.periodo) return `periodo-${estado.periodo}`;
+  return "geral";
+}
+
+function rotuloEscopoLexical() {
+  const partes = [];
+  if (estado.parlamentar) {
+    const ag = estado.agentes.find((a) => a.id === estado.parlamentar);
+    partes.push(ag ? ag.nome_urna : "Parlamentar");
+  } else if (estado.cidade) {
+    partes.push(estado.cidade);
+  } else {
+    partes.push("Todos");
+  }
+  const periodos = { hoje: "Hoje", "7d": "Últimos 7 dias", "30d": "Últimos 30 dias" };
+  if (estado.periodo && !estado.parlamentar && !estado.cidade) {
+    partes.push(periodos[estado.periodo]);
+  }
+  return `Escopo: ${partes.join(" · ")}`;
+}
+
+async function carregarLexical() {
+  try {
+    const { doc, getDoc } = await import("firebase/firestore");
+    const chave = chaveLexical();
+    const snap = await getDoc(doc(estado.db, "analise_lexical", chave));
+    estado.lexical = snap.exists() ? snap.data() : null;
+  } catch {
+    estado.lexical = null;
+  }
+  renderizarLexical();
+}
+
+let limparGrafo = null;
+
+function renderizarLexical() {
+  const conteudo = $("lexicalConteudo");
+  if (!conteudo) return;
+  const rotulo = $("lexicalEscopo");
+  if (rotulo) rotulo.textContent = rotuloEscopoLexical();
+  if (limparGrafo) {
+    limparGrafo();
+    limparGrafo = null;
+  }
+  const aba = document.querySelector(".lex-tab.ativo")?.dataset.lex || "afc";
+  if (aba === "chd") return renderizarChd();
+  if (aba === "dendrograma") return renderizarDendrograma();
+  if (aba === "grafo") return renderizarGrafo();
+  renderizarAfc();
+}
+
+function renderizarAfc() {
+  const conteudo = $("lexicalConteudo");
+  const dados = estado.lexical?.afc;
+  if (!dados || !dados.palavras?.length) {
+    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
+    conteudo.innerHTML =
+      `<p class="lex-vazio">AFC sem dados para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
+    return;
+  }
+  conteudo.innerHTML =
+    `<div class="lex-afc-box"><canvas id="canvasAfc" aria-label="Mapa fatorial de correspondências"></canvas></div>` +
+    `<p class="lex-dica">Palavras (amarelo) e períodos/meses (azul) projetados nos dois primeiros eixos fatoriais.</p>`;
+  charts.criarGraficoDispersao("canvasAfc", dados);
+}
+
+function renderizarChd() {
+  const conteudo = $("lexicalConteudo");
+  const dados = estado.lexical?.chd;
+  if (!dados || !dados.classes?.length) {
+    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
+    conteudo.innerHTML =
+      `<p class="lex-vazio">CHD sem classes para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
+    return;
+  }
+  const cores = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#f97316", "#14b8a6"];
+  const classes = [...dados.classes].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
+  conteudo.innerHTML =
+    `<div class="lex-chd">` +
+    classes
+      .map((cls, i) => {
+        const cor = cores[i % cores.length];
+        const palavras = cls.palavras || [];
+        const maxChi = Math.max(1, ...palavras.map((p) => p.chi2 || 0));
+        const chips = palavras
+          .slice(0, 14)
+          .map((p) => {
+            const t = (p.chi2 || 0) / maxChi;
+            const fs = (11 + t * 8).toFixed(1);
+            const op = 0.55 + t * 0.45;
+            return `<span class="lex-chip" style="font-size:${fs}px;color:${cor};opacity:${op}" title="χ² ${p.chi2} · freq ${p.frequencia}">${p.palavra}</span>`;
+          })
+          .join("");
+        return `
+          <div class="lex-classe" style="--lex-cor:${cor}">
+            <div class="lex-classe-cab">
+              <span class="lex-classe-num">Classe ${cls.classe}</span>
+              <span class="lex-classe-pct">${cls.pct_segmentos}% dos segmentos</span>
+            </div>
+            <div class="lex-classe-palavras">${chips || '<span class="lex-vazio">Sem palavras características.</span>'}</div>
+          </div>`;
+      })
+      .join("") +
+    `</div>` +
+    `<p class="lex-dica">Classes temáticas obtidas por Ward (CHD). O tamanho e a opacidade das palavras refletem o χ² (associação à classe).</p>`;
+}
+
+function renderizarDendrograma() {
+  const conteudo = $("lexicalConteudo");
+  const dados = estado.lexical?.dendrograma;
+  if (!dados || !dados.polilinhas?.length) {
+    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
+    conteudo.innerHTML =
+      `<p class="lex-vazio">Dendrograma sem dados para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
+    return;
+  }
+  const pol = dados.polilinhas;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const p of pol) {
+    for (const v of p.x) { if (v < minX) minX = v; if (v > maxX) maxX = v; }
+    for (const v of p.y) { if (v < minY) minY = v; if (v > maxY) maxY = v; }
+  }
+  if (!isFinite(minX) || !isFinite(minY)) {
+    conteudo.innerHTML = '<p class="lex-vazio">Sem dados do dendrograma.</p>';
+    return;
+  }
+  const pad = 10;
+  const w = maxX - minX;
+  const h = maxY - minY;
+  const palette = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#f97316", "#14b8a6"];
+  const corMapa = {};
+  let k = 0;
+  for (const p of pol) {
+    if (!corMapa[p.cor]) corMapa[p.cor] = palette[k++ % palette.length];
+  }
+  const paths = pol
+    .map((p) => {
+      const pts = p.x.map(
+        (v, i) =>
+          `${(v - minX + pad).toFixed(1)},${(h - (p.y[i] - minY) + pad).toFixed(1)}`
+      );
+      return `<path d="M${pts.join(" L ")}" stroke="${corMapa[p.cor]}" fill="none" stroke-width="1.4" stroke-linecap="round"/>`;
+    })
+    .join("");
+  const vbW = (w + pad * 2).toFixed(1);
+  const vbH = (h + pad * 2).toFixed(1);
+  conteudo.innerHTML =
+    `<div class="lex-dendro-box">` +
+    `<svg viewBox="0 0 ${vbW} ${vbH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Dendrograma da CHD">${paths}</svg>` +
+    `</div>` +
+    `<p class="lex-dica">Dendrograma da CHD (Ward) truncado aos níveis superiores · ${formatarNumero(dados.n_segmentos)} segmentos (UCE). Cores = classes temáticas.</p>`;
+}
+
+function renderizarGrafo() {
+  const conteudo = $("lexicalConteudo");
+  const dados = estado.lexical?.grafo;
+  if (!dados || !dados.nos?.length) {
+    conteudo.innerHTML =
+      '<p class="lex-vazio">Grafo de similaridade sem dados para este escopo. Rode <code>analise_lexical_escopos.py</code> no backend.</p>';
+    return;
+  }
+  conteudo.innerHTML =
+    `<div class="lex-grafo-box"><canvas id="canvasGrafo" aria-label="Grafo de similaridade lexical"></canvas></div>` +
+    `<p class="lex-dica">Nós = palavras (maior = mais frequente); arestas = co-ocorrência. Passe o mouse sobre um nó para ver a palavra.</p>`;
+  limparGrafo = montarGrafo($("canvasGrafo"), dados);
+}
+
 /* ---------- assinaturas em tempo real ---------- */
 
 function desinscreverTudo() {
@@ -171,8 +386,10 @@ async function aplicarFiltros() {
   desinscreverTudo();
   atualizarParlamentares();
   mostrarAviso("", "");
+  await carregarLexical();
 
   const { doc, onSnapshot } = await import("firebase/firestore");
+  await carregarCamadaDsm(estado.db, chaveEscopoDsm(estado), { doc, onSnapshot });
 
   let ref;
   if (estado.parlamentar) {
@@ -234,12 +451,15 @@ function renderizar(dados) {
   );
   charts.criarGraficoDonut(
     "graficoShare",
-    view.distribuicao_categorias || {}
+    view.distribuicao_categorias || {},
+    undefined,
+    true
   );
   charts.criarGraficoBarras(
     "graficoValoracao",
     view.valoracao_por_plataforma || {},
     formatarValor,
+    true,
     true
   );
   renderizarSentimentoLista(view.distribuicao_sentimento || {});
@@ -247,6 +467,8 @@ function renderizar(dados) {
   renderizarTemas(view);
   renderizarAnalise(view);
   renderizarNuvem(view);
+  renderizarNoticias(view.noticias_recentes || []);
+  renderizarHistorico(dados.historico_ingestao || []);
   $("atualizadoEm").textContent = formatarData(dados.atualizado_em);
   renderizarUltimaExecucao(dados.ultima_execucao);
 }
@@ -490,11 +712,43 @@ function desenharNuvem() {
 
 /* ---------- temas (Sprint 23) ---------- */
 
+const NOMES_TEMAS = {
+  Saude: "Saúde",
+  Educacao: "Educação",
+  Seguranca: "Segurança",
+  "Urbanismo/Obras": "Urbanismo/Obras",
+  Transporte: "Transporte",
+  "Meio Ambiente": "Meio Ambiente",
+  Economia: "Economia",
+  Agricultura: "Agricultura",
+  "Cultura/Esporte": "Cultura/Esporte",
+  "Politica/Camara": "Política/Câmara",
+  Eleicoes: "Eleições",
+  CPI: "CPI",
+  Justica: "Justiça",
+  "Social/Assistencia": "Social/Assistência",
+  Tecnologia: "Tecnologia",
+  "Governo/Administracao": "Governo/Administração",
+};
+
+const TEMAS_ORDEM = Object.keys(NOMES_TEMAS);
+
+// Preenche os 16 temas conhecidos (com zero onde nao houver mencoes) para o
+// grafico exibir SEMPRE todas as categorias, ordenadas da maior para a menor.
+function temasCompletos(distribuicao) {
+  const base = distribuicao || {};
+  const obj = {};
+  TEMAS_ORDEM.forEach((chave) => {
+    obj[NOMES_TEMAS[chave]] = base[chave] || 0;
+  });
+  return obj;
+}
+
 function renderizarTemas(view) {
   const canvas = $("graficoTemas");
   if (!canvas) return;
-  const temas = view.distribuicao_temas || {};
-  charts.criarGraficoBarras("graficoTemas", temas, formatarNumero, true);
+  const temas = temasCompletos(view.distribuicao_temas);
+  charts.criarGraficoBarras("graficoTemas", temas, formatarNumero, true, true);
 }
 
 /* ---------- análise de mídia (Sprint 26) ---------- */
@@ -555,6 +809,61 @@ function renderizarAnaliseNegativa(view) {
     `<p>Consulte a aba "Relatório" e filtre por <em>Negativo</em> para revisar cada ocorrência e planejar respostas.</p>`;
 }
 
+/* ---------- últimas notícias + histórico de ingestão ---------- */
+
+function renderizarNoticias(lista) {
+  const cont = $("noticiasLista");
+  if (!cont) return;
+  if (!lista?.length) {
+    cont.innerHTML = '<p class="lex-vazio">Sem notícias recentes.</p>';
+    return;
+  }
+  cont.innerHTML = "";
+  lista.forEach((n) => {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "noticia";
+    row.title = "Ver detalhes da notícia";
+    const cor = CORES_SENTIMENTO[n.sentimento] || "#94a3b8";
+    const titulo = (n.texto_limpo || "").slice(0, 110);
+    const meta = [n.veiculo, n.agente, n.cidade].filter(Boolean).join(" · ");
+    row.innerHTML = `
+      <span class="noticia-sent" style="background:${cor}" aria-hidden="true"></span>
+      <span class="noticia-txt">
+        <span class="noticia-titulo">${esc(titulo)}</span>
+        <span class="noticia-meta">${esc(meta)} · ${formatarData(n.data_publicacao)}</span>
+      </span>
+      <span class="noticia-valor">${formatarValor(n.valor_estimado)}</span>`;
+    row.addEventListener("click", () => abrirDetalhe(n));
+    cont.appendChild(row);
+  });
+}
+
+function renderizarHistorico(historico) {
+  const cont = $("historicoIngestao");
+  if (!cont) return;
+  if (!historico?.length) {
+    cont.innerHTML =
+      '<p class="lex-vazio">Sem histórico de execuções ainda. Rode a ingestão para registrar.</p>';
+    return;
+  }
+  cont.innerHTML = historico
+    .map((h) => {
+      const ok = h.sucesso !== false;
+      const qtd = formatarNumero(h.total_gravados || 0);
+      return `
+        <div class="hist-row">
+          <span class="hist-dot ${ok ? "ok" : "erro"}" aria-hidden="true"></span>
+          <span class="hist-info">
+            <span class="hist-data">${formatarData(h.executado_em)}</span>
+            <span class="hist-status ${ok ? "ok" : "erro"}">${ok ? "sucesso" : "erro"}</span>
+          </span>
+          <span class="hist-qtd">${qtd} clippings</span>
+        </div>`;
+    })
+    .join("");
+}
+
 /* ---------- modal de detalhe (Sprint 24) ---------- */
 
 let clipCache = [];
@@ -562,26 +871,28 @@ let clipCache = [];
 function abrirDetalhe(clip) {
   if (!clip) return;
   $("modalTitulo").textContent = clip.texto_limpo ? clip.texto_limpo.slice(0, 140) : clip.id_clipping;
-  const veiculo = clip.metadados?.veiculo || clip.autor || "—";
+  const veiculo = clip.metadados?.veiculo || clip.veiculo || clip.autor || "—";
   const data = formatarData(clip.data_publicacao);
   const sent = clip.sentimento || "neutro";
-  $("modalMeta").textContent = `${veiculo} · ${data} · ${sent.charAt(0).toUpperCase() + sent.slice(1)}`;
+  const agente = clip.agente ? ` · ${clip.agente}${clip.cidade ? ` (${clip.cidade})` : ""}` : "";
+  $("modalMeta").textContent =
+    `${veiculo}${agente} · ${data} · ${sent.charAt(0).toUpperCase() + sent.slice(1)}`;
 
   const valor = clip.valor_estimado ?? 0;
   const alcance = clip.alcance ?? 0;
   $("modalValoracao").innerHTML =
     `<div class="modal-valor"><span class="rotulo">Valor (R$)</span><span class="valor">${formatarValor(valor)}</span></div>` +
     `<div class="modal-valor"><span class="rotulo">Alcance</span><span class="valor">${formatarNumero(alcance)}</span></div>` +
-    `<div class="modal-valor"><span class="rotulo">Plataforma</span><span class="valor">${clip.plataforma || "Web"}</span></div>`;
+    `<div class="modal-valor"><span class="rotulo">Plataforma</span><span class="valor">${esc(clip.plataforma || "Web")}</span></div>`;
 
   const temas = clip.categorias || [];
   $("modalCategorias").innerHTML = temas.length
-    ? `<strong>Categorias:</strong> ${temas.map((t) => `<span class="chip">${t}</span>`).join("")}`
+    ? `<strong>Categorias:</strong> ${temas.map((t) => `<span class="chip">${esc(t)}</span>`).join("")}`
     : "";
 
   const palavras = extrairPalavrasChave(clip.texto_limpo);
   $("modalPalavras").innerHTML = palavras.length
-    ? `<strong>Palavras-chave:</strong> ${palavras.map((p) => `<span class="chip">${p}</span>`).join("")}`
+    ? `<strong>Palavras-chave:</strong> ${palavras.map((p) => `<span class="chip">${esc(p)}</span>`).join("")}`
     : "";
 
   $("modalConteudo").textContent = clip.texto_limpo || "";
@@ -609,6 +920,13 @@ function abrirRelatorio() {
   gerarRelatorio();
 }
 
+// PDF nativo do relatório: imprime apenas o modal (via CSS @media print).
+function exportarPdf() {
+  document.body.classList.add("print-relatorio");
+  window.print();
+  setTimeout(() => document.body.classList.remove("print-relatorio"), 300);
+}
+
 function gerarRelatorio() {
   const periodo = $("relPeriodo").value;
   const tipo = $("relTipo").value;
@@ -629,12 +947,23 @@ function gerarRelatorio() {
 
   const totalSoma = Object.values(filtroSent).reduce((a, b) => a + b, 0);
   const valorSoma = base.valoracao_total || 0;
-  const caracSoma = base.total_clippings ? Math.round(base.total_clippings * 1400) : 0;
+
+  // Somatório de espaço real (caracteres / minutos / cm²) por tipo de mídia
+  const espaco = base.espaco_total || {};
+  const caracSoma = espaco.caracteres || 0;
+  const minSoma = Math.round((espaco.duracao_seg || 0) / 60);
+  const cm2Soma = espaco.cm2 || 0;
+
+  const cardsEspaco = [
+    `<div class="soma-card">Caracteres (site)<span class="valor">${formatarNumero(caracSoma)}</span></div>`,
+    `<div class="soma-card">Tempo (TV/Rádio)<span class="valor">${formatarNumero(minSoma)} min</span></div>`,
+    `<div class="soma-card">Espaço (impresso)<span class="valor">${formatarNumero(cm2Soma)} cm²</span></div>`,
+  ];
 
   $("relSoma").innerHTML =
     `<div class="soma-card">Menções<span class="valor">${formatarNumero(totalSoma)}</span></div>` +
     `<div class="soma-card">Valor (R$)<span class="valor">${formatarValor(valorSoma)}</span></div>` +
-    `<div class="soma-card">Espaço (site)<span class="valor">${formatarNumero(caracSoma)} carac.</span></div>`;
+    cardsEspaco.join("");
 
   // Lista amostral: representa as menções do período (distribuídas por sentimento/categoria)
   const resumo = [
@@ -678,10 +1007,6 @@ function fecharModal(id) {
   el.setAttribute("aria-hidden", "true");
 }
 
-function exportarPdf() {
-  window.print();
-}
-
 /* ---------- eventos ---------- */
 
 $("filtroCidade").addEventListener("change", (e) => {
@@ -703,12 +1028,16 @@ $("filtroMes").addEventListener("change", (e) => {
 $("filtroPeriodo").addEventListener("change", (e) => {
   estado.periodo = e.target.value;
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
+  carregarLexical();
+  definirJanelaDsm(estado.periodo || "30d");
 });
 
 $("filtroTipoTop").addEventListener("change", (e) => {
   estado.tipoTop = e.target.value;
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
 });
+
+$("btnTema").addEventListener("click", alternarTema);
 
 $("btnAtualizar").addEventListener("click", async () => {
   const btn = $("btnAtualizar");
@@ -739,6 +1068,15 @@ document.querySelectorAll(".analise-tab").forEach((tab) => {
   });
 });
 
+/* Abas de análise lexical (IRAMUTEQ) */
+document.querySelectorAll(".lex-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".lex-tab").forEach((t) => t.classList.remove("ativo"));
+    tab.classList.add("ativo");
+    renderizarLexical();
+  });
+});
+
 /* Modal de detalhe */
 $("fecharDetalhe").addEventListener("click", () => fecharModal("modalDetalhe"));
 $("modalDetalhe").addEventListener("click", (e) => {
@@ -754,6 +1092,19 @@ $("modalRelatorio").addEventListener("click", (e) => {
 $("btnGerarRelatorio").addEventListener("click", gerarRelatorio);
 $("btnExportarPdf").addEventListener("click", exportarPdf);
 
+
+/* Camada DSM: newsletter consolidada (e-mail/WhatsApp) */
+$("btnNewsletterDsm").addEventListener("click", () => {
+  abrirNewsletter();
+});
+$("btnCopiarNewsletter").addEventListener("click", async () => {
+  const ok = await copiarNewsletter();
+  if (ok) {
+    mostrarAviso("Texto da newsletter copiado — cole no WhatsApp/e-mail.");
+  } else {
+    mostrarAviso("Não foi possível copiar o texto da newsletter.", "erro");
+  }
+});
 /* Fechar modais com a tecla Esc */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
@@ -763,3 +1114,4 @@ document.addEventListener("keydown", (e) => {
 });
 
 inicializar();
+

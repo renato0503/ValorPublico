@@ -41,7 +41,7 @@ class YouTubeScraper(BaseScraper):
             "--flat-playlist", "--skip-download", "--no-warnings",
             "--playlist-end", str(n),
             "--socket-timeout", "15", "--retries", "1",
-            "--print", "%(id)s\t%(title)s\t%(channel)s\t%(timestamp)s\t%(view_count)s",
+            "--print", "%(id)s\t%(title)s\t%(channel)s\t%(timestamp)s\t%(view_count)s\t%(duration)s",
             f"ytsearch{n}:{termo}",
         ]
         if self.proxies:
@@ -62,6 +62,7 @@ class YouTubeScraper(BaseScraper):
                         "channel": parts[2],
                         "timestamp": int(ts) if ts not in ("", "NA") else None,
                         "view_count": int(parts[4]) if parts[4].isdigit() else None,
+                        "duration": int(parts[5]) if len(parts) > 5 and parts[5].isdigit() else None,
                     }
                 )
         except Exception as e:  # noqa: BLE001
@@ -153,7 +154,11 @@ class YouTubeScraper(BaseScraper):
                         autor=v.get("channel") or "",
                         url=f"https://www.youtube.com/watch?v={video_id}",
                         alcance=int(v.get("view_count") or 0),
-                        metadados={"canal": v.get("channel") or ""},
+                        metadados={
+                            "canal": v.get("channel") or "",
+                            "duracao_seg": int(v.get("duration") or 0),
+                            "duracao_min": round(int(v.get("duration") or 0) / 60, 1),
+                        },
                     )
                 )
                 self._sleep()

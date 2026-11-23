@@ -42,8 +42,41 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Analises lexicais (IRAMUTEQ) publicadas pelo backend - leitura publica.
+    match /analise_lexical/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Tabela de valoracao (CPM + veiculos) - leitura publica.
     match /tabela_midia/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Camada DSM: radar de propaganda publica, alertas e cobertura/SLA
+    // ------------------------------------------------------------------
+    // Radar de propaganda publica/institucional (transparencia e prova).
+    match /radares/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Alertas acionaveis (negativa direta, compliance eleitoral, valor alto).
+    match /alertas/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Cobertura e SLA do monitoramento (latencia, veiculos por tier, falhas).
+    match /cobertura/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Newsletter consolidada (HTML + texto para WhatsApp).
+    match /newsletters/{docId} {
       allow read: if true;
       allow write: if false;
     }

@@ -1,6 +1,16 @@
-let charts = {};
+﻿let charts = {};
 
-const CORES = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+const CORES = [
+  "#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4",
+  "#ec4899", "#f97316", "#14b8a6", "#84cc16", "#a855f7", "#0ea5e9",
+  "#eab308", "#6366f1",
+];
+
+// Lê uma cor do tema CSS vigente (claro/escuro) para os gráficos acompanharem.
+function corTema(variavel) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(variavel).trim();
+  return v || corTema("--texto-suave");
+}
 
 function destruir(canvasId) {
   if (charts[canvasId]) {
@@ -78,18 +88,18 @@ export function criarGraficoTemporal(canvasId, dados) {
         legend: {
           display: temSerie,
           position: "bottom",
-          labels: { color: "#94a3b8", boxWidth: 12, padding: 14 },
+          labels: { color: corTema("--texto-suave"), boxWidth: 12, padding: 14 },
         },
       },
       scales: {
         x: {
-          ticks: { color: "#94a3b8", maxTicksLimit: 12 },
-          grid: { color: "rgba(255,255,255,0.05)" },
+          ticks: { color: corTema("--texto-suave"), maxTicksLimit: 12 },
+          grid: { color: corTema("--border") },
         },
         y: {
           beginAtZero: true,
-          ticks: { color: "#94a3b8", precision: 0 },
-          grid: { color: "rgba(255,255,255,0.05)" },
+          ticks: { color: corTema("--texto-suave"), precision: 0 },
+          grid: { color: corTema("--border") },
         },
       },
     },
@@ -97,12 +107,14 @@ export function criarGraficoTemporal(canvasId, dados) {
   return charts[canvasId];
 }
 
-export function criarGraficoDonut(canvasId, distribuicao, cores = CORES) {
+export function criarGraficoDonut(canvasId, distribuicao, cores = CORES, ordenar = false) {
   const ctx = contexto(canvasId);
   if (!ctx) return null;
 
-  const rotulos = Object.keys(distribuicao || {});
-  const valores = Object.values(distribuicao || {});
+  let entradas = Object.entries(distribuicao || {});
+  if (ordenar) entradas.sort((a, b) => b[1] - a[1]);
+  const rotulos = entradas.map(([k]) => k);
+  const valores = entradas.map(([, v]) => v);
 
   charts[canvasId] = new Chart(ctx, {
     type: "doughnut",
@@ -113,7 +125,7 @@ export function criarGraficoDonut(canvasId, distribuicao, cores = CORES) {
           data: valores,
           backgroundColor: rotulos.map((_, i) => cores[i % cores.length]),
           borderWidth: 2,
-          borderColor: "#1e293b",
+          borderColor: corTema("--card"),
           hoverOffset: 8,
         },
       ],
@@ -123,19 +135,44 @@ export function criarGraficoDonut(canvasId, distribuicao, cores = CORES) {
       maintainAspectRatio: false,
       cutout: "68%",
       plugins: {
-        legend: { position: "bottom", labels: { color: "#94a3b8", boxWidth: 12, padding: 14 } },
+        legend: { position: "bottom", labels: { color: corTema("--texto-suave"), boxWidth: 12, padding: 14 } },
       },
     },
   });
   return charts[canvasId];
 }
 
-export function criarGraficoBarras(canvasId, distribuicao, formatador, horizontal = true) {
+export function criarGraficoBarras(canvasId, distribuicao, formatador, horizontal = true, ordenar = false) {
   const ctx = contexto(canvasId);
   if (!ctx) return null;
 
-  const rotulos = Object.keys(distribuicao || {});
-  const valores = Object.values(distribuicao || {});
+  let entradas = Object.entries(distribuicao || {});
+  if (ordenar) entradas.sort((a, b) => b[1] - a[1]);
+  const rotulos = entradas.map(([k]) => k);
+  const valores = entradas.map(([, v]) => v);
+
+  const pluginValores = {
+    id: "valoresBarras",
+    afterDatasetsDraw(chart) {
+      const c = chart.ctx;
+      const meta = chart.getDatasetMeta(0);
+      if (!meta.data || !meta.data.length) return;
+      c.save();
+      c.font = "600 10px Inter, sans-serif";
+      c.textBaseline = "middle";
+      c.fillStyle = corTema("--texto-suave");
+      meta.data.forEach((bar, i) => {
+        const valor = chart.data.datasets[0].data[i];
+        if (valor === undefined || valor === null) return;
+        const txt = formatador ? formatador(valor) : valor;
+        const x = horizontal ? bar.x + 4 : bar.x + bar.width + 4;
+        const y = horizontal ? bar.y : bar.y + bar.height / 2;
+        c.textAlign = "left";
+        c.fillText(txt, x, y);
+      });
+      c.restore();
+    },
+  };
 
   charts[canvasId] = new Chart(ctx, {
     type: "bar",
@@ -164,14 +201,133 @@ export function criarGraficoBarras(canvasId, distribuicao, formatador, horizonta
       },
       scales: horizontal
         ? {
-            x: { ticks: { color: "#94a3b8", callback: (v) => (formatador ? formatador(v) : v) }, grid: { color: "rgba(255,255,255,0.05)" } },
-            y: { ticks: { color: "#e2e8f0" }, grid: { display: false } },
+            x: { grace: "8%", ticks: { color: corTema("--texto-suave"), callback: (v) => (formatador ? formatador(v) : v) }, grid: { color: corTema("--border") } },
+            y: { ticks: { color: corTema("--texto-suave") }, grid: { display: false } },
           }
         : {
-            x: { ticks: { color: "#94a3b8" }, grid: { display: false } },
-            y: { ticks: { color: "#94a3b8", callback: (v) => (formatador ? formatador(v) : v) }, grid: { color: "rgba(255,255,255,0.05)" } },
+            x: { ticks: { color: corTema("--texto-suave") }, grid: { display: false } },
+            y: { grace: "8%", ticks: { color: corTema("--texto-suave"), callback: (v) => (formatador ? formatador(v) : v) }, grid: { color: corTema("--border") } },
           },
     },
+    plugins: [pluginValores],
+  });
+  return charts[canvasId];
+}
+
+export function criarGraficoDispersao(canvasId, dados) {
+  const ctx = contexto(canvasId);
+  if (!ctx) return null;
+
+  const palavras = (dados.palavras || []).map((p) => ({
+    x: Number(p.eixo1),
+    y: Number(p.eixo2),
+    rotulo: p.rotulo,
+  }));
+  const periodos = (dados.periodos || []).map((p) => ({
+    x: Number(p.eixo1),
+    y: Number(p.eixo2),
+    rotulo: p.rotulo,
+  }));
+
+  // Remove outliers extremos (artefatos do SVD) para o mapa ficar legível
+  const absolutos = [...palavras, ...periodos]
+    .map((p) => [Math.abs(p.x), Math.abs(p.y)])
+    .flat()
+    .sort((a, b) => a - b);
+  const limite = absolutos.length
+    ? Math.max(absolutos[Math.floor(absolutos.length * 0.98)] || 100, 1)
+    : 100;
+  const palavrasVisiveis = palavras.filter(
+    (p) => Math.abs(p.x) <= limite && Math.abs(p.y) <= limite
+  );
+  const periodosVisiveis = periodos.filter(
+    (p) => Math.abs(p.x) <= limite && Math.abs(p.y) <= limite
+  );
+  const ocultos =
+    palavras.length - palavrasVisiveis.length + periodos.length - periodosVisiveis.length;
+
+  const pluginRotulos = {
+    id: "rotulosPeriodos",
+    afterDatasetsDraw(chart) {
+      const c = chart.ctx;
+      const meta = chart.getDatasetMeta(1);
+      if (!meta || !meta.data) return;
+      c.save();
+      c.font = "10px Inter, sans-serif";
+      c.fillStyle = corTema("--azul");
+      c.textAlign = "left";
+      meta.data.forEach((pt, i) => {
+        if (i % 4 !== 0) return;
+        const r = periodosVisiveis[i];
+        if (!r) return;
+        c.fillText(r.rotulo, pt.x + 5, pt.y - 5);
+      });
+      c.restore();
+    },
+  };
+
+  charts[canvasId] = new Chart(ctx, {
+    type: "scatter",
+    data: {
+      datasets: [
+        {
+          label: "Palavras",
+          data: palavrasVisiveis,
+          backgroundColor: "rgba(245,158,11,0.75)",
+          borderColor: "#f59e0b",
+          borderWidth: 1,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+        },
+        {
+          label: "Períodos (mês)",
+          data: periodosVisiveis,
+          backgroundColor: "rgba(59,130,246,0.9)",
+          borderColor: "#3b82f6",
+          pointStyle: "rectRot",
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom",
+          labels: { color: corTema("--texto-suave"), boxWidth: 12, padding: 14 },
+        },
+        tooltip: {
+          callbacks: {
+            label: (c) =>
+              c.raw && c.raw.rotulo
+                ? `${c.raw.rotulo} (${c.raw.x.toFixed(2)}, ${c.raw.y.toFixed(2)})`
+                : c.dataset.label,
+          },
+        },
+        title: {
+          display: ocultos > 0,
+          text: `${ocultos} pontos com coordenadas extremas ocultos`,
+          color: corTema("--texto-mutado"),
+          font: { size: 11 },
+          padding: { bottom: 4 },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: corTema("--texto-suave") },
+          grid: { color: corTema("--border") },
+          title: { display: true, text: "Eixo 1", color: corTema("--texto-mutado") },
+        },
+        y: {
+          ticks: { color: corTema("--texto-suave") },
+          grid: { color: corTema("--border") },
+          title: { display: true, text: "Eixo 2", color: corTema("--texto-mutado") },
+        },
+      },
+    },
+    plugins: [pluginRotulos],
   });
   return charts[canvasId];
 }

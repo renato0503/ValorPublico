@@ -87,7 +87,10 @@ class WebScraper(BaseScraper):
                             autor=veiculo,
                             url=url,
                             alcance=0,
-                            metadados={"veiculo": veiculo},
+                            metadados={
+                                "veiculo": veiculo,
+                                "espaco_carac": len(texto),
+                            },
                         )
                     )
                 self._sleep()

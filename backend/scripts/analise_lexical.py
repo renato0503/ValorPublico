@@ -51,6 +51,10 @@ def main() -> None:
         "--n-classes", type=int, default=4,
         help="Numero de classes na CHD (padrao 4).",
     )
+    parser.add_argument(
+        "--niveis-dendrograma", type=int, default=8,
+        help="Niveis superiores do dendrograma da CHD a exibir (padrao 8).",
+    )
     args = parser.parse_args()
 
     saida = Path(args.saida) if args.saida.strip() else settings.DATA_DIR / "export" / "lexical"
@@ -110,7 +114,8 @@ def main() -> None:
     pd.DataFrame(linhas_afc).to_csv(saida / "afc_coordenadas.csv", index=False, sep=";", encoding="utf-8-sig")
 
     # 6) CHD (Ward)
-    chd_res = lexical.chd(clippings, n_classes=args.n_classes)
+    prep = lexical._preparar_chd(clippings)
+    chd_res = lexical.chd(clippings, n_classes=args.n_classes, preparado=prep)
     linhas_chd = []
     for cls in chd_res.get("classes", []):
         for p in cls["palavras"]:
@@ -125,6 +130,11 @@ def main() -> None:
                 }
             )
     pd.DataFrame(linhas_chd).to_csv(saida / "chd_classes.csv", index=False, sep=";", encoding="utf-8-sig")
+
+    # 7) Dendrograma da CHD (truncado) p/ visualizacao no dashboard
+    dendo = lexical.dendrograma(clippings, n_classes=args.n_classes, p=args.niveis_dendrograma, preparado=prep)
+    with open(saida / "dendrograma.json", "w", encoding="utf-8") as f:
+        json.dump(dendo, f, ensure_ascii=False, indent=2)
 
     # Resumo
     n_palavras = len(freq_global)
@@ -141,6 +151,10 @@ def main() -> None:
     )
     if chd_res.get("aviso"):
         resumo += f"Aviso CHD: {chd_res['aviso']}\n"
+    if dendo.get("aviso"):
+        resumo += f"Aviso dendrograma: {dendo['aviso']}\n"
+    else:
+        resumo += f"Dendrograma: {len(dendo['polilinhas'])} ramos (niveis superiores)\n"
     (saida / "resumo.txt").write_text(resumo, encoding="utf-8")
 
     logger.info("Analise lexical concluida -> %s", saida)

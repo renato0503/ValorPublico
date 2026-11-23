@@ -1,17 +1,49 @@
-name: Ingestao diaria (ValorPublico)
+name: Ingestão diária (scraping + métricas)
 
 on:
   schedule:
-    # 06:30 e 18:30 UTC todos os dias (03:30 / 15:30 no horario de Cuiaba, UTC-3)
-    - cron: "30 6,18 * * *"
-  workflow_dispatch: {}
+    # 06:30 e 18:30 UTC (03:30 e 15:30 no horário de Cuiabá/MT)
+    - cron: "30 6 * * *"
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ingestao
+  cancel-in-progress: false
 
 jobs:
   ingestao:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
+
+    env:
+      FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+      FIREBASE_SERVICE_ACCOUNT: ${{ github.workspace }}/backend/serviceAccountKey.json
+      HABILITAR_TWITTER: "0"
+      HABILITAR_INSTAGRAM: "0"
+      HABILITAR_FACEBOOK: "0"
+      HABILITAR_TELEGRAM: "0"
+      HABILITAR_WEB: "1"
+      HABILITAR_YOUTUBE: "1"
+      HABILITAR_TV: "1"
+      HABILITAR_RADIO: "1"
+      HABILITAR_IMPRESSO: "1"
+      INCLUIR_COMENTARIOS: "0"
+      WEB_ENRIQUECER: "0"
+      YOUTUBE_MAX_VIDEOS: "3"
+      MIDIA_VIDEOS_POR_CANAL: "10"
+      LIMITE_ITENS_POR_AGENTE: "15"
+      # Canais monitorados — sobrescreva via secrets do repositório
+      TV_CANAIS: ${{ secrets.TV_CANAIS || '@tvvilareal,@tvcentroamerica,@TVRondon,@tvcidadeverde' }}
+      RADIO_CANAIS: ${{ secrets.RADIO_CANAIS || '@centroamericafm,@cbncba,@bandnewsfmcuiaba' }}
+      IMPRESSO_SITES: ${{ secrets.IMPRESSO_SITES || 'https://www.caldeiraopolitico.com.br,https://www.folhamax.com,https://www.olhardireto.com.br,https://g1.globo.com/mato-grosso' }}
+
     steps:
-      - name: Checkout do repositorio
+      - name: Checkout do repositório
         uses: actions/checkout@v4
 
       - name: Setup Python 3.12
@@ -21,65 +53,66 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
 
-      - name: Instalar dependencias
-        working-directory: backend
-        run: pip install -r requirements.txt
-
-      - name: Preparar credenciais (.env + service account)
+      - name: Instalar dependências
         working-directory: backend
         run: |
-          echo "FIREBASE_DATABASE_URL=${{ secrets.FIREBASE_DATABASE_URL }}" > .env
-          echo "HABILITAR_TWITTER=0" >> .env
-          echo "HABILITAR_INSTAGRAM=0" >> .env
-          echo "HABILITAR_FACEBOOK=0" >> .env
-          echo "HABILITAR_WEB=1" >> .env
-          echo "HABILITAR_YOUTUBE=0" >> .env
-          echo "HABILITAR_TELEGRAM=0" >> .env
-          echo "HABILITAR_TV=0" >> .env
-          echo "HABILITAR_RADIO=0" >> .env
-          echo "HABILITAR_IMPRESSO=0" >> .env
-          echo "INCLUIR_COMENTARIOS=0" >> .env
-          echo "WEB_ENRIQUECER=0" >> .env
-          echo "LIMITE_ITENS_POR_AGENTE=15" >> .env
-          # Chave de servico fornecida via segredo (base64)
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}" | base64 --decode > serviceAccountKey.json
-          echo "FIREBASE_SERVICE_ACCOUNT=$(pwd)/serviceAccountKey.json" >> .env
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Rodar ingestao Web
+      - name: Decodificar credencial de serviço do Firebase
+        run: |
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}" | base64 --decode > backend/serviceAccountKey.json
+          test -s backend/serviceAccountKey.json
+
+      - name: Ingestão de clippings
         working-directory: backend
-        run: python scripts/run_ingestao.py
+        run: |
+          python scripts/run_ingestao.py
 
-      - name: Regenerar metricas
+      - name: Regenerar métricas (dashboard em tempo real)
         working-directory: backend
-        run: python scripts/atualizar_metricas.py
+        run: |
+          python scripts/atualizar_metricas.py
 
-      - name: Upload de logs em caso de falha
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: logs-ingestao
-          path: backend/data/logs/
+      - name: Análise lexical por escopo (AFC, CHD, grafo, dendrograma)
+        continue-on-error: true
+        working-directory: backend
+        run: |
+          python scripts/analise_lexical_escopos.py --n-classes 4 --niveis 8
 
-      - name: Abrir issue de alerta em caso de falha
+      - name: Abrir issue automática em caso de falha
         if: failure()
         uses: actions/github-script@v7
         with:
           script: |
-            const { data } = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open',
-              creator: 'github-actions[bot]',
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+            const { data: run } = await github.rest.actions.getWorkflowRun({
+              owner, repo, run_id: runId
             });
-            const abertas = data.filter(i => i.title.includes('Falha na ingestao'));
-            if (abertas.length > 0) {
-              console.log('Issue de alerta ja existe - ignorando.');
+            const { data: issue } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              labels: "bot",
+            });
+            const jaExiste = issue.data.some((i) =>
+              i.title.includes(`Ingestão ${run.head_branch || "principal"} falhou`)
+            );
+            if (jaExiste) {
+              console.log("Issue de falha já aberta; nada a criar.");
               return;
             }
             await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `[ALERTA] Falha na ingestao - ${new Date().toISOString()}`,
-              body: `A ingestão diária do ValorPúblico falhou.\n\n- **Workflow:** ${context.workflow}\n- **Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n- **Disparado por:** ${context.eventName}\n\nVerifique os logs em **Actions → ingestao** (artefato `logs-ingestao`).`,
+              owner,
+              repo,
+              title: `⚠️ Ingestão ${run.head_branch || "principal"} falhou (${new Date().toLocaleString("pt-BR", { timeZone: "America/Cuiaba" })})`,
+              body:
+                "A rotina de ingestão **falhou** automaticamente. \n\n" +
+                "### Detalhes\n" +
+                `- **Workflow:** ${run.name}\n` +
+                `- **Run:** [#${runId}](${run.html_url})\n` +
+                `- **Branch:** ${run.head_branch || "principal"}\n` +
+                `- **Commit:** \`${run.head_sha.slice(0, 7)}\`\n\n` +
+                "Verifique os logs da execução para corrigir antes do próximo agendamento.",
             });
-            console.log('Issue de alerta criada.');

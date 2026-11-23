@@ -26,6 +26,7 @@ __all__ = [
     "analise_correspondencias",
     "segmentar",
     "chd",
+    "dendrograma",
 ]
 
 
@@ -195,28 +196,43 @@ def segmentar(texto: str, tamanho: int = 60) -> list[str]:
     return [" ".join(palavras[i : i + tamanho]) for i in range(0, len(palavras), tamanho)]
 
 
-def chd(clippings, n_classes: int = 4, min_segmentos: int = 100) -> dict:
-    """Classificacao Hierarquica Descendente (Ward) sobre TF-IDF dos segmentos.
-
-    Retorna as classes com as palavras caracteristicas (qui-quadrado).
-    Requer `scipy` e `sklearn`.
-    """
-    from scipy.cluster.hierarchy import fcluster, linkage
+def _preparar_chd(clippings, min_segmentos: int = 100) -> dict | None:
+    """Segmenta o corpus e prepara TF-IDF + linkage de Ward (compartilhado
+    pela CHD e pelo dendrograma, evitando recomputar a parte pesada)."""
+    from scipy.cluster.hierarchy import linkage
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     segmentos: list[str] = []
     for c in clippings:
         segmentos.extend(segmentar(c.get("texto_limpo") or ""))
     if len(segmentos) < min_segmentos:
-        return {
-            "segmentos": len(segmentos),
-            "classes": [],
-            "aviso": "corpus pequeno para CHD (min. 100 segmentos).",
-        }
-
+        return None
     vec = TfidfVectorizer(token_pattern=r"[a-z0-9]{3,}", min_df=2)
     X = vec.fit_transform(segmentos)
     Z = linkage(X.toarray(), method="ward")
+    return {"segmentos": segmentos, "X": X, "Z": Z, "vec": vec}
+
+
+def chd(clippings, n_classes: int = 4, min_segmentos: int = 100, preparado: dict | None = None) -> dict:
+    """Classificacao Hierarquica Descendente (Ward) sobre TF-IDF dos segmentos.
+
+    Retorna as classes com as palavras caracteristicas (qui-quadrado).
+    Requer `scipy` e `sklearn`.
+    """
+    from scipy.cluster.hierarchy import fcluster
+
+    prep = preparado or _preparar_chd(clippings, min_segmentos)
+    if prep is None:
+        return {
+            "segmentos": _contar_segmentos(clippings),
+            "classes": [],
+            "aviso": "corpus pequeno para CHD (min. 100 segmentos).",
+        }
+    segmentos = prep["segmentos"]
+    X = prep["X"]
+    Z = prep["Z"]
+    vec = prep["vec"]
+
     rotulos = fcluster(Z, t=n_classes, criterion="maxclust")
 
     features = [f for f in vec.get_feature_names_out() if f not in _STOPWORDS]
@@ -255,3 +271,57 @@ def chd(clippings, n_classes: int = 4, min_segmentos: int = 100) -> dict:
         )
     classes.sort(key=lambda cl: -cl["n_segmentos"])
     return {"segmentos": len(segmentos), "classes": classes}
+
+
+def _contar_segmentos(clippings) -> int:
+    """Conta segmentos (UCE) sem alocar o corpus (usado p/ avisos)."""
+    total = 0
+    for c in clippings:
+        palavras = extrair_palavras(c.get("texto_limpo") or "")
+        total += max(1, -(-len(palavras) // 60))
+    return total
+
+
+def dendrograma(
+    clippings,
+    n_classes: int = 4,
+    p: int = 8,
+    min_segmentos: int = 100,
+    preparado: dict | None = None,
+) -> dict:
+    """Dendrograma da CHD (Ward) truncado para os `p` niveis superiores.
+
+    Serializa as coordenadas das polilineas (icoord/dcoord) no espaco do
+    scipy (x: 10 unidades por folha; y: altura/distancia de fusao), com as
+    cores das classes de topo. O frontend desenha em SVG.
+    """
+    from scipy.cluster.hierarchy import dendrogram
+
+    prep = preparado or _preparar_chd(clippings, min_segmentos)
+    if prep is None:
+        return {"n_segmentos": _contar_segmentos(clippings), "polilinhas": [],
+                "aviso": "corpus pequeno para CHD (min. 100 segmentos)."}
+    Z = prep["Z"]
+    segmentos = prep["segmentos"]
+
+    n = len(segmentos)
+    if n_classes >= n:
+        return {"n_segmentos": n, "polilinhas": [], "aviso": "corpus pequeno demais."}
+    limiar = float(Z[-n_classes, 2])
+
+    res = dendrogram(
+        Z,
+        truncate_mode="level",
+        p=int(p),
+        color_threshold=limiar,
+        no_plot=True,
+    )
+    return {
+        "n_segmentos": n,
+        "polilinhas": [
+            {"x": [float(v) for v in icoord], "y": [float(v) for v in dcoord], "cor": cor}
+            for icoord, dcoord, cor in zip(res["icoord"], res["dcoord"], res["color_list"])
+        ],
+        "rotulos": list(res["ivl"]),
+        "limiar_classes": round(limiar, 3),
+    }
