@@ -282,3 +282,107 @@ h2 { font-size: 1.22rem; }
 
 :focus-visible { outline: 2px solid var(--bronze); outline-offset: 2px; }
 ::selection { background: rgba(168, 121, 47, 0.25); }
+/* ============================================================
+   Tema ESCURO — "Newsroom, edição da noite"
+   Carvão, papel envelhecido, bronze e azul fosco.
+   ============================================================ */
+html[data-tema="escuro"] {
+  --bg: #0f1319;
+  --bg-deep: #0a0d12;
+  --card: #161c25;
+  --card-hover: #1c2430;
+  --border: #27313e;
+  --border-forte: #3a4757;
+
+  --texto: #f2ecdf;
+  --texto-suave: #c6bfb0;
+  --texto-mutado: #9b9486;
+
+  --verde: #5ecba1;
+  --verde-soft: rgba(94, 203, 161, 0.12);
+  --azul: #86aee0;
+  --azul-soft: rgba(134, 174, 224, 0.14);
+  --ambar: #dda95e;
+  --ambar-soft: rgba(221, 169, 94, 0.16);
+  --roxo: #b795dd;
+  --roxo-soft: rgba(183, 149, 221, 0.14);
+  --vermelho: #e57a6c;
+
+  --navy: #f2ecdf;      /* tinta sobre escuro */
+  --bronze: #dda95e;
+  --papel: #161c25;
+  --regua: #2c3644;
+
+  --sombra: 0 12px 30px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+html[data-tema="escuro"] body {
+  background:
+    radial-gradient(1000px 520px at 82% -8%, rgba(134, 174, 224, 0.10), transparent 62%),
+    radial-gradient(760px 420px at 4% 18%, rgba(221, 169, 94, 0.07), transparent 60%),
+    var(--bg);
+}
+
+html[data-tema="escuro"] .card { background: var(--card); border-color: var(--border); }
+
+html[data-tema="escuro"] .kpi:hover { background: #1a212c; }
+html[data-tema="escuro"] .painel-cabecalho { border-bottom-color: var(--border); }
+html[data-tema="escuro"] .painel-cabecalho h2 { color: #f2ecdf; }
+html[data-tema="escuro"] .painel-sub { color: var(--texto-mutado); }
+
+html[data-tema="escuro"] .kpi-rotulo { color: var(--texto-mutado); }
+html[data-tema="escuro"] .kpi-verde .kpi-rotulo { color: var(--verde); }
+html[data-tema="escuro"] .kpi-azul .kpi-rotulo { color: var(--azul); }
+html[data-tema="escuro"] .kpi-ambar .kpi-rotulo { color: var(--ambar); }
+html[data-tema="escuro"] .kpi-roxo .kpi-rotulo { color: var(--roxo); }
+
+html[data-tema="escuro"] .kpi-valor { color: #f2ecdf; }
+html[data-tema="escuro"] .kpi-verde .kpi-valor { color: var(--verde); }
+html[data-tema="escuro"] .kpi-azul .kpi-valor { color: var(--azul); }
+html[data-tema="escuro"] .kpi-ambar .kpi-valor { color: var(--ambar); }
+html[data-tema="escuro"] .kpi-roxo .kpi-valor { color: var(--roxo); }
+
+html[data-tema="escuro"] .btn-atualizar { background: var(--bronze); color: #17120a; }
+html[data-tema="escuro"] .btn-atualizar:hover { background: #e8ba76; }
+html[data-tema="escuro"] .btn-relatorio { background: #2f4a6e; color: #f2ecdf; }
+html[data-tema="escuro"] .btn-relatorio:hover { background: #3a5a85; }
+html[data-tema="escuro"] .btn-tema { background: #1c2430; color: #f2ecdf; border-color: var(--border-forte); }
+
+html[data-tema="escuro"] .filtro select {
+  background: #141a22;
+  color: #f2ecdf;
+  border-color: #3a4757;
+}
+html[data-tema="escuro"] option { background: #141a22; color: #f2ecdf; }
+html[data-tema="escuro"] .filtro-rotulo { color: var(--texto-mutado); }
+
+html[data-tema="escuro"] .tabela thead th {
+  background: #1b2330;
+  color: #b8b1a2;
+  border-bottom-color: #3a4757;
+}
+html[data-tema="escuro"] .tabela td { border-bottom-color: #232c39; }
+html[data-tema="escuro"] .tabela tbody tr:nth-child(even) { background: #131922; }
+html[data-tema="escuro"] .tabela tbody tr:hover { background: #1c2532; }
+html[data-tema="escuro"] .tabela-wrapper { border-color: #2b3543; }
+
+html[data-tema="escuro"] .aviso {
+  background: #241f14;
+  border-color: #4a3c20;
+  color: #e8cf9c;
+}
+html[data-tema="escuro"] .aviso.erro {
+  background: #2a1716;
+  border-color: #55302c;
+  color: #f0b3aa;
+}
+
+html[data-tema="escuro"] .modal { background: #161c25; border-color: var(--border-forte); }
+html[data-tema="escuro"] .rodape { color: var(--texto-mutado); border-top-color: var(--border); }
+html[data-tema="escuro"] ::selection { background: rgba(221, 169, 94, 0.3); }
+/* contraste dos selos de tendência */
+html[data-tema="claro"] .kpi-tendencia.trend-baixa { background: #fbeceb; color: #8a2f25; }
+html[data-tema="claro"] .kpi-tendencia.trend-alta { background: #e9f5ef; color: #1f6a4f; }
+html[data-tema="escuro"] .kpi-tendencia.trend-baixa { background: rgba(229, 122, 108, 0.18); color: #ffc0b6; }
+html[data-tema="escuro"] .kpi-tendencia.trend-alta { background: rgba(94, 203, 161, 0.16); color: #9fe8c8; }

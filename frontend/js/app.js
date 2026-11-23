@@ -133,9 +133,10 @@ function esc(s) {
 /* ---------- tema claro/escuro ---------- */
 
 function aplicarTemaInicial() {
-  // Identidade "newsroom": claro fixo.
-  document.documentElement.dataset.tema = "claro";
-  localStorage.setItem("vp_tema", "claro");
+  const salvo = localStorage.getItem("vp_tema");
+  const tema = salvo === "escuro" ? "escuro" : "claro";
+  document.documentElement.dataset.tema = tema;
+  atualizarBotaoTema(tema);
 }
 
 function atualizarBotaoTema(tema) {
@@ -1302,6 +1303,7 @@ async function bootstrap() {
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
   $("btnAbrirNewsletter")?.addEventListener("click", abrirNewsletter);
   $("btnSairConta")?.addEventListener("click", alternarAuth);
+  $("btnTemaConta")?.addEventListener("click", alternarTema);
   await iniciarAuth();
   modoPublico = await lerModoAcesso();
   if (!modoPublico && !estadoAuth.autenticado) {

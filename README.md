@@ -235,4 +235,6 @@ completa e o que já foi entregue.
 - Login em página inteira, com capa 3D isométrica própria; em modo restrito o painel só inicia
   depois do login.
 - Ativos próprios em `frontend/icons/` (SVG, PNGs e maskable).
+- Temas claro (padrão) e escuro, com alternador no masthead/Sistema.
+- **Esqueci minha senha** na tela de login; template do e-mail em `docs/emails/`.
 - Motion em `frontend/assets/motion/` (hero do login, splash, faixa e transição de aba).

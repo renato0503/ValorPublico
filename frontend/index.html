@@ -64,6 +64,9 @@
       </div>
 
       <div class="acoes-topo">
+        <button id="btnTema" class="btn-tema" type="button" title="Alternar tema">
+          <span class="btn-tema-icone">☾</span>
+        </button>
         <button id="btnFiltros" class="btn-filtros" type="button" aria-expanded="false" aria-controls="filtrosPainel">
           <span aria-hidden="true">☰</span> Filtros
         </button>
@@ -480,6 +483,7 @@
           </dl>
           <div class="conta-acoes">
             <button class="btn-atualizar" id="btnSairConta" type="button">Sair</button>
+            <button class="btn-tema" id="btnTemaConta" type="button">Alternar tema</button>
           </div>
         </article>
       <article class="card painel">
@@ -573,6 +577,7 @@
         <input id="loginEmail" type="email" autocomplete="email" placeholder="seu@email.com" required />
         <label for="loginSenha">Senha</label>
         <input id="loginSenha" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        <button class="login-link" id="btnEsqueci" type="button">Esqueci minha senha</button>
         <p class="login-erro oculto" id="loginErro" role="alert"></p>
         <button class="btn-atualizar" id="btnEntrar" type="submit">Entrar</button>
       </form>
@@ -582,7 +587,7 @@
       <video src="assets/motion/hero-valor.mp4" autoplay loop muted playsinline></video>
       <div class="login-capa-texto">
         <p>O que a cidade leu, ouviu e assistiu — organizado para a instituição.</p>
-        <span>Edição diária · Cuiabá e Várzea Grande</span>
+        <span>Edição diária</span>
       </div>
     </div>
   </div>

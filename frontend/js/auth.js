@@ -42,6 +42,11 @@ export async function iniciarAuth() {
     const { app } = await import("./firebase-init.js");
     const modulo = await urlAuth();
     estadoAuth.auth = modulo.getAuth(app);
+    try {
+      estadoAuth.auth.languageCode = "pt-BR";
+    } catch {
+      /* SDK antigo sem languageCode: segue em ingles */
+    }
     await new Promise((resolve) => {
       let primeira = true;
       estadoAuth.desinscrever = modulo.onAuthStateChanged(estadoAuth.auth, async (usuario) => {
@@ -100,6 +105,13 @@ export async function entrar(email, senha) {
   if (!estadoAuth.auth) throw new Error("Autenticação indisponível neste projeto.");
   const modulo = await urlAuth();
   await modulo.signInWithEmailAndPassword(estadoAuth.auth, email, senha);
+}
+
+/** Envia o e-mail de redefinição de senha (template personalizado no Firebase). */
+export async function recuperarSenha(email) {
+  if (!estadoAuth.auth) throw new Error("Autenticação indisponível neste projeto.");
+  const modulo = await urlAuth();
+  await modulo.sendPasswordResetEmail(estadoAuth.auth, email);
 }
 
 export async function sair() {
@@ -214,4 +226,41 @@ export async function alternarAuth() {
 export function registrarBotaoAuth() {
   $("btnAuth")?.addEventListener("click", alternarAuth);
   $("formLogin")?.addEventListener("submit", submeterLogin);
+  $("btnEsqueci")?.addEventListener("click", solicitarReset);
+}
+
+async function solicitarReset() {
+  const email = ($("loginEmail")?.value || "").trim();
+  const msg = $("loginErro");
+  if (!email) {
+    if (msg) {
+      msg.className = "login-erro";
+      msg.textContent = "Informe seu e-mail para receber o link.";
+      msg.classList.remove("oculto");
+    }
+    $("loginEmail")?.focus();
+    return;
+  }
+  if (msg) {
+    msg.className = "login-erro";
+    msg.textContent = "Enviando o link…";
+    msg.classList.remove("oculto");
+  }
+  try {
+    await recuperarSenha(email);
+    if (msg) {
+      msg.className = "login-erro ok";
+      msg.textContent = "Link enviado para " + email + ". Confira a caixa de entrada e o spam.";
+    }
+  } catch (e) {
+    const codigo = String(e?.code || "");
+    const aviso = codigo === "auth/too-many-requests"
+      ? "Muitos pedidos. Tente novamente em alguns minutos."
+      : "Não foi possível enviar o link agora. Tente novamente.";
+    if (msg) {
+      msg.className = "login-erro";
+      msg.textContent = aviso;
+      msg.classList.remove("oculto");
+    }
+  }
 }

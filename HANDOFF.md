@@ -80,6 +80,9 @@ O Valor deixou de ser uma cópia do Assessor. Estrutura e visual próprios:
   Parlamentares (Share of Voice + temas), Inteligência (radar/alertas + lexical + nuvem),
   Relatórios ("pranchas": PDF e newsletter) e Sistema (acesso + histórico).
 - **Login em página inteira** com capa 3D isométrica própria (`assets/motion/hero-valor.mp4`).
+- **Dois temas**: `Newsroom` claro (padrão) e `Edição da noite` (carvão + bronze); alternador no
+  masthead e em Sistema, persistido em `localStorage.vp_tema`.
+- **Esqueci minha senha** na tela de login (link do Firebase; template em `docs/emails/README.md`).
 - **Ativos próprios**: `icons/favicon.svg` (pórtico), PNGs 192/512, maskable, apple-touch.
 - **Motion**: assets em `frontend/assets/motion/`; splash do PWA próprio
   (`splash-vertical.mp4`, gerado de `SplashValorNovo` no estúdio do app principal).

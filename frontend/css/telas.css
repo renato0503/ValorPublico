@@ -367,19 +367,23 @@
 
 .login-capa-texto {
   position: absolute;
-  left: 42px;
-  right: 42px;
-  bottom: 38px;
+  left: 28px;
+  right: auto;
+  max-width: 560px;
+  bottom: 22px;
   z-index: 2;
-  padding-top: 14px;
-  border-top: 2px solid var(--navy);
+  padding: 18px 20px 14px;
+  border-top: 2px solid #1d3557;
+  background: linear-gradient(180deg, rgba(247, 243, 232, 0.35), rgba(247, 243, 232, 0.94) 42%);
+  border-radius: 0 0 4px 4px;
+  backdrop-filter: blur(3px);
 }
 
 .login-capa-texto p {
   font-family: var(--fonte-display);
   font-size: clamp(1.35rem, 2vw, 1.8rem);
   line-height: 1.2;
-  color: var(--navy);
+  color: #16202e;
   max-width: 24ch;
 }
 
@@ -390,7 +394,7 @@
   font-size: 0.66rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--bronze);
+  color: #7a541a;
 }
 
 /* ---------- responsivo ---------- */
@@ -460,3 +464,99 @@
 @media (prefers-reduced-motion: reduce) {
   .tela.ativa { animation: none; }
 }
+/* ---------- esqueci minha senha ---------- */
+.login-link {
+  align-self: flex-start;
+  margin-top: -2px;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: var(--texto-suave);
+  font-family: var(--fonte-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.login-link:hover { color: var(--bronze); }
+
+.login-erro.ok {
+  background: #eef6f0;
+  border-color: #bfdccb;
+  color: #1f6a4f;
+}
+
+html[data-tema="escuro"] .login-erro.ok {
+  background: rgba(94, 203, 161, 0.12);
+  border-color: rgba(94, 203, 161, 0.38);
+  color: #8fe6c2;
+}
+
+html[data-tema="escuro"] .login-link { color: var(--texto-suave); }
+/* ============================================================
+   Tema ESCURO no shell (masthead, nav, login, tabelas)
+   ============================================================ */
+html[data-tema="escuro"] .masthead {
+  background: rgba(15, 19, 25, 0.94);
+  border-bottom-color: var(--border);
+}
+
+html[data-tema="escuro"] .marca h1 { color: #f2ecdf; }
+html[data-tema="escuro"] .marca-sub { color: var(--bronze); }
+html[data-tema="escuro"] .edicao { border-color: var(--border); }
+html[data-tema="escuro"] .edicao-data { color: #f2ecdf; }
+html[data-tema="escuro"] .edicao-hora { color: var(--texto-mutado); }
+
+html[data-tema="escuro"] .nav-jornal { border-top-color: var(--border); }
+html[data-tema="escuro"] .nav-jornal a { color: #c6bfb0; }
+html[data-tema="escuro"] .nav-jornal a:hover { color: #f2ecdf; background: rgba(255, 255, 255, 0.04); }
+html[data-tema="escuro"] .nav-jornal a.ativo { color: #f2ecdf; border-bottom-color: var(--bronze); }
+
+html[data-tema="escuro"] .filtros-barra {
+  background: rgba(255, 255, 255, 0.02);
+  border-top-color: var(--border);
+}
+
+html[data-tema="escuro"] .faixa-edicao { border-bottom-color: #3a4757; color: var(--texto-mutado); }
+html[data-tema="escuro"] .faixa-edicao strong { color: #f2ecdf; }
+
+html[data-tema="escuro"] .rel-card h3 { color: #f2ecdf; }
+html[data-tema="escuro"] .rel-card p { color: var(--texto-suave); }
+
+html[data-tema="escuro"] .conta-card h2 { color: #f2ecdf; }
+html[data-tema="escuro"] .conta-dados dd { color: #f2ecdf; }
+
+html[data-tema="escuro"] .login-folha {
+  background: #12171f;
+  border-right-color: var(--border);
+}
+html[data-tema="escuro"] .login-folha::before { background: linear-gradient(90deg, var(--bronze) 0 38%, #2f4a6e 38% 100%); }
+html[data-tema="escuro"] .login-folha h2 { color: #f2ecdf; }
+html[data-tema="escuro"] .login-folha .login-sub { color: var(--texto-suave); }
+html[data-tema="escuro"] .login-marca strong { color: #f2ecdf; }
+html[data-tema="escuro"] .login-form input {
+  background: #0f141b;
+  color: #f2ecdf;
+  border-color: #3a4757;
+}
+html[data-tema="escuro"] .login-form label { color: var(--texto-mutado); }
+html[data-tema="escuro"] .login-pe { color: var(--texto-mutado); border-top-color: var(--border); }
+html[data-tema="escuro"] .login-erro {
+  background: #2a1716;
+  border-color: #55302c;
+  color: #f0b3aa;
+}
+html[data-tema="escuro"] .login-capa { background: #f3eee2; }
+html[data-tema="escuro"] .login-capa-texto { border-top-color: #1d3557; }
+html[data-tema="escuro"] .login-capa-texto p { color: #16202e; }
+html[data-tema="escuro"] .login-capa-texto span { color: #7a541a; }
+
+html[data-tema="escuro"] .btn-filtros {
+  background: #161c25;
+  color: #f2ecdf;
+  border-color: var(--border-forte);
+}
+html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(--bronze); color: var(--bronze); }
