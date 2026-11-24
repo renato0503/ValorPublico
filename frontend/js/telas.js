@@ -955,12 +955,24 @@ function renderizarTendencias(dados) {
 
 /* ---- auxiliares ---- */
 function serieSentimento(dados) {
-  const porDia = dados.por_dia || dados.dias || {};
-  const dias = Object.keys(porDia);
+  const fonte =
+    dados.serie_sentimento || dados.por_dia || dados.dias || {};
+  const dias = Object.keys(fonte).sort();
+  const item = (dia) =>
+    fonte[dia] && typeof fonte[dia] === "object" ? fonte[dia] : {};
   return [
-    { datas: dias, positivos: dias.map((d) => Number(porDia[d]?.positivo ?? 0)) },
-    { datas: dias, neutros: dias.map((d) => Number(porDia[d]?.neutro ?? 0)) },
-    { datas: dias, negativos: dias.map((d) => Number(porDia[d]?.negativo ?? 0)) },
+    {
+      datas: dias,
+      positivos: dias.map((d) => Number(item(d).positivo ?? 0)),
+    },
+    {
+      datas: dias,
+      neutros: dias.map((d) => Number(item(d).neutro ?? 0)),
+    },
+    {
+      datas: dias,
+      negativos: dias.map((d) => Number(item(d).negativo ?? 0)),
+    },
   ];
 }
 

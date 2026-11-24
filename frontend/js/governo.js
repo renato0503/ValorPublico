@@ -268,14 +268,20 @@ function renderizarGoverno() {
 function _serieSentimento(dados) {
   const serie = dados.serie_sentimento || dados.serie || {};
   const dias = Object.keys(serie).sort();
-  const acc = { positivo: [], neutro: [], negativo: [] };
-  for (const dia of dias) {
-    const item = serie[dia] || {};
-    acc.positivo.push(Number(item.positivo || 0));
-    acc.neutro.push(Number(item.neutro || 0));
-    acc.negativo.push(Number(item.negativo || 0));
-  }
-  return [{ datas: dias, ...acc }];
+  return [
+    {
+      datas: dias,
+      positivos: dias.map((d) => Number(serie[d]?.positivo ?? 0)),
+    },
+    {
+      datas: dias,
+      neutros: dias.map((d) => Number(serie[d]?.neutro ?? 0)),
+    },
+    {
+      datas: dias,
+      negativos: dias.map((d) => Number(serie[d]?.negativo ?? 0)),
+    },
+  ];
 }
 
 /* ------------------------------------------------------------------ */
