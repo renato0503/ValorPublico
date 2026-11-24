@@ -1033,3 +1033,11 @@ html[data-tema="escuro"] .chat-mensagens { background: rgba(255, 255, 255, 0.03)
   font: inherit;
 }
 .chat-form button { flex-shrink: 0; }
+
+/* Corrige o grid do chat no mobile (select longo não pode esticar a coluna) */
+.persona-chat { grid-template-columns: minmax(0, 1fr); }
+.persona-chat > * { min-width: 0; }
+.persona-chat .filtro { width: 100%; }
+.persona-chat #chatPersona { width: 100%; min-width: 0; max-width: 100%; }
+.chat-form { min-width: 0; }
+.chat-form button { max-width: 100%; }

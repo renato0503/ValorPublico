@@ -1606,6 +1606,7 @@ window.addEventListener("auth:changed", async () => {
   }
   if (!estadoAuth.autenticado) {
     // Ao sair, a próxima entrada pede a frente de novo (e recarrega tudo).
+    desinscreverTudo();
     if (estado.uid) limparOrgao(estado.uid);
     estado.uid = "";
     estado.orgao = "";

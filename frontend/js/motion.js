@@ -94,19 +94,7 @@ export function iniciarMotion() {
     splash?.remove();
   }
 
-  // Pré-carrega a faixa no primeiro toque (evita atraso no primeiro filtro).
-  if (overlayFaixa) {
-    const faixa = overlayFaixa.querySelector("video");
-    document.addEventListener(
-      "pointerdown",
-      () => {
-        if (!faixa) return;
-        faixa.preload = "auto";
-        faixa.load();
-      },
-      { once: true }
-    );
-  }
+  // A faixa é carregada sob demanda em `tocarFaixa` (evita request abortado).
 
   const fecharPainel = () => {
     topo?.classList.remove("filtros-aberto");

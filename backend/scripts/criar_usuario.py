@@ -34,7 +34,18 @@ from core.logger import get_logger  # noqa: E402
 
 logger = get_logger(__name__)
 
-PAPEIS = ("agente", "assessor", "admin", "owner")
+PAPEIS = (
+    "agente",
+    "assessor",
+    "secom",
+    "presidencia",
+    "ouvidoria",
+    "controle",
+    "transparencia",
+    "leitura",
+    "admin",
+    "owner",
+)
 
 # Orgaos (espelham `frontend/js/orgaos.js` e `firestore.rules`).
 ORGAOS = ("cuiaba", "varzea-grande", "almt", "governo-mt")
