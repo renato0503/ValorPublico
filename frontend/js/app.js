@@ -1,6 +1,7 @@
 import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
 import { iniciarRouter } from "./router.js";
+import * as lexical from "./lexical.js";
 import { iniciarMotion } from "./motion.js";
 import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
@@ -373,117 +374,43 @@ function renderizarLexical() {
 function renderizarAfc() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.afc;
-  if (!dados || !dados.palavras?.length) {
-    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
-    conteudo.innerHTML =
-      `<p class="lex-vazio">AFC sem dados para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
-    return;
-  }
   conteudo.innerHTML =
-    `<div class="lex-afc-box"><canvas id="canvasAfc" aria-label="Mapa fatorial de correspondências"></canvas></div>` +
-    `<p class="lex-dica">Palavras (amarelo) e períodos/meses (azul) projetados nos dois primeiros eixos fatoriais.</p>`;
-  charts.criarGraficoDispersao("canvasAfc", dados);
+    `<div class="lex-afc-box" id="canvasAfc" role="img" aria-label="Mapa de proximidade (AFC)"></div>` +
+    `<div class="lex-dica">Arraste para mover e use a roda para dar zoom. Palavras em amarelo; períodos em azul.
+     <button class="btn-texto" type="button" data-lex-dados="afc">Ver dados</button></div>`;
+  lexical.desenharAfc($("canvasAfc"), dados);
 }
 
 function renderizarChd() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.chd;
-  if (!dados || !dados.classes?.length) {
-    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
-    conteudo.innerHTML =
-      `<p class="lex-vazio">CHD sem classes para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
-    return;
-  }
-  const cores = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#f97316", "#14b8a6"];
-  const classes = [...dados.classes].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
   conteudo.innerHTML =
-    `<div class="lex-chd">` +
-    classes
-      .map((cls, i) => {
-        const cor = cores[i % cores.length];
-        const palavras = cls.palavras || [];
-        const maxChi = Math.max(1, ...palavras.map((p) => p.chi2 || 0));
-        const chips = palavras
-          .slice(0, 14)
-          .map((p) => {
-            const t = (p.chi2 || 0) / maxChi;
-            const fs = (11 + t * 8).toFixed(1);
-            const op = 0.55 + t * 0.45;
-            return `<span class="lex-chip" style="font-size:${fs}px;color:${cor};opacity:${op}" title="χ² ${p.chi2} · freq ${p.frequencia}">${p.palavra}</span>`;
-          })
-          .join("");
-        return `
-          <div class="lex-classe" style="--lex-cor:${cor}">
-            <div class="lex-classe-cab">
-              <span class="lex-classe-num">Classe ${cls.classe}</span>
-              <span class="lex-classe-pct">${cls.pct_segmentos}% dos segmentos</span>
-            </div>
-            <div class="lex-classe-palavras">${chips || '<span class="lex-vazio">Sem palavras características.</span>'}</div>
-          </div>`;
-      })
-      .join("") +
-    `</div>` +
-    `<p class="lex-dica">Classes temáticas obtidas por Ward (CHD). O tamanho e a opacidade das palavras refletem o χ² (associação à classe).</p>`;
+    `<div id="chdCards"></div>` +
+    `<div class="lex-afc-box" id="chdBarras" role="img" aria-label="Participação de cada grupo de assuntos"></div>` +
+    `<div class="lex-dica">Cada grupo reúne textos que usam as mesmas palavras. O tamanho da palavra indica o χ².
+     <button class="btn-texto" type="button" data-lex-dados="chd">Ver dados</button></div>`;
+  lexical.desenharChd($("chdCards"), $("chdBarras"), dados);
 }
 
 function renderizarDendrograma() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.dendrograma;
-  if (!dados || !dados.polilinhas?.length) {
-    const aviso = dados?.aviso ? ` (${dados.aviso})` : "";
-    conteudo.innerHTML =
-      `<p class="lex-vazio">Dendrograma sem dados para este escopo${aviso}. Rode <code>analise_lexical_escopos.py</code> no backend.</p>`;
-    return;
-  }
-  const pol = dados.polilinhas;
-  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-  for (const p of pol) {
-    for (const v of p.x) { if (v < minX) minX = v; if (v > maxX) maxX = v; }
-    for (const v of p.y) { if (v < minY) minY = v; if (v > maxY) maxY = v; }
-  }
-  if (!isFinite(minX) || !isFinite(minY)) {
-    conteudo.innerHTML = '<p class="lex-vazio">Sem dados do dendrograma.</p>';
-    return;
-  }
-  const pad = 10;
-  const w = maxX - minX;
-  const h = maxY - minY;
-  const palette = ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444", "#06b6d4", "#f97316", "#14b8a6"];
-  const corMapa = {};
-  let k = 0;
-  for (const p of pol) {
-    if (!corMapa[p.cor]) corMapa[p.cor] = palette[k++ % palette.length];
-  }
-  const paths = pol
-    .map((p) => {
-      const pts = p.x.map(
-        (v, i) =>
-          `${(v - minX + pad).toFixed(1)},${(h - (p.y[i] - minY) + pad).toFixed(1)}`
-      );
-      return `<path d="M${pts.join(" L ")}" stroke="${corMapa[p.cor]}" fill="none" stroke-width="1.4" stroke-linecap="round"/>`;
-    })
-    .join("");
-  const vbW = (w + pad * 2).toFixed(1);
-  const vbH = (h + pad * 2).toFixed(1);
   conteudo.innerHTML =
-    `<div class="lex-dendro-box">` +
-    `<svg viewBox="0 0 ${vbW} ${vbH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Dendrograma da CHD">${paths}</svg>` +
-    `</div>` +
-    `<p class="lex-dica">Dendrograma da CHD (Ward) truncado aos níveis superiores · ${formatarNumero(dados.n_segmentos)} segmentos (UCE). Cores = classes temáticas.</p>`;
+    `<div class="lex-dendro-box" id="canvasDendro" role="img" aria-label="Dendrograma dos grupos de assuntos"></div>` +
+    `<div class="lex-dica">Cada linha mostra duas ideias que se juntam; quanto mais à direita a fusão, menos parecidas elas são.
+     Use a roda para dar zoom e arraste para navegar.</div>`;
+  lexical.desenharDendrograma($("canvasDendro"), dados, estado.lexical?.chd);
 }
 
 function renderizarGrafo() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.grafo;
-  if (!dados || !dados.nos?.length) {
-    conteudo.innerHTML =
-      '<p class="lex-vazio">Grafo de similaridade sem dados para este escopo. Rode <code>analise_lexical_escopos.py</code> no backend.</p>';
-    return;
-  }
   conteudo.innerHTML =
-    `<div class="lex-grafo-box"><canvas id="canvasGrafo" aria-label="Grafo de similaridade lexical"></canvas></div>` +
-    `<p class="lex-dica">Nós = palavras (maior = mais frequente); arestas = co-ocorrência. Passe o mouse sobre um nó para ver a palavra.</p>`;
-  limparGrafo = montarGrafo($("canvasGrafo"), dados);
+    `<div class="lex-grafo-box" id="canvasGrafo" role="img" aria-label="Rede de palavras"></div>` +
+    `<div class="lex-dica">Palavras ligadas quando aparecem juntas. Arraste os nós, use a roda para dar zoom e passe o mouse para destacar as vizinhas.
+     <button class="btn-texto" type="button" data-lex-dados="grafo">Ver dados</button></div>`;
+  limparGrafo = null;
+  lexical.desenharGrafo($("canvasGrafo"), dados);
 }
 
 /* ---------- assinaturas em tempo real ---------- */
@@ -1354,6 +1281,28 @@ function aplicarEscopoUsuario() {
 }
 
 /* ---------- eventos ---------- */
+
+/* ---------- graficos lexicais: "ver dados" + resize ---------- */
+
+document.addEventListener("click", (evento) => {
+  const botao = evento.target.closest("[data-lex-dados]");
+  if (!botao) return;
+  evento.preventDefault();
+  const tipo = botao.dataset.lexDados;
+  const dados = estado.lexical?.[tipo === "chd" ? "chd" : tipo] || null;
+  const anterior = document.getElementById("lexDadosTabela");
+  if (anterior) anterior.remove();
+  const caixa = document.createElement("div");
+  caixa.id = "lexDadosTabela";
+  caixa.className = "lex-dados";
+  caixa.innerHTML = lexical.tabelaDadosLexicais(tipo, dados);
+  botao.closest(".lex-dica")?.appendChild(caixa);
+});
+
+window.addEventListener("resize", () => {
+  if (lexical && lexical.redimensionarLexicais) lexical.redimensionarLexicais();
+});
+
 
 $("filtroCidade").addEventListener("change", (e) => {
   estado.cidade = e.target.value;

@@ -291,3 +291,51 @@
   .grafico-area { min-height: 190px; }
   .galeria-imagens { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
 }
+
+/* ---------- graficos lexicais (ECharts) ---------- */
+.lex-afc-box { height: 420px; min-height: 280px; }
+.lex-dendro-box { height: 380px; min-height: 260px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-deep); overflow: hidden; }
+.lex-grafo-box { height: 460px; min-height: 320px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-deep); overflow: hidden; }
+.lex-dados { margin-top: 10px; overflow-x: auto; }
+.lex-dados.oculto { display: none; }
+
+@media (max-width: 720px) {
+  .lex-afc-box { height: 320px; }
+  .lex-dendro-box { height: 300px; }
+  .lex-grafo-box { height: 380px; }
+}
+
+/* ---------- titulo da tela: cabe em 2 linhas (nao corta com ...) ---------- */
+.topo-titulo-pagina h1 {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  font-size: 1.35rem;
+}
+.topo-titulo-pagina { max-width: 320px; }
+
+/* ---------- abas da analise lexical (botoes legiveis) ---------- */
+.lex-tab {
+  padding: 7px 12px;
+  margin: 0 6px 6px 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto-suave);
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 34px;
+}
+.lex-tab:hover { border-color: var(--azul); color: var(--texto); }
+.lex-tab.ativo {
+  background: rgba(79, 140, 255, 0.16);
+  border-color: var(--azul);
+  color: var(--texto);
+  font-weight: 600;
+}
+.lex-tab:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
+
+@media (max-width: 720px) {
+  .topo-titulo-pagina { max-width: 100%; }
+  .topo-titulo-pagina h1 { font-size: 1.15rem; white-space: normal; }
+}

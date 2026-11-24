@@ -1,0 +1,518 @@
+/**
+ * Gráficos da análise lexical (plano 10 §3/§4.2) — ECharts, interativos.
+ *
+ * Substitui os canvas/SVG antigos, que ficavam ilegíveis:
+ *   G-21 Mapa de proximidade (AFC)  — scatter com zoom/pan e rótulos sem sobreposição
+ *   G-20 Grupos de assuntos (CHD)   — cards + barras de participação legíveis
+ *   Dendrograma da CHD              — linhas com zoom, legenda por classe e tooltip
+ *   G-22 Rede de palavras (grafo)   — grafo de forças com zoom/arrastar, destaque de
+ *                                     vizinhos e rótulos só nos nós relevantes
+ *   G-23 Nuvem / G-24 Zipf          — mantidos no módulo antigo
+ *
+ * Regras aplicadas (plano 10 §4.2): título-conclusão fica no cartão; fonte ≥ 12 px;
+ * rótulos sem sobreposição; sem 3D; sem eixo duplo; cores por classe iguais em
+ * todos os gráficos; "ver dados" e texto de leitura no cartão.
+ *
+ * Todas as funções devolvem a instância do ECharts (para resize) e não quebram
+ * quando o dado está vazio (mostram uma mensagem clara).
+ */
+
+const PALETA = [
+  "#2563eb", "#16a34a", "#d97706", "#7c3aed", "#dc2626",
+  "#0891b2", "#db2777", "#65a30d",
+];
+
+let instancias = [];
+
+function cor(variavel, fallback) {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(variavel).trim();
+    return v || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function textoBase(opcoes = {}) {
+  const t = cor("--texto", "#e2e8f0");
+  const tm = cor("--texto-mutado", "#94a3b8");
+  return {
+    backgroundColor: "transparent",
+    textStyle: { fontFamily: "Inter, system-ui, sans-serif", color: t, fontSize: 12 },
+    tooltip: {
+      backgroundColor: cor("--card", "#111827"),
+      borderColor: cor("--border", "#334155"),
+      textStyle: { color: t, fontSize: 12 },
+      confine: true,
+      ...(opcoes.tooltip || {}),
+    },
+    ...opcoes,
+  };
+}
+
+function vazio(elemento, mensagem) {
+  if (!elemento) return null;
+  elemento.innerHTML =
+    `<p class="lex-vazio">${mensagem}</p>`;
+  return null;
+}
+
+function instanciar(elemento, opcoes) {
+  if (!elemento || typeof echarts === "undefined") return null;
+  const existente = echarts.getInstanceByDom(elemento);
+  if (existente) existente.dispose();
+  const grafico = echarts.init(elemento, null, { renderer: "canvas" });
+  grafico.setOption(opcoes);
+  instancias.push(grafico);
+  return grafico;
+}
+
+/** Redimensiona todos os gráficos lexicais (troca de tema / janela). */
+export function redimensionarLexicais() {
+  instancias = instancias.filter((g) => {
+    try {
+      if (g.isDisposed && g.isDisposed()) return false;
+      g.resize();
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+/** Esvazia o registro (ao trocar de escopo). */
+export function limparLexicais() {
+  instancias.forEach((g) => {
+    try {
+      g.dispose();
+    } catch {
+      /* já descartado */
+    }
+  });
+  instancias = [];
+}
+
+/* ================================================================== */
+/* G-21 — Mapa de proximidade (AFC)                                    */
+/* ================================================================== */
+export function desenharAfc(elemento, afc) {
+  if (!afc || !(afc.palavras || []).length) {
+    return vazio(
+      elemento,
+      "Mapa de proximidade sem dados neste escopo. Rode <code>analise_lexical_escopos.py</code> no backend."
+    );
+  }
+  const LIMITE_ROTULOS = 40;
+  // Ordena por distância da origem (as mais características primeiro) e limita rótulos.
+  const distancia = (p) => Math.hypot(p.eixo1 || 0, p.eixo2 || 0);
+  const palavras = [...(afc.palavras || [])].sort((a, b) => distancia(b) - distancia(a));
+  const comRotulo = new Set(palavras.slice(0, LIMITE_ROTULOS).map((p) => p.rotulo));
+
+  const azul = cor("--azul", PALETA[0]);
+  const ambar = cor("--ambar", PALETA[2]);
+
+  const series = [
+    {
+      name: "Palavras",
+      type: "scatter",
+      data: palavras.map((p) => [p.eixo1, p.eixo2, p.rotulo]),
+      symbolSize: 8,
+      itemStyle: { color: ambar, opacity: 0.85 },
+      label: {
+        show: true,
+        formatter: (p) => (comRotulo.has(p.data[2]) ? p.data[2] : ""),
+        position: "right",
+        fontSize: 12,
+        color: cor("--texto-suave", "#cbd5e1"),
+      },
+      labelLayout: { hideOverlap: true, moveOverlap: "shiftY" },
+      emphasis: { scale: 1.6, label: { show: true, fontSize: 13, fontWeight: "bold" } },
+    },
+  ];
+  if ((afc.periodos || []).length) {
+    series.push({
+      name: "Períodos",
+      type: "scatter",
+      data: afc.periodos.map((p) => [p.eixo1, p.eixo2, p.rotulo]),
+      symbolSize: 13,
+      symbol: "diamond",
+      itemStyle: { color: azul },
+      label: {
+        show: true,
+        formatter: (p) => p.data[2],
+        position: "top",
+        fontSize: 12,
+        color: cor("--texto-suave", "#cbd5e1"),
+      },
+      labelLayout: { hideOverlap: true },
+    });
+  }
+
+  const instancia = instanciar(
+    elemento,
+    textoBase({
+      grid: { left: 16, right: 16, top: 28, bottom: 16, containLabel: true },
+      legend: {
+        top: 0,
+        textStyle: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 12 },
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: (p) => `<b>${p.data[2]}</b><br/>eixo 1: ${p.data[0].toFixed(2)}<br/>eixo 2: ${p.data[1].toFixed(2)}`,
+      },
+      xAxis: {
+        type: "value",
+        name: "eixo 1",
+        nameTextStyle: { color: cor("--texto-mutado", "#94a3b8") },
+        axisLabel: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 11 },
+        splitLine: { lineStyle: { color: cor("--border", "#334155"), opacity: 0.35 } },
+      },
+      yAxis: {
+        type: "value",
+        name: "eixo 2",
+        nameTextStyle: { color: cor("--texto-mutado", "#94a3b8") },
+        axisLabel: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 11 },
+        splitLine: { lineStyle: { color: cor("--border", "#334155"), opacity: 0.35 } },
+      },
+      dataZoom: [
+        { type: "inside", xAxisIndex: 0, yAxisIndex: 0, filterMode: "none" },
+      ],
+      series,
+    })
+  );
+  return instancia;
+}
+
+/* ================================================================== */
+/* G-20 — Grupos de assuntos (CHD): cards + barras de participação      */
+/* ================================================================== */
+export function desenharChd(elementoCards, elementoBarras, chd) {
+  if (!chd || !(chd.classes || []).length) {
+    return vazio(
+      elementoCards,
+      "Grupos de assuntos sem dados neste escopo. Rode <code>analise_lexical_escopos.py</code> no backend."
+    );
+  }
+  const classes = [...chd.classes].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
+
+  // Cards com as palavras características (tamanho ∝ χ²).
+  if (elementoCards) {
+    elementoCards.innerHTML = `<div class="lex-chd">${classes
+      .map((cl, i) => {
+        const corClasse = PALETA[i % PALETA.length];
+        const palavras = cl.palavras || [];
+        const maxChi = Math.max(1, ...palavras.map((p) => p.chi2 || 0));
+        const chips = palavras
+          .slice(0, 12)
+          .map((p) => {
+            const t = (p.chi2 || 0) / maxChi;
+            const fs = (12 + t * 8).toFixed(1);
+            return `<span class="lex-chip" style="font-size:${fs}px;color:${corClasse}" title="χ² ${p.chi2} · ${p.frequencia} ocorrências">${escapar(p.palavra)}</span>`;
+          })
+          .join("");
+        return `<div class="lex-classe" style="--lex-cor:${corClasse}">
+          <div class="lex-classe-cab">
+            <span class="lex-classe-num">Grupo ${cl.classe}</span>
+            <span class="lex-classe-pct">${cl.pct_segmentos}% dos segmentos</span>
+          </div>
+          <div class="lex-classe-palavras">${chips || '<span class="lex-vazio">Sem palavras características.</span>'}</div>
+        </div>`;
+      })
+      .join("")}</div>`;
+  }
+
+  // Barras horizontais: participação de cada grupo (leitura imediata).
+  if (!elementoBarras) return null;
+  const dados = [...classes].reverse().map((cl, i) => ({
+    value: cl.pct_segmentos,
+    itemStyle: { color: PALETA[(classes.length - 1 - i) % PALETA.length], borderRadius: 4 },
+  }));
+  return instanciar(
+    elementoBarras,
+    textoBase({
+      grid: { left: 8, right: 48, top: 8, bottom: 8, containLabel: true },
+      tooltip: { trigger: "item", formatter: (p) => `${p.name}: ${p.value}% dos segmentos` },
+      xAxis: { type: "value", show: false, max: (v) => Math.min(100, v.max * 1.2) },
+      yAxis: {
+        type: "category",
+        data: [...classes].reverse().map((cl) => {
+          const top = (cl.palavras || [])[0]?.palavra || `Grupo ${cl.classe}`;
+          return `Grupo ${cl.classe} · ${top}`;
+        }),
+        axisLabel: { color: cor("--texto-suave", "#cbd5e1"), fontSize: 12 },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          type: "bar",
+          data: dados,
+          barMaxWidth: 22,
+          label: {
+            show: true,
+            position: "right",
+            fontSize: 12,
+            color: cor("--texto-suave", "#cbd5e1"),
+            formatter: "{c}%",
+          },
+        },
+      ],
+    })
+  );
+}
+
+/* ================================================================== */
+/* Dendrograma da CHD                                                  */
+/* ================================================================== */
+export function desenharDendrograma(elemento, dendrograma, chd) {
+  const pol = dendrograma?.polilinhas || [];
+  if (!pol.length) {
+    return vazio(
+      elemento,
+      "Dendrograma sem dados neste escopo. Rode <code>analise_lexical_escopos.py</code> no backend."
+    );
+  }
+
+  // Mapa cor -> nome do grupo (usa a ordem das classes da CHD).
+  const classes = (chd?.classes || []).map((c) => c.classe);
+  const nomePorCor = {};
+  const coresUnicas = [...new Set(pol.map((p) => p.cor))];
+  coresUnicas.forEach((c, i) => {
+    const indice = Number(String(c).replace(/\D/g, "")) || i + 1;
+    nomePorCor[c] = `Grupo ${indice}`;
+  });
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const p of pol) {
+    for (const v of p.x) {
+      if (v < minX) minX = v;
+      if (v > maxX) maxX = v;
+    }
+    for (const v of p.y) {
+      if (v < minY) minY = v;
+      if (v > maxY) maxY = v;
+    }
+  }
+  if (!Number.isFinite(minX)) return vazio(elemento, "Sem dados do dendrograma.");
+
+  const largura = maxX - minX || 1;
+  const altura = maxY - minY || 1;
+  // Mantém a proporção: a altura do container acompanha os dados.
+  const proporcao = Math.max(0.35, Math.min(1.6, altura / largura));
+  if (elemento.parentElement) {
+    elemento.style.height = `${Math.round(260 * proporcao + 120)}px`;
+  }
+
+  const series = pol.map((p, i) => ({
+    name: nomePorCor[p.cor] || `Ramo ${i + 1}`,
+    type: "line",
+    showSymbol: false,
+    smooth: false,
+    data: p.x.map((xv, k) => [xv, p.y[k]]),
+    lineStyle: {
+      width: 2.2,
+      color: PALETA[coresUnicas.indexOf(p.cor) % PALETA.length],
+    },
+    emphasis: { lineStyle: { width: 4 } },
+  }));
+
+  // Agrupa a legenda por cor (uma entrada por grupo).
+  const porGrupo = {};
+  series.forEach((s) => {
+    porGrupo[s.name] = true;
+  });
+
+  return instanciar(
+    elemento,
+    textoBase({
+      grid: { left: 16, right: 16, top: 30, bottom: 16, containLabel: true },
+      legend: {
+        top: 0,
+        data: Object.keys(porGrupo),
+        textStyle: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 12 },
+        itemWidth: 14,
+        itemHeight: 10,
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: (p) => `${p.seriesName}<br/>fusão em ${Number(p.value?.[0] || 0).toFixed(1)}`,
+      },
+      xAxis: {
+        type: "value",
+        name: "distância de fusão",
+        nameTextStyle: { color: cor("--texto-mutado", "#94a3b8") },
+        axisLabel: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 11 },
+        splitLine: { show: false },
+      },
+      yAxis: {
+        type: "value",
+        show: false,
+        min: minY - altura * 0.05,
+        max: maxY + altura * 0.05,
+      },
+      dataZoom: [
+        { type: "inside", xAxisIndex: 0, filterMode: "none" },
+        { type: "inside", yAxisIndex: 0, filterMode: "none" },
+      ],
+      series,
+    })
+  );
+}
+
+/* ================================================================== */
+/* G-22 — Rede de palavras (grafo de similitude)                        */
+/* ================================================================== */
+function comunidades(nos, arestas) {
+  /** Detecção simples por propagação de rótulo (suficiente para ≤ 60 nós). */
+  const vizinhos = new Map(nos.map((n) => [n.id, []]));
+  arestas.forEach((a) => {
+    vizinhos.get(a.a)?.push(a.b);
+    vizinhos.get(a.b)?.push(a.a);
+  });
+  const rotulo = new Map(nos.map((n) => [n.id, n.id]));
+  for (let iter = 0; iter < 12; iter++) {
+    let mudou = false;
+    for (const n of nos) {
+      const contagem = new Map();
+      for (const viz of vizinhos.get(n.id) || []) {
+        const r = rotulo.get(viz);
+        contagem.set(r, (contagem.get(r) || 0) + 1);
+      }
+      if (!contagem.size) continue;
+      const melhor = [...contagem.entries()].sort((a, b) => b[1] - a[1])[0][0];
+      if (melhor !== rotulo.get(n.id)) {
+        rotulo.set(n.id, melhor);
+        mudou = true;
+      }
+    }
+    if (!mudou) break;
+  }
+  const grupos = [...new Set(rotulo.values())];
+  return { rotulo, grupos };
+}
+
+export function desenharGrafo(elemento, grafo) {
+  const nos = grafo?.nos || [];
+  const arestas = grafo?.arestas || [];
+  if (!nos.length) {
+    return vazio(
+      elemento,
+      "Rede de palavras sem dados neste escopo. Rode <code>analise_lexical_escopos.py</code> no backend."
+    );
+  }
+  if (elemento.parentElement) elemento.style.height = "460px";
+
+  const grau = new Map(nos.map((n) => [n.id, 0]));
+  arestas.forEach((a) => {
+    grau.set(a.a, (grau.get(a.a) || 0) + 1);
+    grau.set(a.b, (grau.get(a.b) || 0) + 1);
+  });
+  const maxPeso = Math.max(1, ...nos.map((n) => n.peso || n.frequencia || 1));
+  const maxAresta = Math.max(1, ...arestas.map((a) => a.peso || 1));
+
+  const { rotulo, grupos } = comunidades(nos, arestas);
+  const indiceGrupo = new Map(grupos.map((g, i) => [g, i]));
+  const categorias = grupos.map((g, i) => ({
+    name: `Grupo ${i + 1}`,
+    itemStyle: { color: PALETA[i % PALETA.length] },
+  }));
+
+  return instanciar(
+    elemento,
+    textoBase({
+      legend: {
+        top: 0,
+        data: categorias.map((c) => c.name),
+        textStyle: { color: cor("--texto-mutado", "#94a3b8"), fontSize: 12 },
+        itemWidth: 12,
+        itemHeight: 10,
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: (p) => {
+          if (p.dataType === "edge") {
+            return `co-ocorrência: <b>${p.data.source}</b> ↔ <b>${p.data.target}</b> (${p.data.value})`;
+          }
+          return `<b>${p.data.name}</b><br/>${p.data.value} ocorrências<br/>${p.data.grau} conexões`;
+        },
+      },
+      series: [
+        {
+          type: "graph",
+          layout: "force",
+          roam: true, // zoom + arrastar
+          draggable: true, // arrastar nós
+          categories: categorias,
+          force: {
+            repulsion: 260,
+            edgeLength: [40, 130],
+            gravity: 0.06,
+            friction: 0.25,
+            layoutAnimation: true,
+          },
+          emphasis: { focus: "adjacency", lineStyle: { width: 4 } },
+          label: {
+            show: true,
+            fontSize: 12,
+            color: cor("--texto-suave", "#cbd5e1"),
+            position: "right",
+          },
+          labelLayout: { hideOverlap: true },
+          lineStyle: { color: "source", curveness: 0.08, opacity: 0.5 },
+          edgeSymbol: ["none", "none"],
+          data: nos.map((n) => ({
+            name: n.id,
+            value: n.peso || n.frequencia || 1,
+            grau: grau.get(n.id) || 0,
+            // Rótulo só nos nós com 2+ conexões (evita poluição) — plano 10 §4.2.5
+            label: { show: (grau.get(n.id) || 0) >= 2 },
+            symbolSize: 12 + 26 * ((n.peso || n.frequencia || 1) / maxPeso),
+            category: indiceGrupo.get(rotulo.get(n.id)) ?? 0,
+          })),
+          links: arestas.map((a) => ({
+            source: a.a,
+            target: a.b,
+            value: a.peso || 1,
+            lineStyle: { width: 1 + 3 * ((a.peso || 1) / maxAresta) },
+          })),
+        },
+      ],
+    })
+  );
+}
+
+/* ================================================================== */
+/* "Ver dados" — tabela acessível de cada gráfico                       */
+/* ================================================================== */
+export function tabelaDadosLexicais(tipo, dados) {
+  if (tipo === "afc") {
+    const linhas = [...(dados?.palavras || [])].slice(0, 25);
+    return `<table class="tabela"><thead><tr><th>Palavra/Período</th><th class="num">Eixo 1</th><th class="num">Eixo 2</th></tr></thead><tbody>${linhas
+      .map((p) => `<tr><td>${escapar(p.rotulo)}</td><td class="num">${Number(p.eixo1).toFixed(2)}</td><td class="num">${Number(p.eixo2).toFixed(2)}</td></tr>`)
+      .join("")}</tbody></table>`;
+  }
+  if (tipo === "chd") {
+    const classes = dados?.classes || [];
+    return `<table class="tabela"><thead><tr><th>Grupo</th><th class="num">% dos segmentos</th><th>Palavras características</th></tr></thead><tbody>${classes
+      .map((c) => `<tr><td>Grupo ${c.classe}</td><td class="num">${c.pct_segmentos}%</td><td>${(c.palavras || []).slice(0, 8).map((p) => escapar(p.palavra)).join(", ")}</td></tr>`)
+      .join("")}</tbody></table>`;
+  }
+  if (tipo === "grafo") {
+    const nos = [...(dados?.nos || [])].sort((a, b) => (b.peso || 0) - (a.peso || 0)).slice(0, 30);
+    return `<table class="tabela"><thead><tr><th>Palavra</th><th class="num">Ocorrências</th></tr></thead><tbody>${nos
+      .map((n) => `<tr><td>${escapar(n.id)}</td><td class="num">${n.peso ?? n.frequencia ?? 0}</td></tr>`)
+      .join("")}</tbody></table>`;
+  }
+  return "";
+}
+
+function escapar(texto) {
+  return String(texto ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
