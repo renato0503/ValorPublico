@@ -172,6 +172,7 @@ export async function carregar(db) {
 export function renderizar() {
   const dados = estado.dados || {};
   renderizarEdicao(dados);
+  renderizarClipping(dados);
   renderizarImagem(dados);
   renderizarOuvidoria(dados);
   renderizarSemana(dados);
@@ -179,6 +180,17 @@ export function renderizar() {
   renderizarConformidade(dados);
   renderizarTendencias(dados);
   registrarExplicacoes();
+}
+
+function saldoDeOpiniao(dados) {
+  if (dados?.saldo_opiniao !== undefined && dados?.saldo_opiniao !== null) {
+    return Number(dados.saldo_opiniao);
+  }
+  const d = dados?.distribuicao_sentimento || {};
+  const positivo = Number(d.positivo || 0);
+  const negativo = Number(d.negativo || 0);
+  const total = positivo + negativo + Number(d.neutro || 0);
+  return total ? Math.round(((positivo - negativo) / total) * 100) : 0;
 }
 
 /* ---- V1 / Edição do dia ---- */
@@ -189,7 +201,7 @@ function renderizarEdicao(dados) {
   });
   cartaoKpi("kpiEdicaoSentimento", {
     codigo: "K-03",
-    valor: Number(dados.saldo_opiniao ?? 0).toFixed(0),
+    valor: Number(saldoDeOpiniao(dados)).toFixed(0),
   });
   cartaoKpi("kpiEdicaoAlcance", {
     codigo: "K-05",
@@ -218,26 +230,105 @@ function renderizarEdicao(dados) {
   }
 }
 
+/* ---- V2 / Clipping (últimas notícias do agregado) ---- */
+function _dataCurta(valor) {
+  if (!valor) return "—";
+  if (valor.toDate) return valor.toDate().toLocaleDateString("pt-BR");
+  const d = new Date(valor);
+  if (!isNaN(d)) return d.toLocaleDateString("pt-BR");
+  return String(valor).slice(0, 10);
+}
+
+function renderizarClipping(dados) {
+  const corpo = document.getElementById("corpoClipping");
+  if (!corpo) return;
+  const itens = Array.isArray(dados?.noticias_recentes) ? dados.noticias_recentes : [];
+  const selVeiculo = document.getElementById("filtroClipVeiculo");
+  const selTier = document.getElementById("filtroClipTier");
+  const selTipo = document.getElementById("filtroClipTipo");
+
+  if (selVeiculo) {
+    const atual = selVeiculo.value;
+    const veiculos = [...new Set(itens.map((n) => n.veiculo).filter(Boolean))].sort();
+    selVeiculo.innerHTML =
+      '<option value="">Todos os veículos</option>' +
+      veiculos.map((v) => `<option value="${escapar(v)}">${escapar(v)}</option>`).join("");
+    selVeiculo.value = veiculos.includes(atual) ? atual : "";
+  }
+  if (selTier) {
+    const temTier = itens.some((n) => n.tier);
+    selTier.disabled = !temTier;
+    selTier.title = temTier ? "" : "O tier não está disponível neste agregado.";
+    if (!temTier) selTier.value = "";
+  }
+
+  const veiculo = selVeiculo?.value || "";
+  const tier = selTier?.value || "";
+  const tipo = selTipo?.value || "";
+  const filtrados = itens.filter((n) => {
+    if (veiculo && n.veiculo !== veiculo) return false;
+    if (tier && n.tier !== tier) return false;
+    const tipoItem = n.tipo_mencao || n.tipo || "";
+    if (tipo && tipoItem !== tipo) return false;
+    return true;
+  });
+
+  corpo.innerHTML = filtrados.length
+    ? filtrados
+        .slice(0, 100)
+        .map(
+          (n) => `<tr>
+            <td>${n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">${escapar(n.titulo || "notícia")}</a>` : escapar(n.titulo || "notícia")}</td>
+            <td>${escapar(n.veiculo || n.autor || "—")}</td>
+            <td>${escapar(_dataCurta(n.data_publicacao || n.data))}</td>
+            <td>${escapar(n.tipo_mencao || n.tipo || "—")}</td>
+            <td>${escapar(n.sentimento || "—")}</td>
+          </tr>`
+        )
+        .join("")
+    : `<tr><td colspan="5">Nenhuma das últimas notícias atende aos filtros selecionados.</td></tr>`;
+
+  const nota = document.getElementById("clippingNota");
+  if (nota) {
+    nota.textContent = itens.length
+      ? `Mostrando ${filtrados.length} de ${itens.length} notícias recentes do agregado do Governo. A lista completa será carregada pela API de clipping.`
+      : "Ainda não há notícias recentes neste agregado. A coleta diária preenche esta lista.";
+  }
+}
+
 /* ---- V3 / Imagem da Casa ---- */
 function renderizarImagem(dados) {
   cartaoKpi("kpiImagemSaldo", {
     codigo: "K-03",
-    valor: Number(dados.saldo_opiniao ?? 0).toFixed(0),
+    valor: Number(saldoDeOpiniao(dados)).toFixed(0),
   });
   cartaoKpi("kpiImagemInstitucional", {
     codigo: "K-42",
-    valor: Number(dados.imagem_institucional ?? 0).toFixed(0),
+    valor:
+      dados.imagem_institucional !== undefined && dados.imagem_institucional !== null
+        ? Number(dados.imagem_institucional).toFixed(0)
+        : "—",
+    sufixo:
+      dados.imagem_institucional === undefined
+        ? "não calculada nesta base"
+        : "",
   });
   cartaoKpi("kpiImagemTier1", {
     codigo: "K-06",
-    valor: `${Number(dados.pct_tier1 ?? 0).toFixed(0)}%`,
+    valor:
+      dados.pct_tier1 !== undefined && dados.pct_tier1 !== null
+        ? `${Number(dados.pct_tier1).toFixed(0)}%`
+        : "—",
+    sufixo: dados.pct_tier1 === undefined ? "sem tier na base" : "",
   });
   cartaoKpi("kpiImagemProjecao", {
     codigo: "K-33",
     valor: dados.previsao?.mencoes?.previsao?.length
       ? String(dados.previsao.mencoes.previsao.length)
-      : "–",
-    sufixo: "dias projetados (com margem)",
+      : "—",
+    sufixo: dados.previsao?.mencoes?.previsao?.length
+      ? "dias projetados (com margem)"
+      : "sem projeção nesta semana",
   });
 
   const previsao = dados.previsao?.mencoes || {};
@@ -336,9 +427,18 @@ function renderizarSemana(dados) {
   const disc = estado.discurso || {};
   const sim = estado.simulacao || {};
 
+  const classes = rel.chd?.classes || [];
+  const variedade = classes.length
+    ? 1 -
+      classes.reduce(
+        (acc, c) => acc + Math.pow(Number(c.pct || 0) / 100, 2),
+        0
+      )
+    : null;
   cartaoKpi("kpiSemanaVariedade", {
     codigo: "K-40",
-    valor: Number(rel.estatisticas?.variedade ?? 0).toFixed(2),
+    valor: variedade !== null ? variedade.toFixed(2) : "—",
+    sufixo: variedade !== null ? "diversidade dos assuntos" : "não calculada nesta semana",
   });
   cartaoKpi("kpiSemanaSintonia", {
     codigo: "K-41",
@@ -346,23 +446,36 @@ function renderizarSemana(dados) {
       rel.alinhamento !== undefined && rel.alinhamento !== null
         ? Number(rel.alinhamento).toFixed(2)
         : "—",
-    sufixo: rel.alinhamento === undefined ? "sem base na semana" : "",
+    sufixo:
+      rel.alinhamento === undefined || rel.alinhamento === null
+        ? "sem base na semana"
+        : "",
   });
+  const imagens = dados.imagens?.kpis;
   cartaoKpi("kpiSemanaImagens", {
     codigo: "K-70",
-    valor: String(dados.imagens?.kpis?.k70_postos_com_imagem ?? 0),
+    valor: imagens ? String(imagens.k70_postos_com_imagem ?? 0) : "—",
+    sufixo: imagens ? "" : "sem análise de imagem",
   });
   cartaoKpi("kpiSemanaEquidade", {
     codigo: "K-43",
-    valor: Number(dados.equidade_visibilidade ?? 0).toFixed(2),
+    valor:
+      dados.equidade_visibilidade !== undefined &&
+      dados.equidade_visibilidade !== null
+        ? Number(dados.equidade_visibilidade).toFixed(2)
+        : "—",
+    sufixo:
+      dados.equidade_visibilidade === undefined
+        ? "não calculado nesta semana"
+        : "",
   });
 
   const canvas = document.getElementById("graficoSemanaClasses");
   if (canvas) {
-    const classes = rel.chd?.classes || [];
-    if (classes.length) {
-      const itens = classes.slice(0, 8).map((c) => ({
-        rotulo: c.rotulo || `Classe ${c.id}`,
+    const classesChd = rel.chd?.classes || [];
+    if (classesChd.length) {
+      const itens = classesChd.slice(0, 8).map((c) => ({
+        rotulo: c.rotulo || c.forma || `Classe ${c.id}`,
         valor: Math.round(Number(c.pct ?? 0) * (Number(c.pct ?? 0) <= 1 ? 100 : 1)),
       }));
       guardar("graficoSemanaClasses", barrasHorizontais(canvas, itens));
@@ -375,11 +488,15 @@ function renderizarSemana(dados) {
 
   const leitura = document.getElementById("semanaLeitura");
   if (leitura) {
-    const classes = rel.chd?.classes || [];
     const maior = [...classes].sort(
       (a, b) => Number(b.pct || 0) - Number(a.pct || 0)
     )[0];
-    const nItens = rel.estatisticas?.n_itens ?? rel.estatisticas?.n ?? 0;
+    const nItens =
+      rel.estatisticas?.textos ??
+      rel.estatisticas?.n_textos ??
+      rel.estatisticas?.n_itens ??
+      rel.estatisticas?.n ??
+      0;
     const texto = rel.semana
       ? `Semana ${rel.semana}: ${nItens} textos analisados, ${classes.length} classes temáticas` +
         (maior ? `. O maior grupo reúne ${maior.pct}% dos segmentos.` : ".") +
@@ -695,6 +812,14 @@ function contagemPor(lista, campo) {
   return Object.entries(contagem)
     .map(([rotulo, valor]) => ({ rotulo, valor }))
     .sort((a, b) => b.valor - a.valor);
+}
+
+if (typeof document !== "undefined") {
+  ["filtroClipVeiculo", "filtroClipTier", "filtroClipTipo"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", () => {
+      renderizarClipping(estado.dados);
+    });
+  });
 }
 
 export default { carregar, renderizar, redimensionar };

@@ -59,7 +59,8 @@ def id_do_clipping(item: dict) -> str:
     return hashlib.md5(base.encode("utf-8")).hexdigest()
 
 
-def documento(item: dict) -> dict:
+def documento(item: dict, valores: dict | None = None) -> dict:
+    valores = valores or {}
     return {
         "id_externo": id_do_clipping(item),
         "titulo": item.get("titulo", ""),
@@ -80,6 +81,8 @@ def documento(item: dict) -> dict:
         "confianca_secretaria": item.get("confianca_secretaria", 0),
         "motivo_secretaria": item.get("motivo_secretaria", {}),
         "origem_coleta": item.get("origem", ""),
+        "valor_estimado": float(valores.get("valor_estimado") or 0),
+        "valor_avpe": float(valores.get("valor_avpe") or 0),
         "metadados": {
             "veiculo": item.get("veiculo", ""),
             "secretarias": item.get("secretarias", []),
@@ -89,6 +92,23 @@ def documento(item: dict) -> dict:
             "origem": item.get("origem", ""),
         },
     }
+
+
+def valorar(db, itens: list[dict]) -> list[dict]:
+    """Aplica a tabela de mídia/AVPE aos itens do Governo (fallback 400/Web)."""
+    try:
+        from scripts.atualizar_metricas_governo import aplicar_valoracao, como_clipping
+
+        base = []
+        for item in itens:
+            copia = dict(item)
+            copia["data_publicacao"] = item.get("data")
+            base.append(como_clipping(copia))
+        aplicar_valoracao(db, base)
+        return base
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Valoracao indisponivel (%s); gravando valor 0.", str(exc)[:120])
+        return []
 
 
 def main() -> int:
@@ -118,11 +138,16 @@ def main() -> int:
     from core.firebase_client import init_firebase
 
     db = init_firebase()
+    valores = valorar(db, itens)
+    if valores:
+        total_valor = sum(float(v.get("valor_estimado") or 0) for v in valores)
+        logger.info("Valoracao aplicada: R$ %.2f no total.", total_valor)
     colecao = db.collection("agentes_publicos").document("governo-mt").collection("clippings")
     lote = db.batch()
     total = 0
-    for item in itens:
-        lote.set(colecao.document(id_do_clipping(item)), documento(item), merge=True)
+    for indice, item in enumerate(itens):
+        valor = valores[indice] if indice < len(valores) else None
+        lote.set(colecao.document(id_do_clipping(item)), documento(item, valor), merge=True)
         total += 1
         if total % LOTE == 0:
             lote.commit()
@@ -134,7 +159,12 @@ def main() -> int:
     if not args.sem_agregados:
         from scripts import atualizar_metricas_governo
 
-        codigo = atualizar_metricas_governo.main()
+        argv = sys.argv[:]
+        sys.argv = [sys.argv[0]]
+        try:
+            codigo = atualizar_metricas_governo.main()
+        finally:
+            sys.argv = argv
         if codigo:
             return codigo
 

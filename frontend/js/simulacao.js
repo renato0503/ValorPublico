@@ -90,23 +90,27 @@ export function renderizar() {
 
   cartaoKpi("simKpiPersonas", {
     codigo: "K-25",
+    nome: "Personas na simulação",
     valor: dados ? String(personas.length || 12) : "—",
-    sufixo: "personas na simulação",
+    sufixo: "personas sintéticas",
   });
   cartaoKpi("simKpiAdesao", {
     codigo: "K-03",
+    nome: "Adesão média",
     valor: dados ? _numero(_media(personas, "adesao")) : "—",
-    sufixo: "adesão média (1–7)",
+    sufixo: "nota de 1 a 7",
   });
   cartaoKpi("simKpiRejeicao", {
     codigo: "K-20",
+    nome: "Rejeição média",
     valor: dados ? `${Math.round(_media(personas, "rejeicao") * 100)}%` : "—",
-    sufixo: "reação negativa média",
+    sufixo: "reações negativas",
   });
   cartaoKpi("simKpiPolarizacao", {
     codigo: "K-28",
+    nome: "Polarização",
     valor: dados ? _numero(dados.polarizacao, 2) : "—",
-    sufixo: "polarização entre personas",
+    sufixo: "diferença entre personas",
   });
 
   const semana = document.getElementById("simSemana");

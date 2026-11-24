@@ -174,7 +174,7 @@ function renderizarRadar() {
   if (!itens.length) {
     resumo.innerHTML = "";
     corpo.innerHTML =
-      '<tr><td colspan="5" class="vazio">Nenhuma propaganda pública detectada no período. Rode <code>atualizar_radares.py</code> no backend.</td></tr>';
+      '<tr><td colspan="5" class="vazio">Nenhuma propaganda pública detectada no período.</td></tr>';
     return;
   }
 
@@ -330,15 +330,16 @@ function renderizarBotaoNewsletter() {
   botao.disabled = !total;
 }
 
-/** Abre a newsletter gerada (HTML) em nova aba. */
+/** Abre a newsletter gerada (HTML) em nova aba. Devolve sucesso. */
 export function abrirNewsletter() {
   const blocoNl = bloco(estadoDsm.newsletter, janelaAtiva());
-  if (!blocoNl?.html) return;
+  if (!blocoNl?.html) return false;
   const janela = window.open("", "_blank");
-  if (!janela) return;
+  if (!janela) return false;
   janela.document.open();
   janela.document.write(blocoNl.html);
   janela.document.close();
+  return true;
 }
 
 /** Copia o texto da newsletter (canal WhatsApp/Telegram). */

@@ -1787,7 +1787,14 @@ async function bootstrap() {
     if (estado.db) await telas.carregar(estado.db);
   });
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
-  $("btnAbrirNewsletter")?.addEventListener("click", abrirNewsletter);
+  $("btnAbrirNewsletter")?.addEventListener("click", () => {
+    if (!abrirNewsletter()) {
+      mostrarAviso(
+        "A newsletter desta semana ainda não foi gerada. Ela entra após a coleta semanal.",
+        ""
+      );
+    }
+  });
   $("btnSairConta")?.addEventListener("click", alternarAuth);
   $("btnOrgao")?.addEventListener("click", abrirSeletorOrgao);
   $("btnTemaConta")?.addEventListener("click", alternarTema);
