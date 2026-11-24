@@ -188,6 +188,11 @@ IA_SENTIMENTO_TAMANHO_LOTE = int(os.getenv("IA_SENTIMENTO_TAMANHO_LOTE", "20"))
 IA_SENTIMENTO_TIMEOUT = int(os.getenv("IA_SENTIMENTO_TIMEOUT", "30"))
 IA_SENTIMENTO_TEMPERATURA = float(os.getenv("IA_SENTIMENTO_TEMPERATURA", "0.0"))
 
+# IA local (Ollama) para o discurso e os textos dos graficos (plano 09/10).
+# Roda na maquina do dono (RTX 4060, 8 GB) — sem API paga.
+IA_LOCAL_URL = os.getenv("IA_LOCAL_URL", "http://127.0.0.1:11434")
+IA_LOCAL_MODELO = os.getenv("IA_LOCAL_MODELO", "qwen3:8b")
+
 # Release de IA (resumo executivo por escopo/periodo, OpenAI-compativel).
 # Reusa a mesma API key do sentimento quando IA_RELEASE_API_KEY nao for informada.
 IA_RELEASE_ENABLED = os.getenv("IA_RELEASE_ENABLED", "1") == "1"
