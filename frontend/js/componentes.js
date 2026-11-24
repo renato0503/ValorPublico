@@ -89,13 +89,25 @@ export function cartaoKpi(idElemento, opcoes = {}) {
  * Cria a estrutura de um cartão de gráfico (título-conclusão, leitura, ações).
  * Devolve o elemento do canvas para o desenho.
  */
-export function cartaoGrafico(elementoPai, opcoes = {}) {
+export function cartaoGrafico(elementoOuId, opcoes = {}) {
+  // Aceita o id (string) ou o proprio elemento. Devolve o canvas/elemento do
+  // grafico (ou null) e NUNCA estoura: sem elemento, avisa e sai.
+  const alvo =
+    typeof elementoOuId === "string"
+      ? document.getElementById(elementoOuId)
+      : elementoOuId;
+  if (!alvo) {
+    console.warn("[componentes] cartao de grafico sem elemento:", opcoes.codigo || "?");
+    return null;
+  }
+  const pai = alvo.parentElement || alvo;
   const codigo = opcoes.codigo || "";
   const item = explicacao(codigo);
   const titulo = opcoes.titulo || nomeAmigavel(codigo);
-  const idCanvas = opcoes.idCanvas || `gfx-${Math.random().toString(36).slice(2, 9)}`;
+  // Mantem o id do placeholder para que a proxima renderizacao ache o bloco.
+  const idCanvas = alvo.id || opcoes.idCanvas || `gfx-${Math.random().toString(36).slice(2, 9)}`;
 
-  elementoPai.innerHTML = `
+  pai.innerHTML = `
     <div class="grafico-cabecalho">
       <div>
         <h3 class="grafico-titulo">${escapar(titulo)}</h3>
@@ -103,7 +115,7 @@ export function cartaoGrafico(elementoPai, opcoes = {}) {
       </div>
       <button class="btn-info" type="button" data-explicacao="${escapar(codigo)}" aria-label="O que é ${escapar(titulo)}?">ⓘ</button>
     </div>
-    <div class="grafico-area" id="${idCanvas}"></div>
+    <div class="grafico-area" id="${escapar(idCanvas)}"></div>
     ${
       opcoes.leitura
         ? `<div class="grafico-leitura"><span class="grafico-leitura-rotulo">Leitura do momento</span>${escapar(opcoes.leitura)}</div>`
@@ -115,7 +127,7 @@ export function cartaoGrafico(elementoPai, opcoes = {}) {
       <button class="btn-texto" type="button" data-acao="como-calculamos">Como calculamos</button>
     </div>
   `;
-  registrarExplicacoes(elementoPai);
+  registrarExplicacoes(pai);
 
   const canvas = document.getElementById(idCanvas);
   if (canvas) {
