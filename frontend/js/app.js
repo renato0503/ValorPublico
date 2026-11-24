@@ -1398,7 +1398,7 @@ async function entrarApp() {
   const uid = estadoAuth.usuario?.uid || "";
   const salvo = orgaoSalvo(uid);
   const o = orgaoAtual(perfil, uid);
-  if (salvo && o && disponiveis.some((x) => x.slug === o)) {
+  if (salvo && salvo === o && disponiveis.some((x) => x.slug === o)) {
     fecharSeletorOrgao();
     aplicarEscopoOrgao(o);
     await iniciarApp();
