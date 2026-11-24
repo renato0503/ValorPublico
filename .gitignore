@@ -118,3 +118,6 @@ desktop.ini
 # FIREBASE (cache local de deploy - pode conter tokens)
 # ============================================================
 .firebase/
+
+# Bibliotecas vendorizadas (precisam ir no deploy do Actions)
+!frontend/vendor/*.min.js
