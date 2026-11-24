@@ -73,6 +73,7 @@ function htmlMais(itens, ativo) {
     `<div class="nav-mais" data-nav-mais>` +
     `<button class="nav-mais-btn nav-jornal-link${temAtivo ? " ativo" : ""}" type="button" ` +
     `aria-expanded="false" aria-controls="navMaisPainel" data-nav-mais-btn>` +
+    `<svg aria-hidden="true"><use href="#i-mais"/></svg>` +
     `<span>Mais</span><span class="nav-mais-seta" aria-hidden="true">▾</span>` +
     `</button>` +
     `<div class="nav-mais-painel" id="navMaisPainel" hidden data-nav-mais-painel>` +

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ValorPúblico — painel institucional de mídia</title>
   <meta name="theme-color" content="#f2ecdf" />
+  <meta name="personas-api" content="" />
   <meta name="description" content="BI institucional de mídia: audiência, valoração, parlamentares e inteligência de clipping." />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
@@ -37,6 +38,7 @@
     <symbol id="i-inteligencia" viewBox="0 0 24 24"><path d="M12 12 18 7.5"/><path d="M5.2 16a7.5 7.5 0 1 1 11.6 0"/><circle cx="12" cy="12" r="1.4"/></symbol>
     <symbol id="i-relatorios" viewBox="0 0 24 24"><path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M9.8 12.5h5.4M9.8 16h5.4"/></symbol>
     <symbol id="i-sistema" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="1.6"/></symbol>
+    <symbol id="i-mais" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
   </svg>
 
   <div id="splashPwa" class="splash-pwa" aria-hidden="true">
@@ -1136,7 +1138,7 @@
     <span id="rodapeOrgao">Selecione a instituição</span>
   </footer>
 
-  <div id="telaLogin" class="tela-login" aria-hidden="true">
+  <div id="telaLogin" class="tela-login ativo" aria-hidden="false">
     <div class="login-folha">
       <a class="login-marca" href="#/painel">
         <img src="icons/favicon.svg" alt="" width="44" height="44" />
@@ -1152,7 +1154,7 @@
         <input id="loginSenha" type="password" autocomplete="current-password" placeholder="••••••••" required />
         <button class="login-link" id="btnEsqueci" type="button">Esqueci minha senha</button>
         <p class="login-erro oculto" id="loginErro" role="alert"></p>
-        <button class="btn-atualizar" id="btnEntrar" type="submit">Entrar</button>
+        <button class="btn-atualizar" id="btnEntrar" type="submit" disabled>Entrar</button>
       </form>
       <p class="login-pe">Acesso restrito a usuários autorizados. Dados no projeto Firebase da instituição (LGPD).</p>
     </div>

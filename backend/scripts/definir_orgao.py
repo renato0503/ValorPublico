@@ -79,13 +79,23 @@ def main() -> None:
 
     uid = _uid_de(args)
     ref = db.collection("usuarios").document(uid)
-    if not ref.get().exists:
+    perfil = ref.get()
+    if not perfil.exists:
         raise SystemExit("Perfil nao encontrado para uid %s." % uid)
+    dados = perfil.to_dict() or {}
 
     ref.set(
         {"orgao": orgao, "atualizado_em": datetime.now(timezone.utc)},
         merge=True,
     )
+    try:
+        from firebase_admin import auth
+
+        auth.set_custom_user_claims(
+            uid, {"orgao": orgao, "papel": dados.get("papel", "")}
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Nao foi possivel gravar custom claims: %s", str(exc)[:120])
     rotulo = ORGAOS.get(orgao, "TODOS (administrador)")
     logger.info("usuarios/%s -> orgao=%s", uid, orgao or "(vazio)")
     print("uid: %s" % uid)

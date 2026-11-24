@@ -128,6 +128,12 @@ def main() -> None:
         "criado_em": datetime.now(timezone.utc),
     }
     db.collection("usuarios").document(usuario.uid).set(perfil, merge=True)
+    try:
+        auth.set_custom_user_claims(
+            usuario.uid, {"orgao": args.orgao, "papel": args.papel}
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Nao foi possivel gravar custom claims: %s", str(exc)[:120])
     logger.info("Perfil gravado em usuarios/%s (chaves=%s).", usuario.uid, perfil["chaves"])
 
     print(f"uid: {usuario.uid}")

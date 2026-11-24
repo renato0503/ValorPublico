@@ -12,6 +12,7 @@ export const estadoAuth = {
   auth: null,
   usuario: null,
   perfil: null, // {uid, email, papel, agente_id, agente_ids, chaves}
+  erroPerfil: false,
   autenticado: false,
   desinscrever: null,
   carregando: true,
@@ -37,6 +38,13 @@ function sdkFirestore(versao = "9.22.0") {
 
 /* ---------- sessão ---------- */
 
+function definirBotaoLogin(pronto) {
+  const botao = $("btnEntrar");
+  if (!botao) return;
+  botao.disabled = !pronto;
+  botao.textContent = pronto ? "Entrar" : "Entrar (iniciando…)";
+}
+
 export async function iniciarAuth() {
   try {
     const { app } = await import("./firebase-init.js");
@@ -52,7 +60,7 @@ export async function iniciarAuth() {
       estadoAuth.desinscrever = modulo.onAuthStateChanged(estadoAuth.auth, async (usuario) => {
         estadoAuth.usuario = usuario;
         estadoAuth.autenticado = !!usuario;
-        estadoAuth.perfil = usuario ? await carregarPerfil(usuario.uid) : null;
+        estadoAuth.perfil = usuario ? await carregarPerfil(usuario) : null;
         estadoAuth.carregando = false;
         atualizarBotao();
         await notificarTroca();
@@ -62,24 +70,50 @@ export async function iniciarAuth() {
         }
       });
     });
+    definirBotaoLogin(true);
   } catch (e) {
-    // Auth nao habilitado no projeto: segue em modo publico.
-    console.warn("Auth indisponivel, seguindo em modo publico:", e?.message || e);
+    // Auth indisponivel: mantem o login travado e avisa (sem abrir o painel).
+    console.warn("Auth indisponivel:", e?.message || e);
     estadoAuth.carregando = false;
+    definirBotaoLogin(false);
     atualizarBotao();
   }
 }
 
-async function carregarPerfil(uid) {
+async function carregarPerfil(usuario) {
+  const uid = usuario.uid;
   const { db } = await import("./firebase-init.js");
   try {
     const { doc, getDoc } = await sdkFirestore();
     const snap = await getDoc(doc(db, "usuarios", uid));
-    return snap.exists() ? snap.data() : null;
+    if (snap.exists()) {
+      estadoAuth.erroPerfil = false;
+      return snap.data();
+    }
   } catch (e) {
     console.warn("Perfil do usuario indisponivel:", e?.message || e);
-    return null;
   }
+  // Fallback: custom claims (orgao/papel) quando o Firestore falha/cota.
+  try {
+    const token = await usuario.getIdTokenResult(true);
+    const claims = token.claims || {};
+    if (claims.orgao || claims.papel) {
+      estadoAuth.erroPerfil = false;
+      return {
+        email: usuario.email || "",
+        papel: claims.papel || "",
+        orgao: claims.orgao || "",
+        agente_id: "",
+        agente_ids: [],
+        chaves: [],
+        _viaClaims: true,
+      };
+    }
+  } catch (e) {
+    console.warn("Claims do usuario indisponiveis:", e?.message || e);
+  }
+  estadoAuth.erroPerfil = true;
+  return null;
 }
 
 /** Lê `config_acesso/publico`. Sem documento = público (modo demo). */
@@ -91,7 +125,8 @@ export async function lerModoAcesso() {
     if (!snap.exists()) return true;
     return snap.data().publico !== false;
   } catch {
-    return true;
+    // Falha de rede/cota: nunca abre o painel sem login por engano.
+    return false;
   }
 }
 
@@ -186,11 +221,20 @@ export async function submeterLogin(evento) {
     return;
   }
   const botao = $("btnEntrar");
+  if (!estadoAuth.auth) {
+    if (erro) {
+      erro.textContent = "A autenticação ainda está iniciando. Aguarde um instante e tente de novo.";
+      erro.classList.remove("oculto");
+    }
+    definirBotaoLogin(false);
+    return;
+  }
   if (botao) {
     botao.disabled = true;
     botao.textContent = "Entrando…";
   }
   try {
+    window.dispatchEvent(new CustomEvent("login:submit"));
     await entrar(email, senha);
     fecharLogin();
   } catch (e) {
@@ -209,8 +253,8 @@ export async function submeterLogin(evento) {
     }
   } finally {
     if (botao) {
-      botao.disabled = false;
-      botao.textContent = "Entrar";
+      botao.disabled = !estadoAuth.auth;
+      botao.textContent = estadoAuth.auth ? "Entrar" : "Entrar (indisponível)";
     }
   }
 }

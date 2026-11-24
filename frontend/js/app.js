@@ -20,6 +20,7 @@ import {
   iniciarAuth,
   lerModoAcesso,
   registrarBotaoAuth,
+  sair,
 } from "./auth.js";
 
 import {
@@ -1452,6 +1453,7 @@ function atualizarBotaoOrgao() {
  */
 async function entrarApp() {
   if (modoPublico) {
+    fecharLogin();
     aplicarEscopoOrgao("cuiaba");
     await iniciarApp();
     return;
@@ -1486,8 +1488,17 @@ function renderOrgaoCards() {
   if (!lista.length) {
     grid.innerHTML = "";
     if (erro) {
-      erro.textContent =
-        "Órgão não definido para seu usuário. Solicite ao administrador que libere o acesso.";
+      if (estadoAuth.erroPerfil) {
+        erro.innerHTML =
+          "Não foi possível carregar seu perfil agora (rede/cota). " +
+          '<button class="btn-texto" type="button" id="btnRecarregarPerfil">Tentar novamente</button>';
+        document
+          .getElementById("btnRecarregarPerfil")
+          ?.addEventListener("click", () => location.reload());
+      } else {
+        erro.textContent =
+          "Órgão não definido para seu usuário. Solicite ao administrador que libere o acesso.";
+      }
       erro.classList.remove("oculto");
     }
     return;
@@ -1632,6 +1643,10 @@ window.addEventListener("auth:changed", async () => {
   if (uid) estado.uid = uid;
   atualizarConta();
   if (estadoAuth.autenticado && !appIniciado) {
+    if (!loginExplicito) {
+      abrirLogin();
+      return;
+    }
     fecharLogin();
     modoPublico = await lerModoAcesso();
     await entrarApp();
@@ -1639,6 +1654,7 @@ window.addEventListener("auth:changed", async () => {
   }
   if (!estadoAuth.autenticado) {
     // Ao sair, a próxima entrada pede a frente de novo (e recarrega tudo).
+    loginExplicito = false;
     desinscreverTudo();
     if (estado.uid) limparOrgao(estado.uid);
     estado.uid = "";
@@ -1760,6 +1776,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 let appIniciado = false;
+let loginExplicito = false;
+
+window.addEventListener("login:submit", () => {
+  loginExplicito = true;
+});
 let modoPublico = true;
 
 function atualizarConta() {
@@ -1801,6 +1822,7 @@ async function iniciarApp() {
 async function bootstrap() {
   aplicarTemaInicial();
   aplicarPreferenciaValor();
+  abrirLogin();
   renderMenu("");
   iniciarRouter();
   registrarBotaoAuth();
@@ -1854,10 +1876,16 @@ async function bootstrap() {
   });
   await iniciarAuth();
   modoPublico = await lerModoAcesso();
-  if (!modoPublico && !estadoAuth.autenticado) {
-    abrirLogin();
+  if (!modoPublico) {
+    if (!loginExplicito) {
+      if (estadoAuth.autenticado) await sair();
+      abrirLogin();
+      return;
+    }
+    await entrarApp();
     return;
   }
+  fecharLogin();
   await entrarApp();
 }
 

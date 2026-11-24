@@ -127,3 +127,4 @@ backend/data/governo_mt/*
 
 # Relatórios semanais gerados localmente (corpus, discurso, PDF)
 backend/data/semanal/*
+cloud/personas-api/data/

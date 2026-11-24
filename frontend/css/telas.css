@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    ValorPúblico — MASTHEAD, TELAS e LOGIN (newsroom)
    ============================================================ */
 
@@ -124,7 +124,8 @@
   font-family: inherit;
 }
 
-.nav-jornal a svg {
+.nav-jornal a svg,
+.nav-jornal .nav-mais-btn svg {
   width: 18px;
   height: 18px;
   stroke: currentColor;
@@ -555,7 +556,8 @@ html[data-tema="escuro"] .nav-mais-painel {
   .masthead.filtros-aberto .filtro select { width: 100%; }
 
   .nav-jornal a { padding: 10px 11px 9px; font-size: 0.8rem; }
-  .nav-jornal a svg { display: none; }
+  .nav-jornal a svg,
+  .nav-jornal .nav-mais-btn svg { width: 16px; height: 16px; }
 
   .conteudo { padding: 14px 14px 36px; }
 
@@ -1050,3 +1052,4 @@ html[data-tema="escuro"] .chat-mensagens { background: rgba(255, 255, 255, 0.03)
   body.print-governador #tela-governador { display: block !important; }
   body.print-governador #tela-governador .card { break-inside: avoid; }
 }
+
