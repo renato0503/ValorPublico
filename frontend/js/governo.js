@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Telas do Governo de Mato Grosso (V12) e do Governador (V13) — ValorPublico.
  *
  * Dados (agregados, nunca os brutos):
@@ -184,6 +184,7 @@ function renderizarGoverno() {
     codigo: "K-08",
     valor: _dinheiro(casa.valoracao_total),
     sufixo: "valor estimado da mídia",
+    valorMidia: true,
   });
   cartaoKpi("kpiGovVeiculos", {
     codigo: "K-61",
@@ -299,6 +300,7 @@ function renderizarGovernador() {
     codigo: "K-08",
     valor: _dinheiro(g.valoracao_total),
     sufixo: "valor estimado da mídia",
+    valorMidia: true,
   });
   cartaoKpi("kpiGovCrise", {
     codigo: "K-28",
@@ -375,3 +377,4 @@ export function redimensionar() {
     }
   });
 }
+

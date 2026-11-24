@@ -235,6 +235,27 @@ function atualizarBotaoTema(tema) {
   el.title = tema === "claro" ? "Mudar para o tema escuro" : "Mudar para o tema claro";
 }
 
+/* ---------- valor de mídia (secundário/opcional) ---------- */
+
+const CHAVE_VALOR_MIDIA = "vp_mostrar_valor";
+
+function valorMidiaAtivo() {
+  try {
+    return localStorage.getItem(CHAVE_VALOR_MIDIA) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function aplicarPreferenciaValor() {
+  const ativo = valorMidiaAtivo();
+  document.body.classList.toggle("mostrar-valor", ativo);
+  const chk = $("toggleValorMidia");
+  if (chk) chk.checked = ativo;
+  const kpi = $("kpiValoracao");
+  if (kpi) kpi.closest(".card")?.classList.add("valor-midia");
+}
+
 function alternarTema() {
   const atual = document.documentElement.dataset.tema === "claro" ? "escuro" : "claro";
   document.documentElement.dataset.tema = atual;
@@ -1281,6 +1302,7 @@ function gerarRelatorio() {
 
   const totalSoma = Object.values(filtroSent).reduce((a, b) => a + b, 0);
   const valorSoma = base.valoracao_total || 0;
+  const mostrarValor = valorMidiaAtivo();
 
   // Somatório de espaço real (caracteres / minutos / cm²) por tipo de mídia
   const espaco = base.espaco_total || {};
@@ -1294,10 +1316,16 @@ function gerarRelatorio() {
     `<div class="soma-card">Espaço (impresso)<span class="valor">${formatarNumero(cm2Soma)} cm²</span></div>`,
   ];
 
-  $("relSoma").innerHTML =
-    `<div class="soma-card">Menções<span class="valor">${formatarNumero(totalSoma)}</span></div>` +
-    `<div class="soma-card">Valor (R$)<span class="valor">${formatarValor(valorSoma)}</span></div>` +
-    cardsEspaco.join("");
+  const cardsSoma = [
+    `<div class="soma-card">Menções<span class="valor">${formatarNumero(totalSoma)}</span></div>`,
+  ];
+  if (mostrarValor) {
+    cardsSoma.push(
+      `<div class="soma-card">Valor (R$)<span class="valor">${formatarValor(valorSoma)}</span></div>`
+    );
+  }
+  cardsSoma.push(...cardsEspaco);
+  $("relSoma").innerHTML = cardsSoma.join("");
 
   // Lista amostral: representa as menções do período (distribuídas por sentimento/categoria)
   const resumo = [
@@ -1310,13 +1338,18 @@ function gerarRelatorio() {
   ];
   const linhas = resumo
     .filter(([, n]) => (!tipo || n > 0))
-    .map(
-      ([cat, n]) =>
-        `<tr><td>${cat}</td><td class="num">${formatarNumero(n)}</td><td class="num">${formatarValor(valorSoma * (n / (base.total_clippings || 1)))}</td></tr>`
-    )
+    .map(([cat, n]) => {
+      const valorCelula = mostrarValor
+        ? `<td class="num">${formatarValor(valorSoma * (n / (base.total_clippings || 1)))}</td>`
+        : "";
+      return `<tr><td>${cat}</td><td class="num">${formatarNumero(n)}</td>${valorCelula}</tr>`;
+    })
     .join("");
+  const cabecalhoValor = mostrarValor
+    ? '<th class="num">Valor est. (R$)</th>'
+    : "";
   $("relLista").innerHTML =
-    `<table class="tabela"><thead><tr><th>Categoria</th><th class="num">Menções</th><th class="num">Valor est. (R$)</th></tr></thead><tbody>${linhas}</tbody></table>`;
+    `<table class="tabela"><thead><tr><th>Categoria</th><th class="num">Menções</th>${cabecalhoValor}</tr></thead><tbody>${linhas}</tbody></table>`;
   lista = linhas;
 }
 
@@ -1705,7 +1738,10 @@ $("btnExportarPdf").addEventListener("click", exportarPdf);
 
 /* Camada DSM: newsletter consolidada (e-mail/WhatsApp) */
 $("btnNewsletterDsm").addEventListener("click", () => {
-  abrirNewsletter();
+  const resultado = abrirNewsletter();
+  if (resultado === "bloqueado") {
+    mostrarAviso("Permita pop-ups para abrir a newsletter em uma nova aba.", "");
+  }
 });
 $("btnCopiarNewsletter").addEventListener("click", async () => {
   const ok = await copiarNewsletter();
@@ -1764,6 +1800,7 @@ async function iniciarApp() {
 
 async function bootstrap() {
   aplicarTemaInicial();
+  aplicarPreferenciaValor();
   renderMenu("");
   iniciarRouter();
   registrarBotaoAuth();
@@ -1788,7 +1825,13 @@ async function bootstrap() {
   });
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
   $("btnAbrirNewsletter")?.addEventListener("click", () => {
-    if (!abrirNewsletter()) {
+    const resultado = abrirNewsletter();
+    if (resultado === "bloqueado") {
+      mostrarAviso(
+        "Permita pop-ups para abrir a newsletter em uma nova aba.",
+        ""
+      );
+    } else if (resultado !== "ok") {
       mostrarAviso(
         "A newsletter desta semana ainda não foi gerada. Ela entra após a coleta semanal.",
         ""
@@ -1798,6 +1841,17 @@ async function bootstrap() {
   $("btnSairConta")?.addEventListener("click", alternarAuth);
   $("btnOrgao")?.addEventListener("click", abrirSeletorOrgao);
   $("btnTemaConta")?.addEventListener("click", alternarTema);
+  $("toggleValorMidia")?.addEventListener("change", (evento) => {
+    try {
+      localStorage.setItem(
+        CHAVE_VALOR_MIDIA,
+        evento.target.checked ? "1" : "0"
+      );
+    } catch {
+      /* sem storage: vale só na sessão */
+    }
+    aplicarPreferenciaValor();
+  });
   await iniciarAuth();
   modoPublico = await lerModoAcesso();
   if (!modoPublico && !estadoAuth.autenticado) {

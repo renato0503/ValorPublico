@@ -33,6 +33,9 @@ const estado = {
   simulacao: null,
   semana: "",
   varianteAtiva: 0,
+  discursoGovernador: null,
+  semanaGovernador: "",
+  varianteGovernador: 0,
 };
 const graficos = new Map();
 
@@ -142,6 +145,18 @@ export function escopoAtual() {
   return { tipo: "nenhum", id: "" };
 }
 
+async function lerDiscursoAgente(db, escopoBase) {
+  for (const semana of semanasRecentes(4)) {
+    const doc = await lerDocSeguro(
+      db,
+      "discurso_semanal",
+      `${escopoBase}__${semana}`
+    );
+    if (doc) return { doc, semana };
+  }
+  return { doc: null, semana: semanasRecentes(1)[0] };
+}
+
 export async function carregar(db) {
   estado.db = db;
   const escopo = escopoAtual();
@@ -166,6 +181,17 @@ export async function carregar(db) {
   estado.discurso = semana.discurso;
   estado.simulacao = semana.simulacao;
   estado.semana = semana.semana;
+  if (estado.orgao?.slug === "governo-mt") {
+    const gov = await lerDiscursoAgente(
+      db,
+      "agente-governador-otaviano-pivetta"
+    );
+    estado.discursoGovernador = gov.doc;
+    estado.semanaGovernador = gov.semana;
+  } else {
+    estado.discursoGovernador = null;
+    estado.semanaGovernador = "";
+  }
   renderizar();
 }
 
@@ -176,6 +202,7 @@ export function renderizar() {
   renderizarImagem(dados);
   renderizarOuvidoria(dados);
   renderizarSemana(dados);
+  renderizarGovernadorDiscurso();
   renderizarRedes(dados);
   renderizarConformidade(dados);
   renderizarTendencias(dados);
@@ -214,6 +241,7 @@ function renderizarEdicao(dados) {
       currency: "BRL",
       maximumFractionDigits: 0,
     }).format(Number(dados.valor_avpe_total ?? dados.valoracao_total ?? 0)),
+    valorMidia: true,
   });
   cartaoKpi("kpiEdicaoAlertas", {
     codigo: "K-20",
@@ -582,6 +610,70 @@ function renderizarDiscurso(disc, sim) {
   });
 }
 
+let textoGovernadorAtual = "";
+
+function renderizarGovernadorDiscurso() {
+  const alvo = document.getElementById("discursoGovernador");
+  if (!alvo) return;
+  const disc = estado.discursoGovernador;
+  const btnCopiar = document.getElementById("btnCopiarDiscursoGovernador");
+  const variantes = Array.isArray(disc?.variantes) ? disc.variantes : [];
+  if (!variantes.length) {
+    textoGovernadorAtual = "";
+    alvo.innerHTML =
+      '<p class="grafico-leitura">O discurso do governador desta semana ainda não foi gerado. ' +
+      "Ele entra aqui após a análise das notícias e a validação do formato.</p>";
+    if (btnCopiar) btnCopiar.disabled = true;
+    return;
+  }
+  const idx = Math.min(estado.varianteGovernador, variantes.length - 1);
+  estado.varianteGovernador = idx;
+  const atual = variantes[idx] || {};
+  const texto = atual.tribuna || atual.texto || "";
+  textoGovernadorAtual = texto;
+  const abas = variantes
+    .map(
+      (v, i) =>
+        `<button class="disc-aba${i === idx ? " ativo" : ""}" type="button" ` +
+        `data-disc-gov="${i}">${escapar(v.angulo || v.id || `Variante ${i + 1}`)}</button>`
+    )
+    .join("");
+  const fontes = (atual.fontes || [])
+    .slice(0, 10)
+    .map(
+      (f) =>
+        `<li>${escapar(f.veiculo || f.fonte || "Fonte")}${
+          f.data ? " · " + escapar(String(f.data).slice(0, 10)) : ""
+        }${f.url ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>` : ""}</li>`
+    )
+    .join("");
+  alvo.innerHTML =
+    `<div class="disc-tabs" role="tablist">${abas}</div>` +
+    `<article class="disc-texto-ativo">` +
+    `<div class="disc-meta"><span>${escapar(disc.semana || estado.semanaGovernador || "")}</span>` +
+    `<span>${escapar(disc.modelo || "IA")}</span></div>` +
+    `<p>${escapar(texto).replace(/\n/g, "</p><p>")}</p>` +
+    (atual.video
+      ? `<details class="disc-extra"><summary>Versão para vídeo (60s)</summary><p>${escapar(atual.video)}</p></details>`
+      : "") +
+    (atual.post
+      ? `<details class="disc-extra"><summary>Versão para post</summary><p>${escapar(atual.post)}</p></details>`
+      : "") +
+    (fontes
+      ? `<div class="disc-fontes"><strong>Fontes</strong><ul>${fontes}</ul></div>`
+      : "") +
+    `<p class="disc-aviso">Rascunho gerado por IA — confira as fontes antes de usar.</p>` +
+    `</article>`;
+  if (btnCopiar) btnCopiar.disabled = false;
+
+  alvo.querySelectorAll("[data-disc-gov]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      estado.varianteGovernador = Number(botao.dataset.discGov);
+      renderizarGovernadorDiscurso();
+    });
+  });
+}
+
 async function copiarDiscursoSemana() {
   if (!textoDiscursoAtual) return;
   try {
@@ -601,6 +693,16 @@ if (typeof document !== "undefined") {
       document.body.classList.add("print-semana");
       window.print();
       setTimeout(() => document.body.classList.remove("print-semana"), 300);
+    }
+    if (evento.target.closest("#btnCopiarDiscursoGovernador")) {
+      if (textoGovernadorAtual) {
+        navigator.clipboard?.writeText(textoGovernadorAtual).catch(() => {});
+      }
+    }
+    if (evento.target.closest("#btnBaixarPdfGovernador")) {
+      document.body.classList.add("print-governador");
+      window.print();
+      setTimeout(() => document.body.classList.remove("print-governador"), 300);
     }
   });
 }

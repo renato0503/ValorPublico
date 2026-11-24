@@ -330,16 +330,16 @@ function renderizarBotaoNewsletter() {
   botao.disabled = !total;
 }
 
-/** Abre a newsletter gerada (HTML) em nova aba. Devolve sucesso. */
+/** Abre a newsletter gerada (HTML) em nova aba. Devolve "ok", "vazio" ou "bloqueado". */
 export function abrirNewsletter() {
   const blocoNl = bloco(estadoDsm.newsletter, janelaAtiva());
-  if (!blocoNl?.html) return false;
+  if (!blocoNl?.html) return "vazio";
   const janela = window.open("", "_blank");
-  if (!janela) return false;
+  if (!janela) return "bloqueado";
   janela.document.open();
   janela.document.write(blocoNl.html);
   janela.document.close();
-  return true;
+  return "ok";
 }
 
 /** Copia o texto da newsletter (canal WhatsApp/Telegram). */

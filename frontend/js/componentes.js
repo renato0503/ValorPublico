@@ -54,7 +54,7 @@ export function cartaoKpi(idElemento, opcoes = {}) {
     }`;
   }
 
-  elemento.className = `card kpi ${opcoes.classe || ""}`.trim();
+  elemento.className = `card kpi ${opcoes.classe || ""} ${opcoes.valorMidia ? "valor-midia" : ""}`.trim();
   elemento.innerHTML = `
     <div class="kpi-cabecalho">
       <span class="kpi-rotulo">${escapar(nome)}</span>

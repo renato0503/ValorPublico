@@ -188,7 +188,7 @@
         </div>
         <span class="kpi-valor" id="kpiAudiencia">–</span>
       </article>
-      <article class="card kpi kpi-ambar">
+      <article class="card kpi kpi-ambar valor-midia">
         <div class="kpi-cabecalho">
           <span class="kpi-rotulo">Valoração Espontânea</span>
           <span class="kpi-tendencia" id="tendenciaValoracao" data-base="0">—</span>
@@ -745,6 +745,20 @@
         </div>
         <div id="govInterino"></div>
       </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Discurso do governador na semana</h2>
+            <span class="painel-sub">3 variantes geradas por IA a partir das notícias da semana, com fontes</span>
+          </div>
+          <span class="selo-ia">Rascunho gerado por IA — confira as fontes</span>
+        </div>
+        <div id="discursoGovernador"></div>
+        <div class="grafico-acoes">
+          <button class="btn-texto" id="btnCopiarDiscursoGovernador" type="button">Copiar texto</button>
+          <button class="btn-texto" id="btnBaixarPdfGovernador" type="button">Baixar PDF</button>
+        </div>
+      </article>
     </section>
     <section class="grade-detalhe" aria-label="Notícias do governador">
       <article class="card painel painel-full">
@@ -1040,6 +1054,10 @@
             <button class="btn-atualizar" id="btnSairConta" type="button">Sair</button>
             <button class="btn-tema" id="btnTemaConta" type="button">Alternar tema</button>
           </div>
+          <label class="conta-toggle">
+            <input type="checkbox" id="toggleValorMidia" />
+            <span>Mostrar valor de mídia</span>
+          </label>
         </article>
       <article class="card painel">
         <div class="painel-cabecalho">

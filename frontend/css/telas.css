@@ -1041,3 +1041,12 @@ html[data-tema="escuro"] .chat-mensagens { background: rgba(255, 255, 255, 0.03)
 .persona-chat #chatPersona { width: 100%; min-width: 0; max-width: 100%; }
 .chat-form { min-width: 0; }
 .chat-form button { max-width: 100%; }
+
+@media print {
+  body.print-governador .masthead,
+  body.print-governador .rodape,
+  body.print-governador .conteudo > .tela:not(#tela-governador),
+  body.print-governador #btnBaixarPdfGovernador { display: none !important; }
+  body.print-governador #tela-governador { display: block !important; }
+  body.print-governador #tela-governador .card { break-inside: avoid; }
+}

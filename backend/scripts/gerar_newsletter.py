@@ -158,6 +158,46 @@ def _payload(escopo: dict, chave: str, rotulo: str, itens: list[dict], html_doc:
     }
 
 
+def carregar_jsonl(caminho: Path) -> list[dict]:
+    """Le um JSONL local do Governo sem gastar cota de leitura do Firestore."""
+    import json
+
+    itens: list[dict] = []
+    for linha in caminho.read_text(encoding="utf-8").splitlines():
+        if not linha.strip():
+            continue
+        item = json.loads(linha)
+        data = item.get("data")
+        if isinstance(data, str):
+            try:
+                data = datetime.fromisoformat(data.replace("Z", "+00:00"))
+            except ValueError:
+                data = None
+        itens.append(
+            {
+                "agente_id": "governo-mt",
+                "cidade": "Governo de Mato Grosso",
+                "casa": "Governo MT",
+                "orgao": "governo-mt",
+                "nome_agente": "Governo de Mato Grosso",
+                "texto_limpo": f"{item.get('titulo', '')}\n{item.get('resumo', '')}".strip(),
+                "titulo": item.get("titulo", ""),
+                "data_publicacao": data,
+                "sentimento": item.get("sentimento", "neutro"),
+                "plataforma": "Web",
+                "tipo": "Noticia",
+                "tipo_mencao": item.get("tipo_mencao", ""),
+                "valor_estimado": 0.0,
+                "valor_avpe": 0.0,
+                "url": item.get("url", ""),
+                "veiculo": item.get("veiculo", ""),
+                "autor": item.get("veiculo", ""),
+                "metadados": {"veiculo": item.get("veiculo", "")},
+            }
+        )
+    return itens
+
+
 def main() -> None:
     db = init_firebase()
     if not NEWSLETTER_ENABLED:
@@ -165,8 +205,11 @@ def main() -> None:
         return
 
     enviar = "--enviar" in sys.argv
+    jsonl = ""
     periodos_escolhidos = ["hoje", "7d", "15d", "30d"]
     for arg in sys.argv:
+        if arg.startswith("--jsonl="):
+            jsonl = arg.split("=", 1)[1]
         if arg.startswith("--periodos="):
             periodos_escolhidos = [p for p in arg.split("=", 1)[1].split(",") if p in PERIODOS]
     apenas: set[str] = set()
@@ -174,7 +217,7 @@ def main() -> None:
         if arg.startswith("--apenas-escopos="):
             apenas = {e for e in arg.split("=", 1)[1].split(",") if e}
 
-    clippings = coletar_clippings(db)
+    clippings = carregar_jsonl(Path(jsonl)) if jsonl else coletar_clippings(db)
     por_cidade: dict[str, list[dict]] = defaultdict(list)
     por_agente: dict[str, list[dict]] = defaultdict(list)
     for clipping in clippings:

@@ -105,6 +105,7 @@ def carregar_jsonl(caminho: str, orgao: str = "governo-mt") -> list[dict]:
                 "data_publicacao": item.get("data"),
                 "temas": item.get("temas") or [],
                 "secretarias": item.get("secretarias") or [],
+                "alvos": item.get("alvos") or [],
                 "agente_id": "governo-mt",
                 "casa": "Governo MT",
                 "plataforma": "Web",
@@ -169,6 +170,7 @@ def coletar_clippings(db, escopo: str, dias: int = 400) -> tuple[list[dict], str
                     "data_publicacao": bruto,
                     "temas": dados.get("categorias") or dados.get("temas") or [],
                     "secretarias": dados.get("secretarias") or [],
+                    "alvos": dados.get("alvos") or [],
                     "agente_id": ref.id,
                     "casa": agente.get("casa", ""),
                     "plataforma": dados.get("plataforma", ""),
@@ -351,6 +353,12 @@ def main() -> int:
         default="",
         help="Le um JSONL local (ex.: data/governo_mt/noticias-2026-11-24.jsonl) e evita ler o Firestore.",
     )
+    parser.add_argument(
+        "--alvo",
+        default="",
+        choices=("", "governador", "interino"),
+        help="Com --jsonl, filtra as notícias do Governo pelo alvo (governador/interino).",
+    )
     args = parser.parse_args()
 
     from core.firebase_client import init_firebase
@@ -373,12 +381,26 @@ def main() -> int:
         inicio = time.monotonic()
         if args.jsonl:
             itens = carregar_jsonl(args.jsonl)
-            nivel = "casa"
-            slug = escopo[len("casa-") :] if escopo.startswith("casa-") else ""
-            rotulo = CASAS.get(slug, {}).get(
-                "rotulo", "Governo do Estado de Mato Grosso"
-            )
-            orgao = CASAS.get(slug, {}).get("orgao", "governo-mt")
+            orgao = "governo-mt"
+            if args.alvo:
+                itens = [
+                    item
+                    for item in itens
+                    if args.alvo in (item.get("alvos") or [])
+                ]
+                nivel = "agente"
+                rotulo = (
+                    "Governador do Estado de Mato Grosso"
+                    if args.alvo == "governador"
+                    else "Governador Interino de Mato Grosso"
+                )
+            else:
+                nivel = "casa"
+                slug = escopo[len("casa-") :] if escopo.startswith("casa-") else ""
+                rotulo = CASAS.get(slug, {}).get(
+                    "rotulo", "Governo do Estado de Mato Grosso"
+                )
+                orgao = CASAS.get(slug, {}).get("orgao", "governo-mt")
         else:
             itens, nivel, rotulo = coletar_clippings(db, escopo)
             orgao = orgao_do_escopo(db, escopo)

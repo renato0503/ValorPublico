@@ -426,3 +426,16 @@ html[data-tema="escuro"] .lex-leitura strong { color: var(--texto, #f2ecdf); }
 }
 .lex-classe:focus-visible { outline: 2px solid var(--azul, #2563eb); outline-offset: 2px; }
 .lex-dados { margin-top: 12px; overflow-x: auto; }
+
+/* Valor de mídia é secundário: oculto por padrão; liga em Sistema */
+body:not(.mostrar-valor) .valor-midia { display: none !important; }
+.conta-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.84rem;
+  color: var(--texto-suave, #475569);
+  cursor: pointer;
+}
+.conta-toggle input { width: 16px; height: 16px; accent-color: var(--bronze, #7a541a); }

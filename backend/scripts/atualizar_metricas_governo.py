@@ -19,9 +19,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -96,6 +97,65 @@ def aplicar_valoracao(db, clippings: list[dict]) -> None:
         clippings[indice]["valor_avpe"] = float(linha.get("valor_avpe") or 0)
 
 
+def _equidade(contagens: list[int]) -> float:
+    """Entropia normalizada (0–1) da distribuição entre secretarias."""
+    valores = [float(c) for c in contagens if c and c > 0]
+    if len(valores) < 2:
+        return 0.0
+    total = sum(valores)
+    entropia = -sum((v / total) * math.log(v / total) for v in valores)
+    return round(entropia / math.log(len(valores)), 3)
+
+
+def _data_clip(c: dict):
+    valor = c.get("data_publicacao")
+    if isinstance(valor, datetime):
+        return valor.astimezone(timezone.utc).date() if valor.tzinfo else valor.date()
+    if isinstance(valor, str) and valor:
+        try:
+            return datetime.fromisoformat(valor.replace("Z", "+00:00")).date()
+        except ValueError:
+            return None
+    return None
+
+
+def _previsao(clippings: list[dict], dias: int = 30, horizonte: int = 7) -> dict:
+    """Série diária + projeção simples (média móvel de 7 dias com margem)."""
+    hoje = datetime.now(timezone.utc).date()
+    inicio = hoje - timedelta(days=dias - 1)
+    contagem: dict = {}
+    for clipping in clippings:
+        dia = _data_clip(clipping)
+        if dia and inicio <= dia <= hoje:
+            contagem[dia] = contagem.get(dia, 0) + 1
+    if sum(contagem.values()) < 5:
+        return {}
+    historico = []
+    for i in range(dias):
+        dia = inicio + timedelta(days=i)
+        historico.append({"data": dia.isoformat(), "valor": contagem.get(dia, 0)})
+    ultimos = [historico[-i]["valor"] for i in range(1, min(8, len(historico) + 1))]
+    media = sum(ultimos) / len(ultimos)
+    variancia = sum((v - media) ** 2 for v in ultimos) / len(ultimos)
+    desvio = math.sqrt(variancia)
+    previsao = []
+    for i in range(1, horizonte + 1):
+        dia = hoje + timedelta(days=i)
+        previsao.append(
+            {
+                "data": dia.isoformat(),
+                "valor": round(media, 2),
+                "superior": round(media + desvio, 2),
+                "inferior": max(0, round(media - desvio, 2)),
+            }
+        )
+    return {
+        "historico": historico,
+        "previsao": previsao,
+        "metodo": "media_movel_7d",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Agregados do Governo de MT.")
     parser.add_argument("--jsonl", default="")
@@ -159,6 +219,12 @@ def main() -> int:
     agregado["atualizado_em"] = agora
     agregado["escopo"] = "governo-estado"
     agregado["orgao"] = "governo-mt"
+    agregado["equidade_visibilidade"] = _equidade(
+        [len(lista) for lista in por_pasta.values()]
+    )
+    previsao = _previsao(clippings)
+    if previsao:
+        agregado["previsao"] = {"mencoes": previsao}
     gravar("metricas_por_cidade", slugify_cidade("Governo de Mato Grosso"), agregado)
     gravar("metricas_por_casa", "governo-mt", agregado)
 
