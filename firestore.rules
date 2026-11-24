@@ -143,6 +143,69 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Plano 18 — imagens dos posts (I0–I5)
+    // ------------------------------------------------------------------
+    // `imagens/{phash}`: analise de cada imagem unica (OCR, tipo de peca, VLM,
+    // reuso, C2PA). **Privada**: so o backend (Admin SDK) le e escreve.
+    match /imagens/{docId} {
+      allow read, write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Plano 09/10 — relatorio e discurso da semana
+    // ------------------------------------------------------------------
+    // `relatorio_semanal/{escopo}__{semana}` e `discurso_semanal/{escopo}__{semana}`:
+    // leitura por escopo (o dono do agente ou a casa com papel).
+    match /relatorio_semanal/{docId} {
+      allow read: if resource.data.escopo != null && leituraPorEscopo(resource.data.escopo);
+      allow write: if false;
+    }
+
+    match /discurso_semanal/{docId} {
+      allow read: if resource.data.escopo != null && leituraPorEscopo(resource.data.escopo);
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Plano 13 — fila de demandas (Base / Ouvidoria)
+    // ------------------------------------------------------------------
+    // `demandas/{id}`: pedido do cidadao. **Privado por escopo**: o gabinete
+    // (Assessor) ou a Ouvidoria da casa (Valor) veem os pedidos do seu escopo.
+    match /demandas/{docId} {
+      allow read: if usuarioEhDonoDoEscopo(docId)
+                   || (usuarioComAcesso() && perfilUsuario().papel in
+                       ['admin', 'owner', 'ouvidoria', 'secom', 'transparencia']);
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Plano 12 — log de auditoria (Valor: completo; Assessor: simples)
+    // ------------------------------------------------------------------
+    match /auditoria/{docId} {
+      allow read: if usuarioComAcesso()
+                   && perfilUsuario().papel in
+                       ['admin', 'owner', 'controle', 'transparencia', 'secom'];
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Plano 14 — metricas por casa (so no ValorPublico; no Assessor a ALMT
+    // e um escopo "cidade" como os demais)
+    // ------------------------------------------------------------------
+    match /metricas_por_casa/{docId} {
+      allow read: if acessoPublico() || usuarioComAcesso();
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
+    // Plano 19 — execucoes do navegador (log das sessoes)
+    // ------------------------------------------------------------------
+    match /execucoes_navegador/{docId} {
+      allow read: if usuarioEhAdmin();
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
     // Controle de acesso
     // ------------------------------------------------------------------
     // Perfil do proprio usuario (mapeia uid -> agente).

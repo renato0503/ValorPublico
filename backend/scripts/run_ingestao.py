@@ -51,17 +51,14 @@ def construir_scrapers() -> list:
             )
         )
     if settings.HABILITAR_FACEBOOK:
-        from scraper.facebook_scraper import FacebookScraper
+        from scraper.facebook_publico_scraper import FacebookPublicoScraper
 
         scrapers.append(
-            FacebookScraper(
+            FacebookPublicoScraper(
                 {
                     **CONFIG_BASE,
-                    "cookies_file": settings.FACEBOOK_COOKIES_FILE,
-                    "username": settings.FACEBOOK_USERNAME,
-                    "password": settings.FACEBOOK_PASSWORD,
-                    "headless": settings.FACEBOOK_HEADLESS,
-                    "max_rolagens": settings.FACEBOOK_MAX_ROLAGENS,
+                    "stealth": settings.NAVEGADOR_STEALTH,
+                    "conta_propria": settings.NAVEGADOR_CONTA_PROPRIA,
                 }
             )
         )

@@ -23,7 +23,7 @@ FIREBASE_SERVICE_ACCOUNT = str(_caminho_credencial)
 FIREBASE_DATABASE_URL = os.getenv("FIREBASE_DATABASE_URL", "")
 # Projeto Firestore esperado. A credencial precisa apontar para ele; caso
 # contrario o cliente aborta (defesa em profundidade contra o achado A1).
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "valorpublico-b1e6d").strip()
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "assessorpublico").strip()
 
 INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
@@ -36,6 +36,10 @@ FACEBOOK_USERNAME = os.getenv("FACEBOOK_USERNAME", "")
 FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
 FACEBOOK_HEADLESS = os.getenv("FACEBOOK_HEADLESS", "1") == "1"
 FACEBOOK_MAX_ROLAGENS = int(os.getenv("FACEBOOK_MAX_ROLAGENS", "5"))
+# O coletor antigo (cookies + login) saiu do codigo (plano 19 N-9). O novo
+# `facebook_publico_scraper.py` nao usa cookie de terceiro nem login alheio;
+# as opcoes abaixo ficam apenas para compatibilidade de .env antigo.
+FACEBOOK_USAR_COOKIES = False
 
 # Contas Twitter no formato "user:pass:email;user2:pass2:email2"
 TWITTER_ACCOUNTS = [
@@ -99,20 +103,79 @@ IMPRESSO_SITES = [s.strip() for s in os.getenv("IMPRESSO_SITES", "").split(",") 
 # ---------------------------------------------------------------------------
 # Redes sociais via buscador (sem login). Consulta o buscador com site: por
 # rede e guarda o que a pagina de resultados ja exibe publicamente (titulo,
-# snippet e trecho de comentario). Motores, em ordem de preferencia:
-# Google CSE (GOOGLE_CSE_KEY+CX) > Serper > SerpAPI > DuckDuckGo (ddgs).
+# snippet e trecho de comentario).
+# Motores, em ordem de preferencia:
+#   SearXNG (container proprio no Actions; sem chave, sem custo) > ddgs (reserva)
+# O Google CSE foi encerrado para novos clientes e descontinua em 01/01/2027;
+# Serper/SerpAPI sao pagos e ficaram fora (regra do dono: tudo gratuito).
 # ---------------------------------------------------------------------------
 HABILITAR_BUSCA_SOCIAL = os.getenv("HABILITAR_BUSCA_SOCIAL", "1") == "1"
 BUSCA_SOCIAL_MAX_CONSULTAS = int(os.getenv("BUSCA_SOCIAL_MAX_CONSULTAS", "120"))
 BUSCA_SOCIAL_MAX_RESULTADOS = int(os.getenv("BUSCA_SOCIAL_MAX_RESULTADOS", "10"))
 BUSCA_SOCIAL_RODIZIO = os.getenv("BUSCA_SOCIAL_RODIZIO", "1") == "1"
 BUSCA_SOCIAL_REGIAO = os.getenv("BUSCA_SOCIAL_REGIAO", "br-pt")
-GOOGLE_CSE_KEY = os.getenv("GOOGLE_CSE_KEY", "")
-GOOGLE_CSE_CX = os.getenv("GOOGLE_CSE_CX", "")
-SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
-SERPAPI_KEY = os.getenv("SERPAPI_KEY", "")
+# SearXNG: URL do container (http://localhost:8080 no Actions). Vazio = usa ddgs.
+SEARXNG_URL = os.getenv("SEARXNG_URL", "").strip()
+SEARXNG_MOTORES = tuple(
+    m.strip()
+    for m in os.getenv("SEARXNG_MOTORES", "google,bing,brave,duckduckgo,startpage").split(",")
+    if m.strip()
+)
+SEARXNG_TIMEOUT = float(os.getenv("SEARXNG_TIMEOUT", "20"))
 # Comentarios publicos do YouTube (yt-dlp), por video.
 YOUTUBE_MAX_COMENTARIOS = int(os.getenv("YOUTUBE_MAX_COMENTARIOS", "15"))
+
+# ---------------------------------------------------------------------------
+# Agentes de navegador (plano 19). Flags e ritmo.
+# NAVEGADOR_STEALTH: ligado nos DOIS apps (decisao do dono, 24/11/2026).
+# NAVEGADOR_CONTA_PROPRIA: automatizar pelo navegador a conta logada do
+#   proprio agente (liberado pelo dono, 24/11/2026). A API oficial (06) segue
+#   sendo o caminho preferencial.
+# ---------------------------------------------------------------------------
+NAVEGADOR_STEALTH = os.getenv("NAVEGADOR_STEALTH", "1") == "1"
+NAVEGADOR_CONTA_PROPRIA = os.getenv("NAVEGADOR_CONTA_PROPRIA", "1") == "1"
+NAVEGADOR_HEADLESS = os.getenv("NAVEGADOR_HEADLESS", "1") == "1"
+NAVEGADOR_TIMEOUT_MS = int(os.getenv("NAVEGADOR_TIMEOUT_MS", "30000"))
+# Limite de paginas por agente/dia (salvaguarda 19 §3.1.3).
+NAVEGADOR_MAX_PAGINAS_AGENTE_DIA = int(os.getenv("NAVEGADOR_MAX_PAGINAS_AGENTE_DIA", "30"))
+# Previa publica (N2): quantos links de redes abrir por agente/dia.
+NAVEGADOR_MAX_PREVIAS_AGENTE_DIA = int(os.getenv("NAVEGADOR_MAX_PREVIAS_AGENTE_DIA", "10"))
+# Pasta onde ficam os prints de evidencia (N3/N4).
+NAVEGADOR_PASTA_EVIDENCIA = os.getenv(
+    "NAVEGADOR_PASTA_EVIDENCIA", str(DATA_DIR / "evidencias")
+)
+
+# ---------------------------------------------------------------------------
+# Tendencias (plano 07) e projecao (K-33).
+# ---------------------------------------------------------------------------
+TENDENCIAS_ATUALIZAR = os.getenv("TENDENCIAS_ATUALIZAR", "1") == "1"
+TENDENCIAS_GEO = os.getenv("TENDENCIAS_GEO", "BR-MT")
+TENDENCIAS_MAX_ITENS = int(os.getenv("TENDENCIAS_MAX_ITENS", "20"))
+# YouTube Data API v3 (chave gratuita) — usada para "em alta" e comentarios.
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+# Meta Ad Library (token com ads_read). Vazio = anuncios indisponiveis.
+META_AD_LIBRARY_TOKEN = os.getenv("META_AD_LIBRARY_TOKEN", "")
+# Indice de crise (K-28): z-score minimo e minimo de itens.
+CRISE_Z_LIMITE = float(os.getenv("CRISE_Z_LIMITE", "3"))
+CRISE_MINIMO_ITENS = int(os.getenv("CRISE_MINIMO_ITENS", "5"))
+
+# ---------------------------------------------------------------------------
+# Imagens dos posts (plano 18).
+# ---------------------------------------------------------------------------
+IMAGENS_HABILITAR = os.getenv("IMAGENS_HABILITAR", "1") == "1"
+IMAGENS_PASTA = os.getenv("IMAGENS_PASTA", str(DATA_DIR / "imagens"))
+# Onde guardar a miniatura (D12): "base64" (Spark, sem Blaze) ou "storage".
+IMAGENS_MINIATURA = os.getenv("IMAGENS_MINIATURA", "base64")
+IMAGENS_MAX_POR_AGENTE = int(os.getenv("IMAGENS_MAX_POR_AGENTE", "24"))
+IMAGENS_RETENCAO_DIAS = int(os.getenv("IMAGENS_RETENCAO_DIAS", "90"))
+# VLM local (I3): modelo do Ollama usado na descricao das imagens.
+IMAGENS_VLM_MODELO = os.getenv("IMAGENS_VLM_MODELO", "qwen2.5vl:7b")
+IMAGENS_VLM_URL = os.getenv("IMAGENS_VLM_URL", "http://127.0.0.1:11434")
+IMAGENS_OCR_HABILITAR = os.getenv("IMAGENS_OCR_HABILITAR", "1") == "1"
+IMAGENS_CLIP_HABILITAR = os.getenv("IMAGENS_CLIP_HABILITAR", "1") == "1"
+# Reconhecimento facial (I4): galerias de referencia por agente.
+IMAGENS_RECONHECIMENTO_HABILITAR = os.getenv("IMAGENS_RECONHECIMENTO_HABILITAR", "0") == "1"
+
 
 # Avaliacao IA do sentimento (alternativa ao VADER, OpenAI-compativel)
 # Quando desabilitado ou sem API key, o pipeline usa VADER + lexico PT.
@@ -224,4 +287,4 @@ EMAIL_PARA = [
 PDF_ASSINATURA = os.getenv("PDF_ASSINATURA", "")
 PDF_INCLUIR_CAMADA_DSM = os.getenv("PDF_INCLUIR_CAMADA_DSM", "1") == "1"
 # Nome do produto usado em relatorios e cabecalhos
-APP_NOME = os.getenv("APP_NOME", "Valor Público")
+APP_NOME = os.getenv("APP_NOME", "Assessor Público")

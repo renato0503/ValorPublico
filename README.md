@@ -242,20 +242,25 @@ completa e o que já foi entregue.
 - Motion em `frontend/assets/motion/` (hero do login, splash, faixa e transição de aba).
 ## Redes sociais via buscador (LGPD)
 
-A coleta de redes sociais **não faz login** em nenhuma rede e **não burla**
-CAPTCHA/bloqueio. Ela consulta um buscador público (Google CSE, Serper, SerpAPI
-ou DuckDuckGo/`ddgs`, em ordem de preferência) com `site:` por rede e guarda
-**somente o que a própria página de resultados já exibe publicamente**: título,
-descrição/snippet, URL, data (quando o snippet indica) e eventual trecho de
-comentário publicado.
+A coleta de redes sociais consulta um buscador publico (SearXNG em container
+proprio, depois DuckDuckGo/`ddgs` como reserva) com `site:` por rede e guarda
+o que a propria pagina de resultados ja exibe publicamente: titulo,
+descricao/snippet, URL, data (quando o snippet indica) e eventual trecho de
+comentario publicado.
 
-- Não armazenamos dados de comentaristas além do **trecho público** exibido
-  pelo buscador; nomes de pessoas comuns em comentários **não** viram
-  porta-vozes nem entidades no pipeline DSM.
+- **Decisao do dono (24/11/2026):** coleta por navegador com stealth
+  (`NAVEGADOR_STEALTH`, on nos dois apps) e a **conta logada do proprio agente**
+  estao liberadas; tambem pode-se coletar e exibir nome/usuario, foto e rosto
+  de terceiros. As salvaguardas do `plano/19` §3.1 valem (ritmo, limite
+  diario, log, desligamento imediato em bloqueio).
+- Base legal e finalidade ficam registradas: monitoramento de imagem publica e
+  atendimento do mandato, com retencao definida e canal de exclusao a pedido.
+  **Continua proibido** montar ficha individual de cidadao ou lista de
+  opositores; o pipeline trata comentaristas como tema/sentimento agregados.
 - Os clippings brutos (incluindo os de redes) continuam **privados**: o cliente
-  lê apenas o agregado `redes_sociais` em `metricas*` (por rede, sentimento por
-  rede, total de comentários e até 40 itens recentes com snippet e link).
-- Itens com `confianca = "baixa"` (nome do agente só no título) **não** geram
+  le apenas o agregado `redes_sociais` em `metricas*` (por rede, sentimento por
+  rede, total de comentarios e ate 40 itens recentes com snippet e link).
+- Itens com `confianca = "baixa"` (nome do agente so no titulo) **nao** geram
   alertas.
-- Orçamento por execução (`BUSCA_SOCIAL_MAX_CONSULTAS`) com rodízio de metade
+- Orcamento por execucao (`BUSCA_SOCIAL_MAX_CONSULTAS`) com rodizio de metade
   dos agentes por dia e dedup por URL.

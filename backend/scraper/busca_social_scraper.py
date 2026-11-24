@@ -7,10 +7,11 @@ login em rede nenhuma, nao burla CAPTCHA/bloqueio e nao guarda dados de
 comentaristas alem do trecho publico (LGPD).
 
 Motores, em ordem de preferencia (configuraveis por env):
-  1. Google Programmable Search JSON API  (GOOGLE_CSE_KEY + GOOGLE_CSE_CX)
-  2. Serper.dev                            (SERPER_API_KEY)
-  3. SerpAPI                               (SERPAPI_KEY)
-  4. DuckDuckGo via pacote `ddgs`          (sem chave, padrao/fallback)
+  1. **SearXNG** (container proprio no Actions; sem chave, sem custo) — padrao
+  2. DuckDuckGo via pacote `ddgs` (sem chave) — reserva
+  3. ~~Google CSE / Serper / SerpAPI~~ — **removidos**: o CSE foi encerrado
+     para novos clientes e descontinua em 01/01/2027; Serper/SerpAPI sao pagos
+     (fora da regra do dono).
 
 Orcamento: no maximo ``BUSCA_SOCIAL_MAX_CONSULTAS`` por execucao, com rodizio
 (metade dos agentes por dia) e dedup por URL. O numero de consultas por motor
@@ -23,6 +24,7 @@ import threading
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
+from cerra_nucleo.scraper.searxng_cliente import SearXNGCliente, SearXNGIndisponivel
 from config import settings
 from core.logger import get_logger
 from scraper.base import BaseScraper
@@ -182,26 +184,20 @@ class BuscaSocialScraper(BaseScraper):
         self._urls_vistas: set[str] = set()
         self._por_motor: dict[str, int] = {}
         self._cache_consulta: dict[str, list[dict]] = {}
+        self._searxng: SearXNGCliente | None = None
 
     # ---------------- motores ----------------
     def _motor(self) -> str:
-        if settings.GOOGLE_CSE_KEY and settings.GOOGLE_CSE_CX:
-            return "google_cse"
-        if settings.SERPER_API_KEY:
-            return "serper"
-        if settings.SERPAPI_KEY:
-            return "serpapi"
+        """Motor em uso: SearXNG (padrao) ou ddgs (reserva)."""
+        if settings.SEARXNG_URL:
+            return "searxng"
         return "ddgs"
 
     def _consultar(self, consulta: str, n: int) -> list[dict]:
         motor = self._motor()
         try:
-            if motor == "google_cse":
-                res = self._google_cse(consulta, n)
-            elif motor == "serper":
-                res = self._serper(consulta, n)
-            elif motor == "serpapi":
-                res = self._serpapi(consulta, n)
+            if motor == "searxng":
+                res = self._searxng(consulta, n)
             else:
                 res = self._ddgs(consulta, n)
         except Exception as e:  # noqa: BLE001
@@ -211,54 +207,30 @@ class BuscaSocialScraper(BaseScraper):
             self._por_motor[motor] = self._por_motor.get(motor, 0) + 1
         return res
 
-    def _google_cse(self, consulta: str, n: int) -> list[dict]:
-        resp = self._get(
-            "https://www.googleapis.com/customsearch/v1",
-            params={
-                "key": settings.GOOGLE_CSE_KEY,
-                "cx": settings.GOOGLE_CSE_CX,
-                "q": consulta,
-                "num": min(max(n, 1), 10),
-                "hl": "pt-BR",
-                "gl": "br",
-            },
-        )
-        itens = resp.json().get("items", [])
+    def _searxng(self, consulta: str, n: int) -> list[dict]:
+        """Consulta o SearXNG (motor nº 1)."""
+        cliente = self._cliente_searxng()
+        resultados = cliente.buscar(consulta, n)
         return [
-            {"titulo": i.get("title", ""), "url": i.get("link", ""), "snippet": i.get("snippet", "")}
-            for i in itens
+            {
+                "titulo": r.get("titulo", ""),
+                "url": r.get("url", ""),
+                "snippet": r.get("snippet", ""),
+                "thumb": r.get("imagem") or r.get("img_src") or "",
+            }
+            for r in resultados
         ]
 
-    def _serper(self, consulta: str, n: int) -> list[dict]:
-        def _post():
-            return self.session.post(
-                "https://google.serper.dev/search",
-                headers={"X-API-KEY": settings.SERPER_API_KEY, "Content-Type": "application/json"},
-                json={"q": consulta, "gl": "br", "hl": "pt-br", "num": max(n, 1)},
-            )
-
-        resp = self.com_resiliencia(_post)
-        resp.raise_for_status()
-        return [
-            {"titulo": i.get("title", ""), "url": i.get("link", ""), "snippet": i.get("snippet", "")}
-            for i in resp.json().get("organic", [])
-        ]
-
-    def _serpapi(self, consulta: str, n: int) -> list[dict]:
-        resp = self._get(
-            "https://serpapi.com/search.json",
-            params={
-                "q": consulta,
-                "api_key": settings.SERPAPI_KEY,
-                "hl": "pt-br",
-                "gl": "br",
-                "num": max(n, 1),
-            },
-        )
-        return [
-            {"titulo": i.get("title", ""), "url": i.get("link", ""), "snippet": i.get("snippet", "")}
-            for i in resp.json().get("organic_results", [])
-        ]
+    def _cliente_searxng(self) -> SearXNGCliente:
+        """Instancia (e reaproveita) o cliente SearXNG."""
+        with self._lock:
+            if self._searxng is None:
+                self._searxng = SearXNGCliente(
+                    url_base=settings.SEARXNG_URL,
+                    motores=settings.SEARXNG_MOTORES,
+                    timeout=settings.SEARXNG_TIMEOUT,
+                )
+            return self._searxng
 
     def _ddgs(self, consulta: str, n: int) -> list[dict]:
         from ddgs import DDGS

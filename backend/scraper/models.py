@@ -37,6 +37,9 @@ class RawItem:
     url: str = ""
     alcance: int = 0
     metadados: dict = field(default_factory=dict)
+    # Plano 18 (I0): imagens do post. Lista de
+    # {"url_original", "origem": "og|thumb|api|embed|screenshot", "ordem"}.
+    midia: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -50,6 +53,7 @@ class RawItem:
             "url": self.url,
             "alcance": self.alcance,
             "metadados": self.metadados,
+            "midia": self.midia,
         }
 
 
