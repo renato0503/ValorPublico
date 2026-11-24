@@ -21,10 +21,14 @@ import {
   quadrante,
   treemap,
 } from "./graficos.js";
-import { filtros } from "./filtros.js";
 
-const estado = { db: null, dados: null, demandas: [] };
+const estado = { db: null, dados: null, demandas: [], orgao: null };
 const graficos = new Map();
+
+/** Define o órgão ativo (a Casa). Sem ele nenhuma tela lê dados. */
+export function definirOrgao(info) {
+  estado.orgao = info || null;
+}
 
 function guardar(id, instancia) {
   if (instancia) graficos.set(id, instancia);
@@ -54,40 +58,41 @@ async function lerDoc(db, caminho, id) {
   return snap.exists() ? snap.data() : null;
 }
 
-async function lerColecao(db, caminho, limite = 80) {
-  const { collection, getDocs } = await sdkFirestore();
+async function lerDemandas(db, orgao) {
+  if (!orgao) return [];
   try {
-    const snap = await getDocs(collection(db, caminho));
-    return snap.docs.slice(0, limite).map((d) => ({ id: d.id, ...d.data() }));
+    const { collection, getDocs, query, where } = await sdkFirestore();
+    const snap = await getDocs(
+      query(collection(db, "demandas"), where("orgao", "==", orgao))
+    );
+    return snap.docs.slice(0, 80).map((d) => ({ id: d.id, ...d.data() }));
   } catch {
     return [];
   }
 }
 
-/** Escopo: a Casa (fixo pelo contrato) ou `metricas_por_casa/<slug>`. */
+/** Escopo: sempre a Casa do órgão selecionado (nunca a URL nem o "geral"). */
 export function escopoAtual() {
-  const f = filtros();
-  if (f.escopo) return { tipo: "casa", id: f.escopo };
-  return { tipo: "geral", id: "geral" };
+  if (estado.orgao) return { tipo: "casa", id: estado.orgao.casaDoc };
+  return { tipo: "nenhum", id: "" };
 }
 
 export async function carregar(db) {
   estado.db = db;
   const escopo = escopoAtual();
+  if (escopo.tipo === "nenhum") {
+    estado.dados = null;
+    estado.demandas = [];
+    renderizar();
+    return;
+  }
   try {
-    estado.dados =
-      escopo.tipo === "casa"
-        ? await lerDoc(db, "metricas_por_casa", escopo.id)
-        : await lerDoc(db, "metricas", "geral");
+    estado.dados = await lerDoc(db, "metricas_por_casa", escopo.id);
   } catch (erro) {
     console.warn("[Telas Valor] falha ao carregar metricas:", erro?.code || erro?.message || erro);
     estado.dados = null;
   }
-  try {
-    estado.demandas = await lerColecao(db, "demandas");
-  } catch {
-    estado.demandas = [];
-  }
+  estado.demandas = await lerDemandas(db, estado.orgao?.slug);
   renderizar();
 }
 

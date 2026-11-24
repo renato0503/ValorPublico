@@ -397,6 +397,85 @@
   color: #7a541a;
 }
 
+/* ---------- seletor de orgao (telaOrgao) ---------- */
+
+.orgao-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.orgao-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.1s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.orgao-card:hover {
+  border-color: var(--bronze);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.orgao-card .orgao-sigla {
+  display: inline-block;
+  font-family: var(--fonte-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--texto-mutado);
+  margin-bottom: 2px;
+}
+
+.orgao-card .orgao-rotulo {
+  font-family: var(--fonte-display);
+  font-size: 1.05rem;
+  color: var(--navy);
+  line-height: 1.3;
+}
+
+.orgao-card .orgao-cidade {
+  font-family: var(--fonte);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin-top: 6px;
+}
+
+.orgao-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  padding: 1px;
+  background: linear-gradient(90deg, var(--navy) 0 55%, var(--bronze) 55% 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: destination-out;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.orgao-card:hover::before {
+  opacity: 1;
+}
+
+.orgao-card:focus-visible {
+  outline: 2px solid var(--bronze);
+  outline-offset: 2px;
+}
+
 /* ---------- responsivo ---------- */
 @media (max-width: 1080px) {
   .masthead-topo { grid-template-columns: auto 1fr auto; gap: 12px; padding: 12px 18px 8px; }
@@ -742,3 +821,9 @@ html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(
 .sent-negativo { color: var(--vermelho); }
 .sent-neutro { color: var(--texto-mutado); }
 .redes-vazio { color: var(--texto-mutado); font-size: 0.85rem; }
+
+/* As telas do Executivo só existem na frente Governo de MT. */
+body:not([data-orgao="governo-mt"]) [data-rota="governo"],
+body:not([data-orgao="governo-mt"]) [data-rota="governador"] {
+  display: none !important;
+}

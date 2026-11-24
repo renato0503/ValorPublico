@@ -27,6 +27,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config import settings
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from core.orgaos import orgao_da_cidade, orgao_do_agente
 from processing import lexical
 
 logger = get_logger(__name__)
@@ -146,6 +147,7 @@ def _documento(escopo: dict, clippings: list[dict], n_classes: int, niveis: int)
     dendo = _calcular_dendrograma(clippings, n_classes, niveis, preparado)
     return {
         "escopo": escopo,
+        "orgao": escopo.get("orgao", ""),
         "n_clippings": len(clippings),
         "afc": _calcular_afc(clippings),
         "chd": chd,
@@ -159,7 +161,10 @@ def _documento(escopo: dict, clippings: list[dict], n_classes: int, niveis: int)
 def _escopos(clippings: list[dict]) -> dict[str, tuple[dict, list[dict]]]:
     """Retorna {chave: (escopo_meta, clippings)} para cada escopo configurado."""
     escopos: dict[str, tuple[dict, list[dict]]] = {}
-    escopos["geral"] = ({"tipo": "geral", "nome": "Todos"}, list(clippings))
+    escopos["geral"] = (
+        {"tipo": "geral", "nome": "Todos", "orgao": ""},
+        list(clippings),
+    )
 
     por_cidade: dict[str, list[dict]] = {}
     por_agente: dict[str, list[dict]] = {}
@@ -171,19 +176,44 @@ def _escopos(clippings: list[dict]) -> dict[str, tuple[dict, list[dict]]]:
 
     for cidade, clips in por_cidade.items():
         chave = f"cidade-{slugify_cidade(cidade)}"
-        escopos[chave] = ({"tipo": "cidade", "chave": slugify_cidade(cidade), "nome": cidade}, clips)
+        escopos[chave] = (
+            {
+                "tipo": "cidade",
+                "chave": slugify_cidade(cidade),
+                "nome": cidade,
+                "orgao": orgao_da_cidade(cidade),
+            },
+            clips,
+        )
 
     for agente_id, clips in por_agente.items():
+        orgao = (clips[0].get("orgao") if clips else "") or orgao_do_agente(
+            clips[0] if clips else {}
+        )
         escopos[f"agente-{agente_id}"] = (
-            {"tipo": "agente", "chave": agente_id, "nome": nome_agente[agente_id]},
+            {
+                "tipo": "agente",
+                "chave": agente_id,
+                "nome": nome_agente[agente_id],
+                "orgao": orgao,
+            },
             clips,
         )
 
     hoje = datetime.now(timezone.utc).date().isoformat()
     janelas: dict[str, tuple[dict, list[dict]]] = {
-        "periodo-hoje": ({"tipo": "periodo", "chave": "hoje", "nome": "Hoje"}, []),
-        "periodo-7d": ({"tipo": "periodo", "chave": "7d", "nome": "Últimos 7 dias"}, []),
-        "periodo-30d": ({"tipo": "periodo", "chave": "30d", "nome": "Últimos 30 dias"}, []),
+        "periodo-hoje": (
+            {"tipo": "periodo", "chave": "hoje", "nome": "Hoje", "orgao": ""},
+            [],
+        ),
+        "periodo-7d": (
+            {"tipo": "periodo", "chave": "7d", "nome": "Últimos 7 dias", "orgao": ""},
+            [],
+        ),
+        "periodo-30d": (
+            {"tipo": "periodo", "chave": "30d", "nome": "Últimos 30 dias", "orgao": ""},
+            [],
+        ),
     }
     for c in clippings:
         dt = c.get("data_publicacao")
@@ -219,6 +249,8 @@ def main() -> None:
                 {
                     "agente_id": agente.id,
                     "cidade": ad.get("cidade", ""),
+                    "casa": ad.get("casa", ""),
+                    "orgao": orgao_do_agente(ad),
                     "nome_agente": nome_agente,
                     **clip.to_dict(),
                 }
@@ -233,6 +265,7 @@ def main() -> None:
             db.collection(COLLECTION_LEXICAL).document(chave).set(
                 {
                     "escopo": escopo_meta,
+                    "orgao": escopo_meta.get("orgao", ""),
                     "n_clippings": 0,
                     "afc": {"palavras": [], "periodos": []},
                     "chd": {"classes": [], "n_segmentos": 0, "aviso": "Sem clippings no escopo."},

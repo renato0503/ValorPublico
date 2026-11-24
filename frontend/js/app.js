@@ -6,6 +6,7 @@ import { iniciarMotion } from "./motion.js";
 import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
 import * as telas from "./telas.js";
+import * as governo from "./governo.js";
 import { redimensionarGraficos } from "./componentes.js";
 import {
   abrirLogin,
@@ -17,6 +18,15 @@ import {
   lerModoAcesso,
   registrarBotaoAuth,
 } from "./auth.js";
+
+import {
+  orgaoAtual,
+  orgaoSalvo,
+  orgaosDisponiveis,
+  definirOrgao,
+  limparOrgao,
+  orgaoPorSlug,
+} from "./orgaos.js";
 
 import {
   abrirNewsletter,
@@ -32,10 +42,14 @@ const $ = (id) => document.getElementById(id);
 const estado = {
   db: null,
   agentes: [],
+  agentesTodos: [],
   cidade: "",
   parlamentar: "",
   periodo: "",
   tipoTop: "",
+  orgao: "",
+  orgaoInfo: null,
+  uid: "",
   ultimosDados: null,
   lexical: null,
   desinscrever: [],
@@ -123,27 +137,20 @@ function chaveDia(v) {
   return d.toISOString().slice(0, 10);
 }
 
-function slugCidade(cidade) {
-  return cidade
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-");
-}
-
 /* ---------- casa / escopo (Câmara Cuiabá, Câmara VG, ALMT) ---------- */
 
 const ROTULO_CASA = {
   "Camara Cuiaba": "Câmara de Cuiabá",
   "Camara VG": "Câmara de Várzea Grande",
   ALMT: "Assembleia (ALMT)",
+  "Governo MT": "Governo de Mato Grosso",
 };
 
 function casaDoAgente(a) {
   if (a.casa) return a.casa;
   if (a.esfera === "estadual" || a.cidade === "Mato Grosso") return "ALMT";
   if (a.cidade === "Varzea Grande") return "Camara VG";
+  if (a.cidade === "Governo de Mato Grosso") return "Governo MT";
   return "Camara Cuiaba";
 }
 
@@ -277,9 +284,24 @@ async function inicializar() {
 }
 
 async function carregarAgentes() {
-  const { collection, getDocs } = await import("firebase/firestore");
-  const snap = await getDocs(collection(estado.db, "agentes_publicos"));
-  estado.agentes = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const { collection, getDocs, query, where } = await import("firebase/firestore");
+  const alvo = estado.orgaoInfo;
+  if (!alvo) {
+    estado.agentes = [];
+    popularFiltros();
+    return;
+  }
+  const snap = await getDocs(
+    query(collection(estado.db, "agentes_publicos"), where("orgao", "==", alvo.slug))
+  );
+  estado.agentesTodos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  // Só os agentes do órgão selecionado: nunca mistura frentes.
+  estado.agentes = estado.agentesTodos.filter(
+    (a) =>
+      a.orgao === alvo.slug ||
+      a.casa === alvo.casa ||
+      (!a.casa && a.cidade === alvo.cidade)
+  );
   estado.agentes.sort((a, b) =>
     (a.cidade + a.nome_urna).localeCompare(b.cidade + b.nome_urna)
   );
@@ -288,14 +310,20 @@ async function carregarAgentes() {
 
 function popularFiltros() {
   const selCidade = $("filtroCidade");
-  const cidades = [...new Set(estado.agentes.map((a) => a.cidade))].sort();
-  cidades.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = rotuloCasa(casaDoAgente({ cidade: c }));
-    selCidade.appendChild(opt);
-  });
+  if (selCidade) {
+    if (estado.orgaoInfo) {
+      selCidade.innerHTML = `<option value="${esc(estado.cidade)}">${esc(
+        estado.orgaoInfo.rotulo
+      )}</option>`;
+      selCidade.value = estado.cidade;
+      selCidade.disabled = true;
+    } else {
+      selCidade.innerHTML = '<option value="">Selecione o órgão</option>';
+      selCidade.disabled = true;
+    }
+  }
   renderizarParlamentaresPorCasa();
+  atualizarParlamentares();
 }
 
 function atualizarParlamentares() {
@@ -318,9 +346,8 @@ function atualizarParlamentares() {
 
 function chaveLexical() {
   if (estado.parlamentar) return `agente-${estado.parlamentar}`;
-  if (estado.cidade) return `cidade-${slugCidade(estado.cidade)}`;
-  if (estado.periodo) return `periodo-${estado.periodo}`;
-  return "geral";
+  if (estado.orgaoInfo) return `cidade-${estado.orgaoInfo.cidadeDoc}`;
+  return "";
 }
 
 function rotuloEscopoLexical() {
@@ -342,8 +369,13 @@ function rotuloEscopoLexical() {
 
 async function carregarLexical() {
   try {
-    const { doc, getDoc } = await import("firebase/firestore");
     const chave = chaveLexical();
+    if (!chave) {
+      estado.lexical = null;
+      renderizarLexical();
+      return;
+    }
+    const { doc, getDoc } = await import("firebase/firestore");
     const snap = await getDoc(doc(estado.db, "analise_lexical", chave));
     estado.lexical = snap.exists() ? snap.data() : null;
   } catch (erro) {
@@ -422,6 +454,13 @@ function desinscreverTudo() {
 
 async function aplicarFiltros() {
   desinscreverTudo();
+  // O parlamentar selecionado tem de ser do órgão ativo.
+  if (
+    estado.parlamentar &&
+    !estado.agentes.some((a) => a.id === estado.parlamentar)
+  ) {
+    estado.parlamentar = "";
+  }
   atualizarParlamentares();
   mostrarAviso("", "");
   await carregarLexical();
@@ -429,13 +468,19 @@ async function aplicarFiltros() {
   const { doc, onSnapshot } = await import("firebase/firestore");
   await carregarCamadaDsm(estado.db, chaveEscopoDsm(estado), { doc, onSnapshot });
 
-  let ref;
+  let ref = null;
   if (estado.parlamentar) {
     ref = doc(estado.db, "metricas_por_agente", estado.parlamentar);
-  } else if (estado.cidade) {
-    ref = doc(estado.db, "metricas_por_cidade", slugCidade(estado.cidade));
-  } else {
-    ref = doc(estado.db, "metricas", "geral");
+  } else if (estado.orgaoInfo) {
+    // Sempre o agregado do órgão selecionado: nunca mistura frentes.
+    ref = doc(estado.db, "metricas_por_cidade", estado.orgaoInfo.cidadeDoc);
+  }
+
+  governo.definirAtivo(estado.orgao === "governo-mt");
+
+  if (!ref) {
+    renderizarVazio();
+    return;
   }
 
   estado.desinscrever.push(
@@ -447,6 +492,9 @@ async function aplicarFiltros() {
           // Telas novas (E2): leem os mesmos agregados.
           telas.carregar(estado.db).catch((erro) =>
             console.warn("[Telas] falha ao carregar:", erro?.message || erro)
+          );
+          governo.carregar(estado.db).catch((erro) =>
+            console.warn("[Governo] falha ao carregar:", erro?.message || erro)
           );
         } else {
           renderizarVazio();
@@ -1280,6 +1328,141 @@ function aplicarEscopoUsuario() {
   }
 }
 
+/* ---------- escopo por orgao (separacao total de dados) ---------- */
+
+function aplicarEscopoOrgao(slug) {
+  const info = orgaoPorSlug(slug);
+  estado.orgao = slug || "";
+  estado.orgaoInfo = info || null;
+  estado.parlamentar = "";
+  estado.cidade = info ? info.cidade : "";
+  document.body.dataset.orgao = info ? info.slug : "";
+  telas.definirOrgao(info);
+  governo.definirAtivo(info ? info.slug === "governo-mt" : false);
+  atualizarBotaoOrgao();
+  atualizarRotulosOrgao(info);
+  // Se estava numa tela do Executivo e trocou de frente, volta para a edição.
+  const rotaAtual = (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "");
+  if (info && info.slug !== "governo-mt" && (rotaAtual === "governo" || rotaAtual === "governador")) {
+    window.location.hash = "#/edicao";
+  }
+}
+
+function atualizarRotulosOrgao(info) {
+  const faixa = $("faixaOrgaos");
+  if (faixa) faixa.textContent = info ? info.rotulo : "Selecione o órgão";
+  const sub = $("parlamentaresSubtitulo");
+  if (sub) {
+    sub.textContent = info
+      ? `Membros de ${info.rotulo} — cobertura individual com o mesmo tratamento`
+      : "Membros da instituição selecionada";
+  }
+  const rodape = $("rodapeOrgao");
+  if (rodape) rodape.textContent = info ? info.rotulo : "Selecione a instituição";
+}
+
+function atualizarBotaoOrgao() {
+  const btn = $("btnOrgao");
+  if (!btn) return;
+  const info = estado.orgaoInfo;
+  const perfil = estadoAuth.perfil || {};
+  const disponiveis = orgaosDisponiveis(perfil);
+  if (info) {
+    btn.textContent = info.curto || info.rotulo;
+    btn.title = "Trocar o órgão (" + info.rotulo + ")";
+  } else {
+    btn.textContent = "Órgão";
+    btn.title = "Selecione o órgão a ser exibido";
+  }
+  // Quem pertence a um só órgão não troca de frente pelo cabeçalho.
+  btn.style.display = disponiveis.length > 1 ? "" : "none";
+}
+
+/**
+ * Abre o painel depois de garantir o escopo de dados.
+ * Modo restrito: exige um órgão selecionado (abre o seletor e trava).
+ * Modo público: órgão padrão, sem misturar órgãos.
+ */
+async function entrarApp() {
+  if (modoPublico) {
+    aplicarEscopoOrgao("cuiaba");
+    await iniciarApp();
+    return;
+  }
+  const perfil = estadoAuth.perfil || {};
+  const disponiveis = orgaosDisponiveis(perfil);
+  if (!disponiveis.length) {
+    abrirSeletorOrgao();
+    return;
+  }
+  const uid = estadoAuth.usuario?.uid || "";
+  const salvo = orgaoSalvo(uid);
+  const o = orgaoAtual(perfil, uid);
+  if (salvo && o && disponiveis.some((x) => x.slug === o)) {
+    fecharSeletorOrgao();
+    aplicarEscopoOrgao(o);
+    await iniciarApp();
+    return;
+  }
+  // Primeiro acesso (ou depois de sair): escolhe a frente explicitamente.
+  abrirSeletorOrgao();
+}
+
+/* ---------- seletor de orgao (UI) ---------- */
+
+function renderOrgaoCards() {
+  const grid = $("orgaoCards");
+  if (!grid) return;
+  const perfil = estadoAuth.perfil || {};
+  const lista = orgaosDisponiveis(perfil);
+  const erro = $("orgaoErro");
+  if (!lista.length) {
+    grid.innerHTML = "";
+    if (erro) {
+      erro.textContent =
+        "Órgão não definido para seu usuário. Solicite ao administrador que libere o acesso.";
+      erro.classList.remove("oculto");
+    }
+    return;
+  }
+  if (erro) erro.classList.add("oculto");
+  grid.innerHTML = lista
+    .map(
+      (o) =>
+        `<a href="#" class="orgao-card" data-orgao="${o.slug}" role="button">` +
+        `<span class="orgao-sigla">${esc(o.slug)}</span>` +
+        `<span class="orgao-rotulo">${esc(o.rotulo)}</span>` +
+        `<span class="orgao-cidade">${esc(o.cidade)}</span>` +
+        `</a>`
+    )
+    .join("");
+  grid.querySelectorAll(".orgao-card").forEach((card) => {
+    card.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      definirOrgao(estadoAuth.usuario?.uid || "", card.dataset.orgao);
+      fecharSeletorOrgao();
+    });
+  });
+}
+
+function abrirSeletorOrgao() {
+  fecharLogin();
+  const tela = $("telaOrgao");
+  if (!tela) return;
+  tela.classList.add("ativo");
+  tela.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  renderOrgaoCards();
+}
+
+function fecharSeletorOrgao() {
+  const tela = $("telaOrgao");
+  if (!tela) return;
+  tela.classList.remove("ativo");
+  tela.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
 /* ---------- eventos ---------- */
 
 /* ---------- graficos lexicais: "ver dados" + resize ---------- */
@@ -1328,19 +1511,47 @@ $("filtroPeriodo").addEventListener("change", (e) => {
 });
 
 window.addEventListener("auth:changed", async () => {
+  const uid = estadoAuth.usuario?.uid || "";
+  if (uid) estado.uid = uid;
   atualizarConta();
   if (estadoAuth.autenticado && !appIniciado) {
     fecharLogin();
-    await iniciarApp();
+    modoPublico = await lerModoAcesso();
+    await entrarApp();
+    return;
+  }
+  if (!estadoAuth.autenticado) {
+    // Ao sair, a próxima entrada pede a frente de novo (e recarrega tudo).
+    if (estado.uid) limparOrgao(estado.uid);
+    estado.uid = "";
+    estado.orgao = "";
+    estado.orgaoInfo = null;
+    estado.parlamentar = "";
+    appIniciado = false;
+    document.body.dataset.orgao = "";
+    if (!modoPublico) abrirLogin();
     return;
   }
   if (!estado.db) return;
-  if (!estadoAuth.autenticado && !modoPublico) {
-    abrirLogin();
-    return;
-  }
   aplicarEscopoUsuario();
   aplicarFiltros();
+});
+
+window.addEventListener("orgao:changed", async () => {
+  if (!estadoAuth.autenticado && !modoPublico) return;
+  const perfil = estadoAuth.perfil || {};
+  const uid = estadoAuth.usuario?.uid || estado.uid || "";
+  const o = orgaoAtual(perfil, uid);
+  if (!o) return;
+  aplicarEscopoOrgao(o);
+  if (appIniciado) {
+    await carregarAgentes();
+    aplicarEscopoUsuario();
+    aplicarFiltros();
+    atualizarConta();
+  } else {
+    await iniciarApp();
+  }
 });
 
 $("filtroTipoTop").addEventListener("change", (e) => {
@@ -1437,8 +1648,13 @@ function atualizarConta() {
   if (papel) papel.textContent = perfil?.papel || (estadoAuth.autenticado ? "usuario" : "visitante");
   const escopo = $("contaEscopo");
   if (escopo) {
+    const partes = [];
+    if (estado.orgaoInfo) partes.push(estado.orgaoInfo.rotulo);
     const ids = perfil?.agente_ids || [];
-    escopo.textContent = ids.length ? ids.join(", ") : (estadoAuth.autenticado ? "geral" : "—");
+    if (ids.length) partes.push("Agente: " + ids.join(", "));
+    escopo.textContent = partes.length
+      ? partes.join(" · ")
+      : (estadoAuth.autenticado ? "—" : "—");
   }
   const sair = $("btnSairConta");
   if (sair) sair.textContent = estadoAuth.autenticado ? "Sair" : "Entrar";
@@ -1470,10 +1686,12 @@ async function bootstrap() {
   window.addEventListener("resize", () => {
     redimensionarGraficos();
     telas.redimensionar();
+    governo.redimensionar();
   });
   document.addEventListener("rota:changed", () => {
     registrarExplicacoes();
     telas.redimensionar();
+    governo.redimensionar();
   });
   aoMudarFiltros(async () => {
     if (estado.db) await telas.carregar(estado.db);
@@ -1481,6 +1699,7 @@ async function bootstrap() {
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
   $("btnAbrirNewsletter")?.addEventListener("click", abrirNewsletter);
   $("btnSairConta")?.addEventListener("click", alternarAuth);
+  $("btnOrgao")?.addEventListener("click", abrirSeletorOrgao);
   $("btnTemaConta")?.addEventListener("click", alternarTema);
   await iniciarAuth();
   modoPublico = await lerModoAcesso();
@@ -1488,7 +1707,7 @@ async function bootstrap() {
     abrirLogin();
     return;
   }
-  await iniciarApp();
+  await entrarApp();
 }
 
 bootstrap();
@@ -1502,7 +1721,19 @@ window.__app_test = {
   renderizarCamadaDsm,
   renderizarParlamentaresPorCasa,
   telas,
+  governo,
   irPara: (rota) => window.__router?.irPara(rota),
 };
 
 
+
+
+/* ---------- Governo de MT: filtro por pasta ---------- */
+
+document.addEventListener("click", (evento) => {
+  const botao = evento.target.closest(".gov-pasta");
+  if (!botao) return;
+  const slug = botao.dataset.pasta || "";
+  governo.filtrarPasta(slug === (window.__pastaSelecionada || "") ? "" : slug);
+  window.__pastaSelecionada = slug === (window.__pastaSelecionada || "") ? "" : slug;
+});

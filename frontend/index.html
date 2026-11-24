@@ -81,6 +81,14 @@
         Relatório
       </button>
       <button
+        id="btnOrgao"
+        class="btn-tema"
+        type="button"
+        title="Trocar o órgão exibido"
+      >
+        Órgão
+      </button>
+      <button
         id="btnAuth"
         class="btn-tema"
         type="button"
@@ -109,6 +117,8 @@
       <a href="#/semana" data-rota="semana" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-analise"/></svg><span>Semana da Casa</span></a>
       <a href="#/redes" data-rota="redes" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-mencoes"/></svg><span>Redes da Casa</span></a>
       <a href="#/conformidade" data-rota="conformidade" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-inteligencia"/></svg><span>Conformidade</span></a>
+      <a href="#/governo" data-rota="governo" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-painel"/></svg><span>Governo de MT</span></a>
+      <a href="#/governador" data-rota="governador" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-painel"/></svg><span>Governador</span></a>
       <a href="#/tendencias" data-rota="tendencias" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-analise"/></svg><span>Tendências</span></a>
       <a href="#/relatorios" data-rota="relatorios" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-relatorios"/></svg><span>Relatórios</span></a>
       <a href="#/sistema" data-rota="sistema" class="nav-jornal-link"><svg aria-hidden="true"><use href="#i-sistema"/></svg><span>Sistema</span></a>
@@ -137,9 +147,9 @@
         </select>
       </label>
       <label class="filtro">
-        <span class="filtro-rotulo">Casa / escopo</span>
-        <select id="filtroCidade" aria-label="Filtrar por casa ou escopo">
-          <option value="">Todas as casas</option>
+        <span class="filtro-rotulo">Instituição</span>
+        <select id="filtroCidade" aria-label="Instituição selecionada" disabled>
+          <option value="">Selecione o órgão</option>
         </select>
       </label>
       <label class="filtro">
@@ -175,7 +185,7 @@
     <section class="tela ativa" id="tela-painel" data-tela="edicao">
       <div class="faixa-edicao">
         <span>Última ingestão <strong id="ultimaExecucao">—</strong> · dados de <strong id="atualizadoEm">—</strong> · <span id="saudeIngestao" class="saude saude-ok">● OK</span></span>
-        <span>Cuiabá · Várzea Grande · Assembleia de MT</span>
+        <span id="faixaOrgaos">Selecione o órgão</span>
       </div>
     <section class="kpis" aria-label="Indicadores principais">
       <article class="card kpi kpi-verde">
@@ -365,7 +375,7 @@
         <div class="painel-cabecalho">
           <div>
             <h2>Parlamentares por casa</h2>
-            <span class="painel-sub">Câmaras de Cuiabá e Várzea Grande + Assembleia Legislativa (ALMT)</span>
+            <span class="painel-sub" id="parlamentaresSubtitulo">Membros da instituição selecionada</span>
           </div>
         </div>
         <div id="parlamentaresPorCasa" class="parlamentares-casa"></div>
@@ -661,6 +671,112 @@
     </section>
         </section>
 
+
+        <section class="tela" id="tela-governo" data-tela="governo">
+    <section class="grade-principal" aria-label="Indicadores do Governo do Estado">
+      <article class="card kpi" id="kpiGovMencoes"></article>
+      <article class="card kpi" id="kpiGovSaldo"></article>
+      <article class="card kpi" id="kpiGovValor"></article>
+      <article class="card kpi" id="kpiGovVeiculos"></article>
+      <article class="card kpi" id="kpiGovAlertas"></article>
+      <article class="card kpi" id="kpiGovPastas"></article>
+    </section>
+    <section class="grade-secundaria" aria-label="Gráficos do Governo">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>A opinião sobre o Governo, dia a dia</h2>
+            <span class="painel-sub">Notícias positivas, neutras e negativas sobre o Executivo estadual</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="G-03" aria-label="O que é a linha do tempo da opinião?">ⓘ</button>
+        </div>
+        <div class="grafico-area" id="graficoGovSentimento"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Onde o governo aparece</h2>
+            <span class="painel-sub">Secretarias e autarquias por número de notícias</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="G-33" aria-label="O que é o ranking de secretarias?">ⓘ</button>
+        </div>
+        <div class="grafico-area" id="graficoGovPastas"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Secretarias e autarquias</h2>
+            <span class="painel-sub">Clique numa pasta para filtrar o gráfico</span>
+          </div>
+        </div>
+        <div class="gov-grade" id="govGradePastas"></div>
+      </article>
+    </section>
+    <section class="grade-detalhe" aria-label="Últimas notícias do Governo">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Últimas notícias do Governo</h2>
+            <span class="painel-sub">As matérias mais recentes coletadas sobre o Executivo estadual, com a pasta responsável</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="T-15" aria-label="O que é esta tabela?">ⓘ</button>
+        </div>
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead><tr><th>Data</th><th>Notícia</th><th>Veículo</th><th>Tema</th><th></th></tr></thead>
+            <tbody id="govTabelaNoticias"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-governador" data-tela="governador">
+    <section class="grade-principal" aria-label="Indicadores do governador">
+      <article class="card kpi" id="kpiGovMencoesGovernador"></article>
+      <article class="card kpi" id="kpiGovSaldoGovernador"></article>
+      <article class="card kpi" id="kpiGovValorGovernador"></article>
+      <article class="card kpi" id="kpiGovCrise"></article>
+    </section>
+    <section class="grade-secundaria" aria-label="Cobertura do governador">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Como a mídia trata o governador</h2>
+            <span class="painel-sub">Notícias por dia, por tom</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="G-03" aria-label="O que é a linha do tempo da opinião?">ⓘ</button>
+        </div>
+        <div class="grafico-area" id="graficoGovGovernador"></div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Governador interino</h2>
+            <span class="painel-sub">Quem assumiu o governo na ausência do governador</span>
+          </div>
+        </div>
+        <div id="govInterino"></div>
+      </article>
+    </section>
+    <section class="grade-detalhe" aria-label="Notícias do governador">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Notícias que citam o governador</h2>
+            <span class="painel-sub">Com data, veículo e link original</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="T-16" aria-label="O que é esta tabela?">ⓘ</button>
+        </div>
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead><tr><th>Data</th><th>Notícia</th><th>Veículo</th><th></th></tr></thead>
+            <tbody id="govTabelaGovernador"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+        </section>
         <section class="tela" id="tela-semana" data-tela="semana">
     <section class="grade-principal" aria-label="Indicadores da semana">
       <article class="card kpi" id="kpiSemanaVariedade">
@@ -956,7 +1072,7 @@
   <footer class="rodape">
     <span>ValorPúblico · painel institucional</span>
     <span class="rodape-sep">·</span>
-    <span>Dados de mídia de Cuiabá e Várzea Grande</span>
+    <span id="rodapeOrgao">Selecione a instituição</span>
   </footer>
 
   <div id="telaLogin" class="tela-login" aria-hidden="true">
@@ -985,6 +1101,21 @@
         <p>O que a cidade leu, ouviu e assistiu — organizado para a instituição.</p>
         <span>Edição diária</span>
       </div>
+    </div>
+  </div>
+
+  <div id="telaOrgao" class="tela-login" aria-hidden="true">
+    <div class="login-folha">
+      <h2>Escolha o órgão</h2>
+      <p class="login-sub">
+        Qual instituição você quer acompanhar agora? Os dados de cada órgão
+        ficam totalmente separados — nada de uma casa aparece na outra.
+      </p>
+      <div id="orgaoCards" class="orgao-grid"></div>
+      <p class="login-erro oculto" id="orgaoErro" role="alert"></p>
+      <p class="login-pe">
+        Você pode trocar o órgão a qualquer momento pelo cabeçalho.
+      </p>
     </div>
   </div>
 

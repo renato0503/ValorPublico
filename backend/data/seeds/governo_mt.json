@@ -1,0 +1,577 @@
+{
+  "orgao": {
+    "nome": "Governo do Estado de Mato Grosso",
+    "sigla": "GOVERNO MT",
+    "casa": "Governo MT",
+    "esfera": "estadual-executivo",
+    "cidade": "Governo de Mato Grosso",
+    "site": "https://www.mt.gov.br/",
+    "fonte": {
+      "url": "https://www.mt.gov.br/",
+      "orgaos_publicos": "https://www.mt.gov.br/orgao",
+      "nota": "Estrutura vigente em 24/11/2026, conforme lista do dono e página oficial de Órgãos Públicos do Governo de Mato Grosso. Há reforma administrativa anunciada pelo governador (fusão/extinção de secretarias): o arquivo é versionado com 'vigente_desde' para ser atualizado quando mudar."
+    },
+    "vigente_desde": "2026-11-24"
+  },
+  "governador": {
+    "nome": "Otaviano Pivetta",
+    "slug": "governador-otaviano-pivetta",
+    "cargo": "Governador do Estado",
+    "partido": "Republicanos",
+    "termos": [
+      "otaviano pivetta",
+      "pivetta",
+      "governador pivetta",
+      "pivetta governador",
+      "governo de mato grosso pivetta",
+      "palacio paiaguas"
+    ],
+    "fonte": {
+      "url": "https://www.mt.gov.br/",
+      "nota": "Governador em exercício (2026). Confirmado em cobertura oficial e imprensa (24/11/2026)."
+    }
+  },
+  "interino": {
+    "nome": "Max Russi",
+    "slug": "interino-max-russi",
+    "cargo": "Governador Interino (por ausência)",
+    "condicional": true,
+    "termos": [
+      "max russi",
+      "russi assume",
+      "governador interino",
+      "interino do governo",
+      "governo interino"
+    ],
+    "fonte": {
+      "url": "https://www.al.mt.gov.br/",
+      "nota": "Assumi interinamente durante viagem do governador (ex.: COP31). Tratar como condicional: o cargo vale apenas no período em que exerce."
+    }
+  },
+  "secretarias": [
+    {
+      "slug": "casa-civil",
+      "sigla": "CASA CIVIL",
+      "nome": "Casa Civil",
+      "titular": "Eduardo Manciolli",
+      "site_oficial": "https://www.casacivil.mt.gov.br/",
+      "termos": [
+        "casa civil",
+        "gabinete do governador",
+        "agenda do governador",
+        "vice-governo"
+      ],
+      "temas": [
+        "cerimonial",
+        "agenda do governador",
+        "palacio paiaguas",
+        "investimento",
+        "decreto",
+        "lei complementar"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "controladoria-geral",
+      "sigla": "CGE",
+      "nome": "Controladoria-Geral do Estado",
+      "site_oficial": "https://www.cge.mt.gov.br/",
+      "termos": [
+        "controladoria-geral do estado",
+        "controladoria"
+      ],
+      "temas": [
+        "auditoria",
+        "conformidade",
+        "terceirizacao",
+        "controle interno",
+        "acesso a informacao"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "escritorio-representacao-brasilia",
+      "sigla": "ERMAT",
+      "alias": [
+        "SERMAT"
+      ],
+      "nome": "Escritório de Representação do Estado de Mato Grosso em Brasília",
+      "site_oficial": "",
+      "termos": [
+        "escritorio de representacao do estado",
+        "escritorio de representacao"
+      ],
+      "temas": [
+        "brasilia",
+        "representacao",
+        "relacao institucional",
+        "federal"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.ermat.mt.gov.br', port=443): M",
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "procuradoria-geral",
+      "sigla": "PGE",
+      "nome": "Procuradoria-Geral do Estado",
+      "site_oficial": "https://www.pge.mt.gov.br/",
+      "termos": [
+        "procuradoria-geral do estado",
+        "procuradoria"
+      ],
+      "temas": [
+        "parecer juridico",
+        "procurador",
+        "litigio",
+        "consultoria juridica",
+        "advogado"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "agricultura-familiar",
+      "sigla": "SEAF",
+      "nome": "Secretaria de Estado de Agricultura Familiar",
+      "site_oficial": "",
+      "termos": [
+        "secretaria de estado de agricultura familiar",
+        "agricultura familiar"
+      ],
+      "temas": [
+        "agricultura",
+        "agricultor",
+        "cooperativa",
+        "cadastro rural",
+        "alimentacao escolar",
+        "producao rural",
+        "safra"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.seaf.mt.gov.br', port=443): Ma",
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "cultura-esporte-lazer",
+      "sigla": "SECEL",
+      "nome": "Secretaria de Estado de Cultura, Esporte e Lazer",
+      "site_oficial": "https://www.secel.mt.gov.br/",
+      "termos": [
+        "cultura, esporte e lazer",
+        "secretaria de cultura"
+      ],
+      "temas": [
+        "cultura",
+        "esporte",
+        "festival",
+        "atleta",
+        "selecao",
+        "danca",
+        "teatro",
+        "museu"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "ciencia-tecnologia-inovacao",
+      "sigla": "SECITECI",
+      "nome": "Secretaria de Estado de Ciência, Tecnologia e Inovação",
+      "site_oficial": "",
+      "termos": [
+        "ciencia, tecnologia e inovacao",
+        "secretaria de ciencia"
+      ],
+      "temas": [
+        "ciencia",
+        "tecnologia",
+        "inovacao",
+        "universidade",
+        "fomento",
+        "cte",
+        "pesquisa",
+        "startup"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.seciteci.mt.gov.br', port=443)",
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "comunicacao",
+      "sigla": "SECOM",
+      "nome": "Secretaria de Estado de Comunicação",
+      "site_oficial": "https://www.secom.mt.gov.br/",
+      "termos": [
+        "secretaria de comunicacao",
+        "radio paiaguas",
+        "tv paiaguas"
+      ],
+      "temas": [
+        "comunicacao",
+        "assessoria de imprensa",
+        "portal do governo",
+        "midia",
+        "imprensa"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "desenvolvimento-economico",
+      "sigla": "SEDEC",
+      "nome": "Secretaria de Estado de Desenvolvimento Econômico",
+      "titular": "Mayran Beckman Benicio",
+      "site_oficial": "https://www.sedec.mt.gov.br/",
+      "termos": [
+        "desenvolvimento economico",
+        "secretaria de desenvolvimento"
+      ],
+      "temas": [
+        "industria",
+        "emprego",
+        "comercio",
+        "investimento",
+        "free shopping",
+        "economia",
+        "empresa",
+        "exportacao"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "educacao",
+      "sigla": "SEDUC",
+      "nome": "Secretaria de Estado de Educação",
+      "site_oficial": "https://www.seduc.mt.gov.br/",
+      "termos": [
+        "secretaria de educacao",
+        "rede estadual de educacao"
+      ],
+      "temas": [
+        "escola",
+        "matricula",
+        "professor",
+        "rede estadual",
+        "merenda escolar",
+        "educacao",
+        "aluno",
+        "universidade",
+        "creche",
+        "professores"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "fazenda",
+      "sigla": "SEFAZ",
+      "nome": "Secretaria de Estado de Fazenda",
+      "titular": "Fábio Pimenta",
+      "site_oficial": "https://www5.sefaz.mt.gov.br/",
+      "termos": [
+        "secretaria de fazenda",
+        "fazenda do estado"
+      ],
+      "temas": [
+        "arrecadacao",
+        "icms",
+        "imposto",
+        "tributario",
+        "divida ativa",
+        "auditoria fiscal",
+        "fiscalizacao",
+        "patrimonio"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "justica",
+      "sigla": "SEJUS",
+      "nome": "Secretaria de Estado de Justiça",
+      "site_oficial": "https://www.sejus.mt.gov.br/",
+      "termos": [
+        "secretaria de justica",
+        "defensoria publica"
+      ],
+      "temas": [
+        "medida de forca",
+        "comarca",
+        "prisao",
+        "paz",
+        "policia penal",
+        "justica",
+        "internacao",
+        "monitoramento"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "meio-ambiente",
+      "sigla": "SEMA",
+      "nome": "Secretaria de Estado de Meio Ambiente",
+      "site_oficial": "https://www.sema.mt.gov.br/",
+      "termos": [
+        "secretaria de meio ambiente"
+      ],
+      "temas": [
+        "licenciamento",
+        "desmatamento",
+        "incendio",
+        "unidade de conservacao",
+        "outorga",
+        "fiscalizacao ambiental",
+        "meio ambiente",
+        "agua",
+        "area de protecao"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "planejamento-gestao",
+      "sigla": "SEPLAG",
+      "nome": "Secretaria de Estado de Planejamento e Gestão",
+      "titular": "Gustavo de Oliveira",
+      "site_oficial": "https://www.seplag.mt.gov.br/",
+      "termos": [
+        "planejamento e gestao",
+        "secretaria de planejamento"
+      ],
+      "temas": [
+        "plano plurianual",
+        "ppa",
+        "lei de diretrizes orcamentarias",
+        "orcamento",
+        "gestao publica",
+        "terceirizacao",
+        "reorganizacao administrativa",
+        "licitacao"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "saude",
+      "sigla": "SES",
+      "nome": "Secretaria de Estado de Saúde",
+      "titular": "Juliano Silva Melo",
+      "site_oficial": "",
+      "termos": [
+        "secretaria de saude",
+        "vigilancia sanitaria",
+        "hospital central"
+      ],
+      "temas": [
+        "saude",
+        "upa",
+        "hospital",
+        "sus",
+        "medicamento",
+        "cirurgia",
+        "medico",
+        "hospitalar",
+        "maternidade",
+        "vacinacao",
+        "saude mental",
+        "internacao",
+        "internacoes",
+        "indicasus",
+        "fila zero",
+        "mutirao",
+        "leito",
+        "enfermagem",
+        "saude mental",
+        "telemedicina"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.ses.mt.gov.br', port=443): Max",
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "seguranca-publica",
+      "sigla": "SESP",
+      "nome": "Secretaria de Estado de Segurança Pública",
+      "site_oficial": "https://www.sesp.mt.gov.br/",
+      "termos": [
+        "seguranca publica",
+        "policia civil",
+        "policia militar",
+        "corpo de bombeiros",
+        "policia rodoviaria federal"
+      ],
+      "temas": [
+        "delegacia",
+        "viatura",
+        "roubo",
+        "trafico",
+        "preso",
+        "operacao policial",
+        "forca policial",
+        "homicidio",
+        "roubo de carga"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "assistencia-social-cidadania",
+      "sigla": "SETASC",
+      "nome": "Secretaria de Estado de Assistência Social e Cidadania",
+      "titular": "Gisela Simona Viana de Souza",
+      "site_oficial": "https://www.setasc.mt.gov.br/",
+      "termos": [
+        "assistencia social e cidadania",
+        "secretaria de assistencia social"
+      ],
+      "temas": [
+        "assistencia social",
+        "cidadania",
+        "bolsa familia",
+        "assistente social",
+        "conselho tutelar",
+        "crianca",
+        "adolescente",
+        "mulher",
+        "familia"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "infraestrutura-logistica",
+      "sigla": "SINFRA",
+      "nome": "Secretaria de Estado de Infraestrutura e Logística",
+      "site_oficial": "https://www.sinfra.mt.gov.br/",
+      "termos": [
+        "infraestrutura e logistica",
+        "secretaria de infraestrutura"
+      ],
+      "temas": [
+        "asfalto",
+        "pavimentacao",
+        "rodovia",
+        "ponte",
+        "viaduto",
+        "saneamento",
+        "drenagem",
+        "obra",
+        "licitacao de obra",
+        "duplicacao",
+        "rodovia"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    }
+  ],
+  "autarquias": [
+    {
+      "slug": "detran",
+      "sigla": "DETRAN",
+      "nome": "Departamento de Trânsito do Estado de Mato Grosso",
+      "site_oficial": "https://www.detran.mt.gov.br/",
+      "termos": [
+        "departamento de transito",
+        "detran"
+      ],
+      "temas": [
+        "transito",
+        "multa",
+        "cnh",
+        "viatura",
+        "rodovia",
+        "transito"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "der",
+      "sigla": "DER",
+      "nome": "Departamento de Estradas de Rodagem do Estado de Mato Grosso",
+      "site_oficial": "",
+      "termos": [
+        "departamento de estradas de rodagem",
+        "der-mt"
+      ],
+      "temas": [
+        "rodovia",
+        "asfalto",
+        "pavimentacao",
+        "ponte",
+        "duplicacao",
+        "carroceria"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.der.mt.gov.br', port=443): Max",
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "intermat",
+      "sigla": "INTERMAT",
+      "nome": "Instituto de Terras do Estado de Mato Grosso",
+      "site_oficial": "https://www.intermat.mt.gov.br/",
+      "termos": [
+        "instituto de terras",
+        "intermat"
+      ],
+      "temas": [
+        "terra",
+        "gleba",
+        "propriedade rural",
+        "fiscalizacao fundiaria"
+      ],
+      "site_oficial_verificado": true,
+      "site_oficial_status": 200,
+      "site_oficial_verificado_em": "2026-11-24"
+    },
+    {
+      "slug": "mtgas",
+      "sigla": "MT GÁS",
+      "nome": "MT Gás",
+      "site_oficial": "",
+      "termos": [
+        "mt gas",
+        "mtgassaudavel"
+      ],
+      "temas": [
+        "gas",
+        "saneamento",
+        "saneamento basico"
+      ],
+      "site_oficial_verificado": false,
+      "site_oficial_status": "HTTPSConnectionPool(host='www.mtgassaudavel.mt.gov.br', port",
+      "site_oficial_verificado_em": "2026-11-24"
+    }
+  ],
+  "consulta_orgaos_completos": {
+    "url": "https://www.mt.gov.br/orgao",
+    "nota": "Página oficial de Órgãos Públicos do Governo de Mato Grosso: inclui autarquias, fundações e empresas públicas além das secretarias listadas aqui."
+  },
+  "consulta_noticias": {
+    "oficial": "https://portal.mt.gov.br/api/rss-api/v1/rss",
+    "nota": "RSS oficial do portal do Governo do Estado de Mato Grosso (20 itens mais recentes por leitura; sem paginação).",
+    "agregador": "https://news.google.com/rss/search?q=<consulta>&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+    "nota_agregador": "Permite a janela de 60 dias via operador when:60d (verificado: 100 itens de 26/09 a 24/11)."
+  }
+}

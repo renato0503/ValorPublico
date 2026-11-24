@@ -618,6 +618,24 @@ const EXPLICACOES = {
     porque: "Mostra se o monitoramento está atualizado.",
   },
 
+  "G-33": {
+    nome: "Ranking de secretarias",
+    oQueE: "Quantas notícias cada secretaria do governo apareceu.",
+    comoLer: "Barra mais longa = mais presença na mídia.",
+    porque: "Mostra qual pasta está mais exposta no período.",
+  },
+  "T-15": {
+    nome: "Notícias do Governo",
+    oQueE: "As matérias mais recentes coletadas sobre o Executivo estadual.",
+    comoLer: "Cada linha é uma notícia com data, veículo e link.",
+    porque: "Permite conferir na origem o que foi publicado.",
+  },
+  "T-16": {
+    nome: "Notícias do governador",
+    oQueE: "As matérias que citaram o governador no período.",
+    comoLer: "Cada linha é uma notícia com data, veículo e link.",
+    porque: "Mostra como a mídia acompanha a gestão.",
+  },
   /* ---------------- Relatórios (plano 17 §9) ---------------- */
   "R-01": {
     nome: "Resumo do dia",

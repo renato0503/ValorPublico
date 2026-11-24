@@ -17,11 +17,11 @@ Cada colecao tem caso POSITIVO e caso NEGATIVO.
 
 const COLECOES_NOVAS = [
   { nome: "imagens", doc: "abc123phash" },
-  { nome: "relatorio_semanal", doc: "agente-agente-a__2026-W48" },
-  { nome: "discurso_semanal", doc: "agente-agente-a__2026-W48" },
-  { nome: "demandas", doc: "agente-agente-a" },
+  { nome: "relatorio_semanal", doc: "agente-agente-a__2026-W48", orgao: "cuiaba" },
+  { nome: "discurso_semanal", doc: "agente-agente-a__2026-W48", orgao: "cuiaba" },
+  { nome: "demandas", doc: "agente-agente-a", orgao: "cuiaba" },
   { nome: "auditoria", doc: "2026-11-24T10:00:00" },
-  { nome: "metricas_por_casa", doc: "camara-cuiaba" },
+  { nome: "metricas_por_casa", doc: "camara-cuiaba", orgao: "cuiaba" },
   { nome: "execucoes_navegador", doc: "run-0001" },
 ];
 
@@ -48,6 +48,15 @@ async function semearNovas(ctx) {
       agente_id: "agente-a",
       agente_ids: ["agente-a"],
       chaves: ["agente-agente-a"],
+      orgao: "cuiaba",
+    });
+    await db.doc("usuarios/uid-governo").set({
+      email: "governo@exemplo.com",
+      papel: "assessor",
+      agente_id: "",
+      agente_ids: [],
+      chaves: [],
+      orgao: "governo-mt",
     });
     await db.doc("usuarios/uid-admin").set({
       email: "admin@exemplo.com",
@@ -55,10 +64,13 @@ async function semearNovas(ctx) {
       agente_id: "",
       agente_ids: [],
       chaves: ["geral"],
+      orgao: "",
     });
+    await db.collection("metricas_por_secretaria").doc("saude").set({ teste: true });
     for (const item of COLECOES_NOVAS) {
       await db.collection(item.nome).doc(item.doc).set({
         teste: true,
+        orgao: item.orgao || "",
         // O escopo vem no proprio documento (o id da semana tem sufixo).
         escopo: item.nome === "relatorio_semanal" || item.nome === "discurso_semanal"
           ? "agente-agente-a"
@@ -112,11 +124,23 @@ async function testarColecoesNovas(ctx, helpers) {
   await deveBloquear("escrita em auditoria", () =>
     usuario("uid-controle").firestore().collection("auditoria").doc("x").set({ a: 1 }));
 
-  // --- metricas_por_casa: leitura no modo restrito ---
-  await devePermitir("usuario logado le metricas_por_casa", () =>
+  // --- metricas_por_casa: leitura restrita ao orgao do usuario ---
+  await devePermitir("usuario de Cuiaba le metricas_por_casa/camara-cuiaba", () =>
     usuario("uid-agente").firestore().collection("metricas_por_casa").doc("camara-cuiaba").get());
+  await deveBloquear("usuario de Cuiaba NAO le metricas_por_casa/almt", () =>
+    usuario("uid-agente").firestore().collection("metricas_por_casa").doc("almt").get());
   await deveBloquear("escrita em metricas_por_casa", () =>
-    usuario("uid-agente").firestore().collection("metricas_por_casa").doc("x").set({ a: 1 }));
+    usuario("uid-agente").firestore().collection("metricas_por_casa").doc("camara-cuiaba").set({ a: 1 }));
+
+  // --- metricas_por_secretaria (Governo de MT): so Governo ou admin ---
+  await devePermitir("Governo de MT le metricas_por_secretaria", () =>
+    usuario("uid-governo").firestore().collection("metricas_por_secretaria").doc("saude").get());
+  await deveBloquear("Camara NAO le metricas_por_secretaria", () =>
+    usuario("uid-agente").firestore().collection("metricas_por_secretaria").doc("saude").get());
+  await devePermitir("admin le metricas_por_secretaria", () =>
+    usuario("uid-admin").firestore().collection("metricas_por_secretaria").doc("saude").get());
+  await deveBloquear("escrita em metricas_por_secretaria", () =>
+    usuario("uid-governo").firestore().collection("metricas_por_secretaria").doc("saude").set({ a: 1 }));
 
   // --- execucoes_navegador: so admin ---
   await devePermitir("admin le execucoes_navegador", () =>

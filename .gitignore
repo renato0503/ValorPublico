@@ -121,3 +121,6 @@ desktop.ini
 
 # Bibliotecas vendorizadas (precisam ir no deploy do Actions)
 !frontend/vendor/*.min.js
+
+# Exportações geradas do Governo de MT (o seed e os scripts são versionados)
+backend/data/governo_mt/*

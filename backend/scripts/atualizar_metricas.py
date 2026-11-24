@@ -23,6 +23,8 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase
 from core.logger import get_logger
+from core.orgaos import info as _info_orgao
+from core.orgaos import orgao_da_casa, orgao_da_cidade, orgao_do_agente
 from core.quota import main_com_cota  # noqa: E402
 from processing.alertas import detectar_alertas  # noqa: E402
 from processing.classificador_midia import classificar_clipping
@@ -91,6 +93,11 @@ def _redes_sociais(clippings: list[dict]) -> dict:
         "total": len(itens),
         "recentes": recentes_out,
     }
+
+
+def _slug_casa(casa: str) -> str:
+    """Slug estavel da casa (orgao) para usar como id do documento."""
+    return "-".join(casa.strip().lower().split())
 
 
 def slugify_cidade(cidade: str) -> str:
@@ -479,12 +486,20 @@ def agregar(clippings: list[dict]) -> dict:
     return base
 
 
+def _casa_padrao(cidade: str) -> str:
+    """Casa (orgao) a partir da cidade, para os agentes do seed antigo."""
+    item = _info_orgao(orgao_da_cidade(cidade))
+    return item.get("casa") or "Camara Cuiaba"
+
+
 def coletar_clippings(db) -> list[dict]:
     clippings = []
     agentes = db.collection(COLLECTION_AGENTES).stream()
     for agente in agentes:
         agente_dict = agente.to_dict()
         cidade = agente_dict.get("cidade", "")
+        casa = agente_dict.get("casa", "") or _casa_padrao(cidade)
+        orgao = orgao_do_agente({**agente_dict, "casa": casa})
         nome_agente = (
             agente_dict.get("nome_urna")
             or agente_dict.get("nome")
@@ -495,6 +510,8 @@ def coletar_clippings(db) -> list[dict]:
                 {
                     "agente_id": agente.id,
                     "cidade": cidade,
+                    "casa": casa,
+                    "orgao": orgao,
                     "nome_agente": nome_agente,
                     **clip.to_dict(),
                 }
@@ -532,12 +549,15 @@ def main() -> None:
 
     por_cidade: dict[str, list[dict]] = defaultdict(list)
     por_agente: dict[str, list[dict]] = defaultdict(list)
+    por_casa: dict[str, list[dict]] = defaultdict(list)
     for c in clippings:
         cidade = c.get("cidade") or "Sem cidade"
         por_cidade[cidade].append(c)
         por_agente[c["agente_id"]].append(c)
+        por_casa[c.get("casa") or "Camara Cuiaba"].append(c)
 
     dados_geral = agregar(clippings)
+    dados_geral["orgao"] = ""
     dados_geral["historico_ingestao"] = historico_ingestao
     dados_geral["share_of_voice"] = share_of_voice(por_agente)
     dados_geral["total_agentes"] = len(por_agente)
@@ -548,6 +568,7 @@ def main() -> None:
 
     for cidade, clips in por_cidade.items():
         agregado_cidade = agregar(clips)
+        agregado_cidade["orgao"] = orgao_da_cidade(cidade)
         agentes_da_cidade = {
             agente_id: itens
             for agente_id, itens in por_agente.items()
@@ -557,9 +578,22 @@ def main() -> None:
         db.collection("metricas_por_cidade").document(slugify_cidade(cidade)).set(
             agregado_cidade
         )
+    # Um documento por CASA (orgao): o front le so o orgao selecionado.
+    for casa, clips in por_casa.items():
+        agregado_casa = agregar(clips)
+        agregado_casa["orgao"] = orgao_da_casa(casa)
+        db.collection("metricas_por_casa").document(_slug_casa(casa)).set(
+            agregado_casa
+        )
+
     for agente_id, clips in por_agente.items():
+        agregado_agente = agregar(clips)
+        agregado_agente["orgao"] = (
+            (clips[0].get("orgao") if clips else "")
+            or orgao_do_agente(clips[0] if clips else {})
+        )
         db.collection("metricas_por_agente").document(agente_id).set(
-            agregar(clips)
+            agregado_agente
         )
 
     logger.info(

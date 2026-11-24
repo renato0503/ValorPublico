@@ -31,6 +31,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase  # noqa: E402
 from core.logger import get_logger  # noqa: E402
+from core.orgaos import orgao_da_cidade, orgao_do_agente  # noqa: E402
 from core.quota import main_com_cota  # noqa: E402
 from processing.alertas import detectar_alertas  # noqa: E402
 from processing.alertas import resumir as _resumir_alertas  # noqa: E402
@@ -111,9 +112,11 @@ def coletar_radar(db) -> list[dict]:
     return itens
 
 
-def construir_documento(escopo: dict, clippings: list[dict], tier1: set[str]) -> dict:
+def construir_documento(
+    escopo: dict, clippings: list[dict], tier1: set[str], orgao: str = ""
+) -> dict:
     """Monta o documento com as janelas de periodo."""
-    documento: dict = {"escopo": escopo}
+    documento: dict = {"escopo": escopo, "orgao": orgao}
     janelas = _janelas(clippings)
 
     for chave, itens in janelas.items():
@@ -181,22 +184,33 @@ def main() -> None:
                 por_cidade[cidade].extend([item])
         logger.info("Radar oficial: %d itens Somados aos escopos.", len(itens_radar))
 
-    escopos = [
-        ({"tipo": "geral", "chave": "geral", "nome": "Geral"}, clippings),
+    escopos: list[tuple[dict, list[dict], str]] = [
+        ({"tipo": "geral", "chave": "geral", "nome": "Geral"}, clippings, ""),
     ]
     for cidade, itens in por_cidade.items():
         slug = slugify_cidade(cidade)
         escopos.append(
-            ({"tipo": "cidade", "chave": f"cidade-{slug}", "nome": cidade}, itens)
+            (
+                {"tipo": "cidade", "chave": f"cidade-{slug}", "nome": cidade},
+                itens,
+                orgao_da_cidade(cidade),
+            )
         )
     for agente_id, itens in por_agente.items():
         nome = itens[0].get("nome_agente") if itens else agente_id
+        orgao = (itens[0].get("orgao") if itens else "") or orgao_do_agente(
+            itens[0] if itens else {}
+        )
         escopos.append(
-            ({"tipo": "agente", "chave": f"agente-{agente_id}", "nome": nome}, itens)
+            (
+                {"tipo": "agente", "chave": f"agente-{agente_id}", "nome": nome},
+                itens,
+                orgao,
+            )
         )
 
-    for escopo, itens in escopos:
-        documento = construir_documento(escopo, itens, tier1)
+    for escopo, itens, orgao in escopos:
+        documento = construir_documento(escopo, itens, tier1, orgao)
         chave_doc = escopo["chave"]
         db.collection(COLLECTION_RADARES).document(chave_doc).set(documento, merge=True)
         db.collection(COLLECTION_ALERTAS).document(chave_doc).set(documento, merge=True)

@@ -64,20 +64,11 @@ function fmtData(v) {
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(d);
 }
 
-function slugCidade(cidade) {
-  return String(cidade || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-");
-}
-
-/** Chave do escopo selecionado no painel (agente > cidade > geral). */
+/** Chave do escopo selecionado no painel (agente > cidade do órgão). */
 export function chaveEscopoDsm(estado) {
   if (estado.parlamentar) return `agente-${estado.parlamentar}`;
-  if (estado.cidade) return `cidade-${slugCidade(estado.cidade)}`;
-  return "geral";
+  if (estado.orgaoInfo) return `cidade-${estado.orgaoInfo.cidadeDoc}`;
+  return "";
 }
 
 /* ---------- carga dos dados ---------- */
@@ -89,6 +80,10 @@ export async function carregarCamadaDsm(db, chave, firestore) {
   estadoDsm.alertas = null;
   estadoDsm.cobertura = null;
   estadoDsm.newsletter = null;
+  if (!chave) {
+    renderizarCamadaDsm();
+    return;
+  }
 
   // O módulo do Firestore é injetado pelo app (cada projeto usa uma versão
   // do SDK diferente): evita carregar duas instâncias do Firebase.

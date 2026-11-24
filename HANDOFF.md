@@ -230,3 +230,30 @@ python scripts/semanal/pdf.py
 ```
 **Núcleo compartilhado:** editar em `D:\Dev\CerraClipping\cerra_nucleo` e rodar
 `python tools/sync_nucleo.py` (copia para os dois apps e confere a deriva).
+
+---
+
+## 2. Sessão 24/11/2026 — separação total das 4 frentes
+
+O Valor deixou de ser "um painel com todas as casas": depois do login o usuário
+escolhe **uma** frente e o app só mostra os dados dela.
+
+| Frente | `orgao` | Casa (`metricas_por_casa`) | Cidade (`metricas_por_cidade`) |
+|---|---|---|---|
+| Câmara de Cuiabá | `cuiaba` | `camara-cuiaba` | `cuiaba` |
+| Câmara de Várzea Grande | `varzea-grande` | `camara-vg` | `varzea-grande` |
+| Assembleia (ALMT) | `almt` | `almt` | `mato-grosso` |
+| Governo de MT | `governo-mt` | `governo-mt` | `governo-de-mato-grosso` |
+
+**Arquivos-chave:** `backend/core/orgaos.py` (mapa), `frontend/js/orgaos.js`
+(espelho), `backend/scripts/carimbar_orgao.py` (migração do acervo),
+`frontend/js/app.js` (seletor + escopo), `frontend/js/telas.js`/`dsm.js`
+(leituras presas ao órgão), `frontend/js/governo.js` (só na frente Governo),
+`firestore.rules` (leitura por `orgao`).
+
+**Criar usuário de uma frente:** `python scripts/criar_usuario.py --email … --papel secom --orgao almt`
+(ou `cuiaba`, `varzea-grande`, `governo-mt`). Admin (sem `--orgao`) vê as 4.
+
+**Deploy feito:** regras publicadas via Rules API e Hosting `valorpublico` publicado.
+Smoke de produção (Playwright) das 4 frentes: OK, 0 erro de permissão/JS; usuários
+de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO.md`.

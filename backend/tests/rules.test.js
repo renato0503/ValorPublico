@@ -67,6 +67,7 @@ async function semear() {
     agente_id: "agente-a",
     agente_ids: ["agente-a"],
     chaves: ["agente-agente-a"],
+    orgao: "cuiaba",
   });
   await db.doc("usuarios/uid-2").set({
     email: "agente2@exemplo.com",
@@ -74,12 +75,37 @@ async function semear() {
     agente_id: "agente-b",
     agente_ids: ["agente-b"],
     chaves: ["agente-agente-b"],
+    orgao: "varzea-grande",
   });
-  await db.doc("metricas_por_agente/agente-a").set({ total_clippings: 10 });
-  await db.doc("metricas_por_agente/agente-b").set({ total_clippings: 20 });
-  await db.doc("alertas/agente-agente-a").set({ escopo: { chave: "agente-agente-a" } });
-  await db.doc("alertas/agente-agente-b").set({ escopo: { chave: "agente-agente-b" } });
-  await db.doc("alertas/geral").set({ escopo: { chave: "geral" } });
+  await db.doc("usuarios/uid-adm").set({
+    email: "admin@exemplo.com",
+    papel: "owner",
+    agente_id: "",
+    agente_ids: [],
+    chaves: ["geral"],
+    orgao: "",
+  });
+  await db.doc("metricas_por_agente/agente-a").set({ total_clippings: 10, orgao: "cuiaba" });
+  await db.doc("metricas_por_agente/agente-b").set({ total_clippings: 20, orgao: "varzea-grande" });
+  await db.doc("agentes_publicos/agente-a").set({ nome_urna: "A", orgao: "cuiaba", cidade: "Cuiaba" });
+  await db.doc("agentes_publicos/agente-b").set({ nome_urna: "B", orgao: "varzea-grande", cidade: "Varzea Grande" });
+  await db.doc("metricas_por_cidade/cuiaba").set({ total_clippings: 10, orgao: "cuiaba" });
+  await db.doc("metricas_por_cidade/varzea-grande").set({ total_clippings: 20, orgao: "varzea-grande" });
+  await db.doc("metricas_por_cidade/mato-grosso").set({ total_clippings: 30, orgao: "almt" });
+  await db.doc("metricas_por_cidade/governo-de-mato-grosso").set({ total_clippings: 40, orgao: "governo-mt" });
+  await db.doc("metricas_por_casa/camara-cuiaba").set({ total_clippings: 10, orgao: "cuiaba" });
+  await db.doc("metricas_por_casa/camara-vg").set({ total_clippings: 20, orgao: "varzea-grande" });
+  await db.doc("metricas_por_casa/almt").set({ total_clippings: 30, orgao: "almt" });
+  await db.doc("metricas_por_casa/governo-mt").set({ total_clippings: 40, orgao: "governo-mt" });
+  await db.doc("metricas_por_secretaria/saude").set({ total_clippings: 5, orgao: "governo-mt" });
+  await db.doc("alertas/agente-agente-a").set({ escopo: { chave: "agente-agente-a" }, orgao: "cuiaba" });
+  await db.doc("alertas/agente-agente-b").set({ escopo: { chave: "agente-agente-b" }, orgao: "varzea-grande" });
+  await db.doc("alertas/geral").set({ escopo: { chave: "geral" }, orgao: "" });
+  await db.doc("alertas/cidade-cuiaba").set({ escopo: { chave: "cidade-cuiaba" }, orgao: "cuiaba" });
+  await db.doc("alertas/cidade-mato-grosso").set({ escopo: { chave: "cidade-mato-grosso" }, orgao: "almt" });
+  await db.doc("alertas/cidade-governo-de-mato-grosso").set({ escopo: { chave: "cidade-governo-de-mato-grosso" }, orgao: "governo-mt" });
+  await db.doc("analise_lexical/cidade-cuiaba").set({ escopo: { tipo: "cidade" }, orgao: "cuiaba" });
+  await db.doc("analise_lexical/cidade-mato-grosso").set({ escopo: { tipo: "cidade" }, orgao: "almt" });
   });
 }
 
@@ -162,11 +188,74 @@ async function testarModoRestrito() {
     dbU1.collection("alertas").doc("agente-agente-a").get());
   await deveBloquear("agente lê alerta de outro", () =>
     dbU1.collection("alertas").doc("agente-agente-b").get());
-  await devePermitir("agente logado lê o escopo geral", () =>
+  await deveBloquear("escopo 'geral' e so do administrador", () =>
     dbU1.collection("alertas").doc("geral").get());
   await deveBloquear("usuario sem perfil lê metrica de agente", () =>
     usuario("uid-sem-perfil").firestore()
       .collection("metricas_por_agente").doc("agente-a").get());
+
+  // --- separacao por orgao (modo restrito) ---
+  const dbCuiaba = usuario("uid-1").firestore(); // orgao = cuiaba
+  const dbVg = usuario("uid-2").firestore(); // orgao = varzea-grande
+  const dbAdm = usuario("uid-adm").firestore(); // owner
+
+  await devePermitir("Cuiaba lê metricas_por_casa/camara-cuiaba", () =>
+    dbCuiaba.collection("metricas_por_casa").doc("camara-cuiaba").get());
+  await devePermitir("Cuiaba lê metricas_por_cidade/cuiaba", () =>
+    dbCuiaba.collection("metricas_por_cidade").doc("cuiaba").get());
+  await deveBloquear("Cuiaba NAO lê metricas_por_casa/almt", () =>
+    dbCuiaba.collection("metricas_por_casa").doc("almt").get());
+  await deveBloquear("Cuiaba NAO lê metricas_por_cidade/mato-grosso", () =>
+    dbCuiaba.collection("metricas_por_cidade").doc("mato-grosso").get());
+  await deveBloquear("Cuiaba NAO lê metricas_por_casa/governo-mt", () =>
+    dbCuiaba.collection("metricas_por_casa").doc("governo-mt").get());
+  await deveBloquear("Cuiaba NAO lê metricas/geral", () =>
+    dbCuiaba.collection("metricas").doc("geral").get());
+
+  await devePermitir("V.Grande lê metricas_por_casa/camara-vg", () =>
+    dbVg.collection("metricas_por_casa").doc("camara-vg").get());
+  await deveBloquear("V.Grande NAO lê metricas_por_casa/camara-cuiaba", () =>
+    dbVg.collection("metricas_por_casa").doc("camara-cuiaba").get());
+
+  // --- DSM / lexical tambem separados por orgao ---
+  await devePermitir("Cuiaba lê alertas/cidade-cuiaba", () =>
+    dbCuiaba.collection("alertas").doc("cidade-cuiaba").get());
+  await deveBloquear("Cuiaba NAO lê alertas/cidade-mato-grosso", () =>
+    dbCuiaba.collection("alertas").doc("cidade-mato-grosso").get());
+  await deveBloquear("Cuiaba NAO lê alertas/cidade-governo-de-mato-grosso", () =>
+    dbCuiaba.collection("alertas").doc("cidade-governo-de-mato-grosso").get());
+  await devePermitir("Cuiaba lê analise_lexical/cidade-cuiaba", () =>
+    dbCuiaba.collection("analise_lexical").doc("cidade-cuiaba").get());
+  await deveBloquear("Cuiaba NAO lê analise_lexical/cidade-mato-grosso", () =>
+    dbCuiaba.collection("analise_lexical").doc("cidade-mato-grosso").get());
+  await devePermitir("V.Grande lê alertas/agente-agente-b (mesmo orgao)", () =>
+    dbVg.collection("alertas").doc("agente-agente-b").get());
+
+  // --- roster (agentes_publicos) separado por orgao ---
+  await devePermitir("Cuiaba lista agentes do proprio orgao", () =>
+    dbCuiaba.collection("agentes_publicos").where("orgao", "==", "cuiaba").get());
+  await deveBloquear("Cuiaba NAO lista agentes sem filtro de orgao", () =>
+    dbCuiaba.collection("agentes_publicos").get());
+  await devePermitir("Cuiaba le agente do proprio orgao", () =>
+    dbCuiaba.collection("agentes_publicos").doc("agente-a").get());
+  await deveBloquear("Cuiaba NAO le agente de outro orgao", () =>
+    dbCuiaba.collection("agentes_publicos").doc("agente-b").get());
+  await devePermitir("admin lista todos os agentes", () =>
+    dbAdm.collection("agentes_publicos").get());
+
+  await deveBloquear("Camara NAO lê metricas_por_secretaria", () =>
+    dbCuiaba.collection("metricas_por_secretaria").doc("saude").get());
+
+  await devePermitir("admin lê metricas/geral (todos os orgaos)", () =>
+    dbAdm.collection("metricas").doc("geral").get());
+  await devePermitir("admin lê metricas_por_casa/almt", () =>
+    dbAdm.collection("metricas_por_casa").doc("almt").get());
+  await devePermitir("admin lê metricas_por_cidade/governo-de-mato-grosso", () =>
+    dbAdm.collection("metricas_por_cidade").doc("governo-de-mato-grosso").get());
+  await devePermitir("admin lê metricas_por_secretaria", () =>
+    dbAdm.collection("metricas_por_secretaria").doc("saude").get());
+  await devePermitir("admin lê escopo geral", () =>
+    dbAdm.collection("alertas").doc("geral").get());
 }
 
 async function run() {
@@ -176,6 +265,15 @@ async function run() {
   await testarModoPublico();
   await testarUsuarios();
   await testarModoRestrito();
+  // Colecoes novas (roda em modo restrito, ja ativado acima).
+  const novas = require("./rules_novas.test.js");
+  await novas.semearNovas(testEnv);
+  await novas.testarColecoesNovas(testEnv, {
+    devePermitir,
+    deveBloquear,
+    usuario,
+    anon,
+  });
   console.log("\nTodos os testes de regras passaram.");
 }
 

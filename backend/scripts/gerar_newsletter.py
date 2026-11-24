@@ -35,6 +35,7 @@ from config.settings import (  # noqa: E402
 )
 from core.firebase_client import init_firebase  # noqa: E402
 from core.logger import get_logger  # noqa: E402
+from core.orgaos import orgao_da_cidade, orgao_do_agente  # noqa: E402
 from core.quota import main_com_cota  # noqa: E402
 from scripts.atualizar_metricas import coletar_clippings, slugify_cidade  # noqa: E402
 
@@ -180,19 +181,36 @@ def main() -> None:
         por_cidade[clipping.get("cidade") or "Sem cidade"].append(clipping)
         por_agente[clipping["agente_id"]].append(clipping)
 
-    escopos = [({"tipo": "geral", "chave": "geral", "nome": "Visão geral"}, clippings)]
+    escopos = [
+        ({"tipo": "geral", "chave": "geral", "nome": "Visão geral"}, clippings, "")
+    ]
     for cidade, itens in por_cidade.items():
         slug = slugify_cidade(cidade)
-        escopos.append(({"tipo": "cidade", "chave": f"cidade-{slug}", "nome": cidade}, itens))
+        escopos.append(
+            (
+                {"tipo": "cidade", "chave": f"cidade-{slug}", "nome": cidade},
+                itens,
+                orgao_da_cidade(cidade),
+            )
+        )
     for agente_id, itens in por_agente.items():
         nome = itens[0].get("nome_agente") if itens else agente_id
-        escopos.append(({"tipo": "agente", "chave": f"agente-{agente_id}", "nome": nome}, itens))
+        orgao = (itens[0].get("orgao") if itens else "") or orgao_do_agente(
+            itens[0] if itens else {}
+        )
+        escopos.append(
+            (
+                {"tipo": "agente", "chave": f"agente-{agente_id}", "nome": nome},
+                itens,
+                orgao,
+            )
+        )
 
     total_docs = 0
-    for escopo, itens in escopos:
+    for escopo, itens, orgao in escopos:
         if apenas and escopo["chave"] not in apenas:
             continue
-        documento: dict = {"escopo": escopo}
+        documento: dict = {"escopo": escopo, "orgao": orgao}
         for chave in periodos_escolhidos:
             dias = PERIODOS[chave]
             if dias == 0:

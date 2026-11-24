@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v16";
+﻿const CACHE_VERSION = "valorpublico-v17";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const APP_SHELL = [
   "./css/styles.css",
   "./css/identidade.css",
   "./css/telas.css",
+  "./css/componentes.css",
   "./js/app.js",
   "./js/charts.js",
   "./js/grafo.js",
@@ -14,6 +15,8 @@ const APP_SHELL = [
   "./js/auth.js",
   "./js/motion.js",
   "./js/firebase-init.js",
+  "./js/orgaos.js",
+  "./js/governo.js",
   "./icons/favicon.svg",
   "./icons/icon-192.png",
   "./icons/icon-maskable-512.png",

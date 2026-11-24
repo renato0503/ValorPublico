@@ -55,6 +55,16 @@ const TELAS = {
     eyebrow: "Conformidade e risco",
     pergunta: "Estamos cumprindo as regras?",
   },
+  governo: {
+    titulo: "Governo de MT",
+    eyebrow: "Executivo estadual",
+    pergunta: "O que o governo fez e como a imprensa tratou?",
+  },
+  governador: {
+    titulo: "Governador",
+    eyebrow: "Cobertura da gestão",
+    pergunta: "Como a mídia trata o governador?",
+  },
   tendencias: {
     titulo: "Tendências",
     eyebrow: "Interesse da população",
@@ -84,7 +94,16 @@ function rotaDoHash() {
 }
 
 function aplicar(rota) {
-  const alvo = TELAS[rota] ? rota : "edicao";
+  let alvo = TELAS[rota] ? rota : "edicao";
+  // As telas do Executivo só existem na frente Governo de MT.
+  const orgao = document.body.dataset.orgao || "";
+  if (
+    (alvo === "governo" || alvo === "governador") &&
+    orgao &&
+    orgao !== "governo-mt"
+  ) {
+    alvo = "edicao";
+  }
   const info = TELAS[alvo];
   const telaId = info.legado || alvo;
 

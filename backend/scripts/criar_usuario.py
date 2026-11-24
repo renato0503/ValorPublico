@@ -5,14 +5,15 @@ Faz as duas etapas numa chamada so:
   2. grava `usuarios/<uid>` com o escopo que as `firestore.rules` usam.
 
 Perfil gravado:
-  {email, papel, agente_id, agente_ids[], chaves[], nome, criado_em}
+  {email, papel, agente_id, agente_ids[], chaves[], orgao, nome, criado_em}
   - agente_id  : id do agente (ex.: "fulano-de-tal")
   - agente_ids : ids de agentes que o usuario pode ver
   - chaves     : chaves de escopo da Camada DSM ("geral", "agente-<id>")
+  - orgao      : Câmara de Cuiabá | Várzea Grande | ALMT | Governo (separação)
 
 Uso:
   python scripts/criar_usuario.py --email fulano@exemplo.com --papel agente \
-      --agente-id fulano-de-tal
+      --agente-id fulano-de-tal --orgao cuiaba
   python scripts/criar_usuario.py --email chefe@exemplo.com --papel admin --geral
 
 Sem --senha, uma senha aleatoria e gerada e impressa uma unica vez.
@@ -34,6 +35,9 @@ from core.logger import get_logger  # noqa: E402
 logger = get_logger(__name__)
 
 PAPEIS = ("agente", "assessor", "admin", "owner")
+
+# Orgaos (espelham `frontend/js/orgaos.js` e `firestore.rules`).
+ORGAOS = ("cuiaba", "varzea-grande", "almt", "governo-mt")
 
 
 def _senha_aleatoria(tamanho: int = 16) -> str:
@@ -70,7 +74,21 @@ def main() -> None:
         help="Escopos DSM separados por virgula (padrao: agente-<id>).",
     )
     parser.add_argument("--geral", action="store_true", help="Da acesso ao escopo geral.")
+    parser.add_argument(
+        "--orgao",
+        default="",
+        choices=("",) + ORGAOS,
+        help="Orgao do usuario (separa os dados). Ex.: cuiaba, varzea-grande, almt, governo-mt.",
+    )
     args = parser.parse_args()
+
+    if args.papel not in ("admin", "owner") and not args.orgao:
+        raise SystemExit(
+            "Usuarios que nao sao admin/owner precisam de --orgao "
+            "(cuiaba, varzea-grande, almt, governo-mt)."
+        )
+    if args.geral and args.papel not in ("admin", "owner"):
+        logger.warning("O escopo 'geral' agrega todos os orgaos e e restrito ao admin.")
 
     email = args.email.strip().lower()
     agente_id = (args.agente_id or "").strip()
@@ -94,6 +112,7 @@ def main() -> None:
         "agente_id": agente_id,
         "agente_ids": agente_ids,
         "chaves": sorted(set(chaves)),
+        "orgao": args.orgao,
         "atualizado_em": datetime.now(timezone.utc),
         "criado_em": datetime.now(timezone.utc),
     }

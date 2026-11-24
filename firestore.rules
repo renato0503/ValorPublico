@@ -50,12 +50,54 @@ service cloud.firestore {
         && perfilUsuario().chaves.hasAny([chave]);
     }
 
+    // ------------------------------------------------------------------
+    // Orgão (separação total dos dados entre instituições)
+    // ------------------------------------------------------------------
+    // Cada usuário pertence a UM órgão: Câmara de Cuiabá, Câmara de Várzea
+    // Grande, Assembleia Legislativa (ALMT) ou Governo de Mato Grosso.
+    // O campo fica em `usuarios/{uid}.orgao`.
+    function orgaoDoUsuario() {
+      return usuarioComAcesso() ? perfilUsuario().orgao : "";
+    }
+
+    // Órgão gravado no próprio documento (agregados, DSM, lexical, ...).
+    function orgaoDoDoc() {
+      return resource.data.get('orgao', '');
+    }
+
+    // Órgão dono de um documento de agregado (mapa fixo, sem dicionário).
+    // IDs de `metricas_por_casa`: camara-cuiaba, camara-vg, almt, governo-mt.
+    // IDs de `metricas_por_cidade`: cuiaba, varzea-grande, mato-grosso, governo-de-mato-grosso.
+    function orgaoDoDocumento(docId) {
+      return docId == 'camara-cuiaba' ? 'cuiaba'
+        : docId == 'camara-vg' ? 'varzea-grande'
+        : docId == 'almt' ? 'almt'
+        : docId == 'governo-mt' ? 'governo-mt'
+        : docId == 'cuiaba' ? 'cuiaba'
+        : docId == 'varzea-grande' ? 'varzea-grande'
+        : docId == 'mato-grosso' ? 'almt'
+        : docId == 'governo-de-mato-grosso' ? 'governo-mt'
+        : '';
+    }
+
+    // Verdadeiro quando o usuario pode ler o agregado deste orgao.
+    // Aceita o mapa por id (metricas_por_cidade/casa) ou o campo `orgao`.
+    function orgaoPermitido(docId) {
+      return usuarioEhAdmin()
+        || (orgaoDoUsuario() != ''
+            && (orgaoDoUsuario() == orgaoDoDocumento(docId)
+                || orgaoDoUsuario() == orgaoDoDoc()));
+    }
+
     // Leitura de um documento "por escopo" (geral | cidade-<slug> | agente-<id>).
     // Regras do Firestore exigem expressao unica por funcao (sem if/else).
     function leituraPorEscopo(chave) {
+      // `geral` agrega todos os orgaos: so o administrador le.
       return acessoPublico()
         || (request.auth != null
-            && (chave == 'geral' || usuarioEhAdmin() || usuarioEhDonoDoEscopo(chave)));
+            && (usuarioEhAdmin()
+                || (chave != 'geral' && usuarioEhDonoDoEscopo(chave))
+                || (orgaoDoUsuario() != '' && orgaoDoUsuario() == orgaoDoDoc())));
     }
 
     // Documento de configuracao de acesso (somente backend escreve)
@@ -64,10 +106,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Agentes publicos (roster) - leitura publica.
+    // Agentes publicos (roster) - leitura do orgao do usuario.
     // Clippings ficam em subcolecao e NAO sao expostos ao cliente.
     match /agentes_publicos/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico()
+        || usuarioEhAdmin()
+        || (usuarioComAcesso()
+            && orgaoDoUsuario() != ''
+            && orgaoDoUsuario() == orgaoDoDoc());
       allow write: if false;
 
       match /clippings/{clipId} {
@@ -76,19 +122,25 @@ service cloud.firestore {
     }
 
     // Metricas agregadas - leitura publica (dashboard em tempo real).
+    // `metricas/geral` agrega TODOS os orgaos: so o administrador le.
     match /metricas/{docId} {
-      allow read: if true;
+      allow read: if acessoPublico() || usuarioEhAdmin();
       allow write: if false;
     }
 
     match /metricas_por_cidade/{docId} {
-      allow read: if acessoPublico() || (request.auth != null);
+      allow read: if acessoPublico() || orgaoPermitido(docId);
       allow write: if false;
     }
 
     // Metricas por agente: escopo do proprio agente quando o acesso e restrito.
+    // Tambem visivel para quem e do mesmo orgao (a Casa ve os seus membros).
     match /metricas_por_agente/{docId} {
-      allow read: if acessoPublico() || usuarioEhDonoDoAgente(docId);
+      allow read: if acessoPublico()
+        || usuarioEhDonoDoAgente(docId)
+        || (usuarioComAcesso()
+            && orgaoDoUsuario() != ''
+            && orgaoDoUsuario() == orgaoDoDoc());
       allow write: if false;
     }
 
@@ -173,6 +225,9 @@ service cloud.firestore {
     // (Assessor) ou a Ouvidoria da casa (Valor) veem os pedidos do seu escopo.
     match /demandas/{docId} {
       allow read: if usuarioEhDonoDoEscopo(docId)
+                   || (usuarioComAcesso()
+                       && orgaoDoUsuario() != ''
+                       && orgaoDoUsuario() == orgaoDoDoc())
                    || (usuarioComAcesso() && perfilUsuario().papel in
                        ['admin', 'owner', 'ouvidoria', 'secom', 'transparencia']);
       allow write: if false;
@@ -193,7 +248,7 @@ service cloud.firestore {
     // e um escopo "cidade" como os demais)
     // ------------------------------------------------------------------
     match /metricas_por_casa/{docId} {
-      allow read: if acessoPublico() || usuarioComAcesso();
+      allow read: if acessoPublico() || orgaoPermitido(docId);
       allow write: if false;
     }
 
@@ -202,6 +257,17 @@ service cloud.firestore {
     // ------------------------------------------------------------------
     match /execucoes_navegador/{docId} {
       allow read: if usuarioEhAdmin();
+      allow write: if false;
+    }
+
+// ------------------------------------------------------------------
+    // Plano 18/E2 — Governo de Mato Grosso (ValorPublico)
+    // ------------------------------------------------------------------
+    // Uma pasta por secretaria/autarquia do Executivo estadual.
+    match /metricas_por_secretaria/{docId} {
+      allow read: if acessoPublico()
+        || usuarioEhAdmin()
+        || orgaoDoUsuario() == 'governo-mt';
       allow write: if false;
     }
 
