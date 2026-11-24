@@ -16,7 +16,9 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/identidade.css" />
   <link rel="stylesheet" href="css/telas.css" />
+  <link rel="stylesheet" href="css/componentes.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="vendor/echarts.min.js"></script>
   <script type="importmap">
     {
       "imports": {
@@ -27,7 +29,7 @@
     }
   </script>
 </head>
-<body>
+<body data-produto="valor">
     <svg class="svg-sprite" aria-hidden="true" focusable="false">
     <symbol id="i-painel" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 8.5h6M7 12h6M7 15.5h4M16.5 8.5h2M16.5 12h2M16.5 15.5h2"/></symbol>
     <symbol id="i-midia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><path d="M7.7 7.7a6 6 0 0 0 0 8.6M16.3 7.7a6 6 0 0 1 0 8.6M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
@@ -110,9 +112,45 @@
     <div class="filtros-barra">
       <div class="filtros" id="filtrosPainel" role="group" aria-label="Filtros do painel">
       <label class="filtro">
+        <span class="filtro-rotulo">Período</span>
+        <select id="filtroPeriodo" aria-label="Filtrar por período">
+          <option value="">Todo o período</option>
+          <option value="hoje">Hoje</option>
+          <option value="7d">Últimos 7 dias</option>
+          <option value="15d">Últimos 15 dias</option>
+          <option value="30d">Últimos 30 dias</option>
+          <option value="90d">Últimos 90 dias</option>
+          <option value="12m">Últimos 12 meses</option>
+        </select>
+      </label>
+      <label class="filtro">
+        <span class="filtro-rotulo">Comparar com</span>
+        <select id="filtroComparar" aria-label="Comparar com">
+          <option value="anterior">Período anterior</option>
+          <option value="ano">Mesma época do ano passado</option>
+          <option value="nenhum">Nenhum</option>
+        </select>
+      </label>
+      <label class="filtro">
         <span class="filtro-rotulo">Casa / escopo</span>
         <select id="filtroCidade" aria-label="Filtrar por casa ou escopo">
           <option value="">Todas as casas</option>
+        </select>
+      </label>
+      <label class="filtro">
+        <span class="filtro-rotulo">Canal</span>
+        <select id="filtroCanal" aria-label="Filtrar por canal">
+          <option value="">Todos os canais</option>
+          <option value="imprensa">Imprensa (portal/jornal)</option>
+          <option value="tvradio">TV e rádio</option>
+          <option value="redes">Redes sociais</option>
+          <option value="oficial">Oficial (diário e sites públicos)</option>
+        </select>
+      </label>
+      <label class="filtro">
+        <span class="filtro-rotulo">Tema</span>
+        <select id="filtroTema" aria-label="Filtrar por tema">
+          <option value="">Todos os temas</option>
         </select>
       </label>
       <label class="filtro">
@@ -121,23 +159,15 @@
           <option value="">Todos os parlamentares</option>
         </select>
       </label>
-      <label class="filtro">
-        <span class="filtro-rotulo">Período</span>
-        <select id="filtroPeriodo" aria-label="Filtrar por período">
-          <option value="">Todo o período</option>
-          <option value="hoje">Hoje</option>
-          <option value="7d">Últimos 7 dias</option>
-          <option value="30d">Últimos 30 dias</option>
-        </select>
-      </label>
       </div>
+      <div class="filtros-ativos oculto" id="filtrosAtivos" aria-label="Filtros ativos"></div>
     </div>
   </header>
 
   <main class="conteudo">
     <div id="aviso" class="aviso oculto" role="status"></div>
 
-    <section class="tela ativa" id="tela-painel" data-tela="painel">
+    <section class="tela ativa" id="tela-painel" data-tela="edicao">
       <div class="faixa-edicao">
         <span>Última ingestão <strong id="ultimaExecucao">—</strong> · dados de <strong id="atualizadoEm">—</strong> · <span id="saudeIngestao" class="saude saude-ok">● OK</span></span>
         <span>Cuiabá · Várzea Grande · Assembleia de MT</span>
@@ -484,7 +514,333 @@
     </section>
     </section>
 
-    <section class="tela" id="tela-relatorios" data-tela="relatorios">
+    
+        <section class="tela" id="tela-clipping" data-tela="clipping">
+    <section class="grade-detalhe" aria-label="Clipping da Casa">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Clipping da Casa</h2>
+            <span class="painel-sub">Tudo o que saiu sobre a Casa. Filtre, selecione para o boletim ou exporte.</span>
+          </div>
+          <div class="redes-filtros">
+            <select id="filtroClipVeiculo" aria-label="Filtrar por veículo"><option value="">Todos os veículos</option></select>
+            <select id="filtroClipTier" aria-label="Filtrar por nível"><option value="">Todos os níveis</option><option value="Tier 1">Grandes veículos</option><option value="Tier 2">Veículos de média audiência</option></select>
+            <select id="filtroClipTipo" aria-label="Filtrar por tipo de menção"><option value="">Todas as menções</option><option value="direta">Diretas</option><option value="indireta">Indiretas</option></select>
+          </div>
+        </div>
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead><tr><th>Matéria</th><th>Veículo</th><th>Data</th><th>Tipo</th><th>Sentimento</th></tr></thead>
+            <tbody id="corpoClipping"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-imagem" data-tela="imagem">
+    <section class="grade-principal" aria-label="Indicadores de imagem institucional">
+      <article class="card kpi" id="kpiImagemSaldo">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Saldo de opinião</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiImagemInstitucional">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Imagem da Casa</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiImagemTier1">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Grandes veículos</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiImagemProjecao">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Tendência para as próximas semanas</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Gráficos de imagem">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Tendência com margem</h2>
+            <span class="painel-sub">O que já aconteceu e a projeção para as próximas semanas</span>
+          </div>
+        </div>
+        <div class="grafico-area" id="graficoImagemPrevisao"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Opinião por canal</h2>
+          <span class="painel-sub">Cada barra é um canal dividido em positivo, neutro e negativo</span>
+        </div>
+        <div class="grafico-area" id="graficoImagemCanais"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>O que mudou</h2>
+          <span class="painel-sub">Palavras que apareceram muito mais ou muito menos do que o normal</span>
+        </div>
+        <div class="grafico-area" id="graficoImagemMudou"></div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Linha do tempo da crise</h2>
+            <span class="painel-sub">Sequência dos fatos e das reações, hora a hora</span>
+          </div>
+        </div>
+        <div class="grafico-area" id="graficoImagemCrise"></div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-ouvidoria" data-tela="ouvidoria">
+    <section class="grade-principal" aria-label="Indicadores da Ouvidoria">
+      <article class="card kpi" id="kpiOuvNovas">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Pedidos novos</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiOuvAbertas">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Pedidos em aberto</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiOuvTempo">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Tempo de resposta</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiOuvEncaminhadas">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Encaminhadas às comissões</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Pedidos da população">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Fila de pedidos</h2>
+            <span class="painel-sub">Cada linha é um pedido de cidadão. Mude o status quando responder ou encaminhar.</span>
+          </div>
+          <div class="redes-filtros">
+            <select id="filtroOuvStatus" aria-label="Filtrar por status">
+              <option value="">Todos os status</option>
+              <option value="nova">Novo</option>
+              <option value="andamento">Em andamento</option>
+              <option value="respondida">Respondido</option>
+              <option value="encaminhada">Encaminhado à comissão</option>
+            </select>
+            <select id="filtroOuvTema" aria-label="Filtrar por tema"><option value="">Todos os temas</option></select>
+            <select id="filtroOuvBairro" aria-label="Filtrar por bairro"><option value="">Todos os bairros</option></select>
+          </div>
+        </div>
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead><tr><th>Pedido</th><th>Tema</th><th>Bairro</th><th>Urgência</th><th>Origem</th><th>Status</th></tr></thead>
+            <tbody id="corpoOuvidoria"></tbody>
+          </table>
+        </div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Mapa de temas</h2>
+          <span class="painel-sub">Retângulo maior = tema mais pedido</span>
+        </div>
+        <div class="grafico-area" id="graficoOuvTemas"></div>
+      </article>
+      <article class="card painel">
+        <div class="painel-cabecalho">
+          <h2>Mapa por bairro</h2>
+          <span class="painel-sub">Bairros com mais pedidos</span>
+        </div>
+        <div class="grafico-area" id="graficoOuvBairros"></div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-semana" data-tela="semana">
+    <section class="grade-principal" aria-label="Indicadores da semana">
+      <article class="card kpi" id="kpiSemanaVariedade">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Variedade de assuntos</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiSemanaSintonia">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Sintonia com a população</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiSemanaImagens">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Imagens da semana</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiSemanaEquidade">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Equilíbrio da cobertura</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Relatório e discurso da semana">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Relatório da semana da Casa</h2>
+            <span class="painel-sub">Assuntos, o que mudou, opinião e o que comunicar</span>
+          </div>
+          <button class="btn-atualizar btn-relatorio" id="btnBaixarPdfSemanal" type="button">Baixar PDF</button>
+        </div>
+        <div class="grafico-area" id="graficoSemanaClasses"></div>
+        <div class="grafico-leitura" id="semanaLeitura"><span class="grafico-leitura-rotulo">Leitura do momento</span>O relatório da semana é gerado aos domingos, na máquina da Secom. Ele aparece aqui quando a coleta da semana terminar.</div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Discurso institucional da semana</h2>
+            <span class="painel-sub">Pauta da semana, entregas e resposta às demandas mais recorrentes</span>
+          </div>
+          <span class="selo-ia">Rascunho gerado por IA — revisar antes de usar</span>
+        </div>
+        <div class="discurso-texto" id="discursoTexto">O discurso institucional aparece aqui quando o relatório semanal for gerado.</div>
+        <div class="grafico-acoes">
+          <button class="btn-texto" id="btnCopiarDiscurso" type="button">Copiar texto</button>
+          <button class="btn-texto" id="btnEnviarBoletim" type="button">Enviar boletim</button>
+        </div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-redes" data-tela="redes">
+    <section class="grade-principal" aria-label="Contas institucionais">
+      <article class="card kpi" id="kpiRedesSeguidores">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Seguidores</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiRedesEngajamento">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Engajamento</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiRedesComentarios">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Comentários</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiRedesResposta">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Taxa de resposta</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Contas e posts">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Contas oficiais da Casa</h2>
+            <span class="painel-sub">Contas institucionais conectadas: seguidores, alcance e engajamento</span>
+          </div>
+        </div>
+        <div class="redes-kpis" id="redesContas"></div>
+        <div class="grafico-area" id="graficoFunilRedes"></div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Imagens das peças</h2>
+            <span class="painel-sub">As peças que circularam e o que a análise encontrou em cada uma</span>
+          </div>
+        </div>
+        <div class="redes-kpis" id="imagensKpis"></div>
+        <div class="galeria-imagens" id="galeriaImagens"></div>
+        <div class="grafico-area" id="graficoImagensTipo"></div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-conformidade" data-tela="conformidade">
+    <section class="grade-principal" aria-label="Riscos de conformidade">
+      <article class="card kpi" id="kpiConfRiscos">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Riscos de regra</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiConfPromocao">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Peças com promoção pessoal</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiConfAnuncios">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Anúncios políticos em MT</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiConfVedacoes">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Dias até as vedações eleitorais</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Conformidade">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Radar de propaganda pública</h2>
+            <span class="painel-sub">Publicações oficiais de MT e peças com possível promoção pessoal</span>
+          </div>
+          <div class="dsm-acoes">
+            <button id="btnInvestigar" class="btn-atualizar btn-relatorio" type="button" title="Verificar uma afirmação nas fontes oficiais">Investigar</button>
+          </div>
+        </div>
+        <div class="dsm-grade">
+          <section class="dsm-bloco">
+            <h3>Publicações oficiais</h3>
+            <div class="tabela-wrapper">
+              <table class="tabela">
+                <thead><tr><th>Publicação</th><th>Órgão</th><th>Tipo</th><th class="num">Valor</th><th>Símbolo</th></tr></thead>
+                <tbody id="dsmRadarCorpo"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="dsm-bloco">
+            <h3>Alertas de regra</h3>
+            <div id="dsmAlertasLista" class="dsm-alertas"></div>
+          </section>
+        </div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-tendencias" data-tela="tendencias">
+    <section class="grade-principal" aria-label="Indicadores de tendência">
+      <article class="card kpi" id="kpiTendInteresse">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Interesse nas buscas</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiTendPico">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Pico de atenção</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiTendProjecao">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Tendência para as próximas semanas</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+      <article class="card kpi" id="kpiTendCrise">
+        <div class="kpi-cabecalho"><span class="kpi-rotulo">Alerta de crise</span></div>
+        <span class="kpi-valor">–</span>
+      </article>
+    </section>
+    <section class="grade-secundaria" aria-label="Assuntos em alta">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Em alta em MT</h2>
+            <span class="painel-sub">Os assuntos mais buscados em Mato Grosso hoje, com as notícias ligadas</span>
+          </div>
+          <div class="redes-filtros">
+            <select id="filtroTendGeo" aria-label="Geografia"><option value="BR-MT">Mato Grosso</option><option value="BR">Brasil</option></select>
+          </div>
+        </div>
+        <ul class="lista-tendencias" id="listaTendencias"></ul>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Tendência com margem</h2>
+            <span class="painel-sub">O que já aconteceu e a projeção para as próximas semanas</span>
+          </div>
+        </div>
+        <div class="grafico-area" id="graficoPrevisao"></div>
+      </article>
+    </section>
+        </section>
+<section class="tela" id="tela-relatorios" data-tela="relatorios">
       <div class="rel-grid">
         <article class="card rel-card">
           <span class="rel-numero">PRANCHA 01</span>

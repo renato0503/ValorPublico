@@ -1,0 +1,293 @@
+/* ==========================================================================
+   Componentes novos do front (plano 13 §6, plano 17 §4)
+   - barra global de filtros + chips de filtro ativo
+   - cartão de KPI com variação e minigráfico
+   - cartão de gráfico com título-conclusão, leitura e ações
+   - galeria de imagens (plano 18)
+   - popover/bottom sheet de explicação (ⓘ)
+   ========================================================================== */
+
+/* ---------- barra global + chips ---------- */
+.filtros-ativos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0;
+}
+.filtros-ativos.oculto { display: none; }
+
+.chip-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.14));
+  background: rgba(79, 140, 255, 0.10);
+  color: var(--texto, #e6edf7);
+  font-size: 12.5px;
+  cursor: pointer;
+  line-height: 1.2;
+}
+.chip-filtro:hover { background: rgba(79, 140, 255, 0.2); }
+.chip-filtro:focus-visible { outline: 2px solid var(--azul, #4f8cff); outline-offset: 2px; }
+.chip-filtro-limpar {
+  background: transparent;
+  border-style: dashed;
+  color: var(--texto-suave, #b6c2d6);
+}
+
+/* ---------- cartão de KPI (17 §4.1) ---------- */
+.kpi-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kpi-variacao {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-variacao-alta { color: var(--verde, #22c55e); }
+.kpi-variacao-baixa { color: var(--vermelho, #ef4444); }
+.kpi-variacao-igual { color: var(--texto-mutado, #94a3b8); }
+.kpi-sufixo {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--texto-mutado, #94a3b8);
+}
+.kpi-spark {
+  height: 30px;
+  margin-top: 8px;
+}
+.kpi-spark:empty { display: none; }
+
+/* ---------- botão de explicação (ⓘ) ---------- */
+.btn-info {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.16));
+  border-radius: 50%;
+  background: transparent;
+  color: var(--texto-suave, #b6c2d6);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+.btn-info:hover { color: var(--texto, #e6edf7); border-color: var(--azul, #4f8cff); }
+.btn-info:focus-visible { outline: 2px solid var(--azul, #4f8cff); outline-offset: 2px; }
+
+/* ---------- popover de explicação ---------- */
+.popup-explicacao {
+  position: absolute;
+  z-index: 90;
+  width: min(320px, calc(100vw - 24px));
+  padding: 14px 16px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.16));
+  border-radius: 12px;
+  background: var(--card, #111827);
+  color: var(--texto, #e6edf7);
+  box-shadow: 0 18px 44px rgba(2, 6, 18, 0.55);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.popup-explicacao-titulo {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.popup-explicacao-linha { margin: 0 0 6px; }
+.popup-explicacao-linha strong { color: var(--texto, #e6edf7); }
+.popup-explicacao-fechar {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--texto-mutado, #94a3b8);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* ---------- cartão de gráfico (17 §4.2) ---------- */
+.grafico-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.grafico-titulo {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.3;
+}
+.grafico-subtitulo {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--texto-mutado, #94a3b8);
+}
+.grafico-area {
+  width: 100%;
+  min-height: 220px;
+}
+.grafico-leitura {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--azul, #4f8cff);
+  border-radius: 0 8px 8px 0;
+  background: rgba(79, 140, 255, 0.07);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.grafico-leitura-rotulo {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--texto-mutado, #94a3b8);
+}
+.grafico-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.btn-texto {
+  padding: 5px 10px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texto-suave, #b6c2d6);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.btn-texto:hover { color: var(--texto, #e6edf7); border-color: var(--azul, #4f8cff); }
+.btn-texto:focus-visible { outline: 2px solid var(--azul, #4f8cff); outline-offset: 2px; }
+
+/* ---------- selos ---------- */
+.selo-ia,
+.selo-aviso {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.selo-ia {
+  background: rgba(139, 92, 246, 0.16);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: var(--roxo, #a78bfa);
+}
+.selo-aviso {
+  margin-top: 10px;
+  background: rgba(245, 158, 11, 0.13);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--ambar, #f59e0b);
+}
+
+/* ---------- galeria de imagens (plano 18) ---------- */
+.galeria-imagens {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.galeria-item {
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.14));
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card, #111827);
+  cursor: pointer;
+}
+.galeria-item:focus-visible { outline: 2px solid var(--azul, #4f8cff); outline-offset: 2px; }
+.galeria-thumb {
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  background: var(--card-2, #0f172a);
+}
+.galeria-info { padding: 8px 10px; }
+.galeria-tipo {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.galeria-meta {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--texto-mutado, #94a3b8);
+}
+.galeria-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.galeria-chip {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(79, 140, 255, 0.14);
+  font-size: 11px;
+  color: var(--texto-suave, #b6c2d6);
+}
+.galeria-chip-alerta {
+  background: rgba(239, 68, 68, 0.16);
+  color: var(--vermelho, #ef4444);
+}
+
+/* ---------- lista de tendências ---------- */
+.lista-tendencias {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.lista-tendencias li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.14));
+  border-radius: 10px;
+  background: var(--card, #111827);
+}
+.lista-tendencias .tend-termino { font-weight: 600; }
+.lista-tendencias .tend-volume {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--texto-mutado, #94a3b8);
+  font-variant-numeric: tabular-nums;
+}
+.lista-tendencias .tend-noticia { font-size: 12.5px; color: var(--texto-suave, #b6c2d6); }
+
+/* ---------- discurso da semana ---------- */
+.discurso-texto {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.14));
+  border-radius: 12px;
+  background: var(--card, #111827);
+  font-size: 14px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* ---------- responsivo ---------- */
+@media (max-width: 720px) {
+  .popup-explicacao {
+    position: fixed;
+    left: 12px !important;
+    right: 12px;
+    bottom: 12px;
+    top: auto !important;
+    width: auto;
+  }
+  .grafico-area { min-height: 190px; }
+  .galeria-imagens { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+}

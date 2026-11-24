@@ -1,28 +1,95 @@
 ﻿/**
- * Roteador por hash — ValorPúblico (seções do painel institucional).
+ * Roteador por hash — ValorPúblico / "Newsroom" (plano 13 §4).
+ *
+ * Telas (V1–V11):
+ *   V1 Edição do dia · V2 Clipping · V3 Imagem da Casa · V4 Parlamentares
+ *   V5 Ouvidoria · V6 Semana da Casa · V7 Redes da Casa
+ *   V8 Publicidade & Conformidade · V9 Tendências
+ *   V10 Relatórios & Transparência · V11 Sistema
+ *
+ * As rotas antigas (painel, midia, inteligencia) continuam válidas e caem nas
+ * telas novas correspondentes.
+ *
+ * A URL pode trazer filtros: `#/clipping?periodo=30d&canal=imprensa`
+ * (o estado vive na URL — ver `js/filtros.js`).
  */
 
 const TELAS = {
-  painel: { titulo: "Painel", eyebrow: "Edição institucional" },
-  midia: { titulo: "Mídia", eyebrow: "Veículos e audiência" },
-  parlamentares: { titulo: "Parlamentares", eyebrow: "Espaço e tom" },
-  inteligencia: { titulo: "Inteligência", eyebrow: "Radar e conteúdo" },
-  relatorios: { titulo: "Relatórios", eyebrow: "Pranchas" },
-  sistema: { titulo: "Sistema", eyebrow: "Operação" },
+  edicao: {
+    titulo: "Edição do dia",
+    eyebrow: "O que saiu hoje sobre a Casa",
+    pergunta: "O que saiu hoje sobre a Casa?",
+  },
+  clipping: {
+    titulo: "Clipping",
+    eyebrow: "Arquivo oficial da cobertura",
+    pergunta: "Encontrar e arquivar o que saiu",
+  },
+  imagem: {
+    titulo: "Imagem da Casa",
+    eyebrow: "Reputação institucional",
+    pergunta: "Como está a imagem institucional e para onde vai?",
+  },
+  parlamentares: {
+    titulo: "Parlamentares",
+    eyebrow: "Cobertura de cada membro",
+    pergunta: "Como a mídia cobre cada membro?",
+  },
+  ouvidoria: {
+    titulo: "Ouvidoria",
+    eyebrow: "O que a cidade pede",
+    pergunta: "O que a cidade pede à Casa?",
+  },
+  semana: {
+    titulo: "Semana da Casa",
+    eyebrow: "Relatório e discurso institucional",
+    pergunta: "Como foi a semana e o que a Casa deve comunicar?",
+  },
+  redes: {
+    titulo: "Redes da Casa",
+    eyebrow: "Contas institucionais",
+    pergunta: "Como vão as contas oficiais?",
+  },
+  conformidade: {
+    titulo: "Publicidade & Conformidade",
+    eyebrow: "Conformidade e risco",
+    pergunta: "Estamos cumprindo as regras?",
+  },
+  tendencias: {
+    titulo: "Tendências",
+    eyebrow: "Interesse da população",
+    pergunta: "O que preocupa a cidade e o estado?",
+  },
+  relatorios: {
+    titulo: "Relatórios & Transparência",
+    eyebrow: "Prestação de contas",
+    pergunta: "O que publicamos e prestamos contas?",
+  },
+  sistema: {
+    titulo: "Sistema",
+    eyebrow: "Acesso e operação",
+    pergunta: "Quem acessa e como está a operação?",
+  },
+  // rotas antigas (links já publicados) -> caem nas telas novas
+  painel: { titulo: "Edição do dia", eyebrow: "O que saiu hoje sobre a Casa", pergunta: "O que saiu hoje sobre a Casa?", legado: "edicao" },
+  midia: { titulo: "Imagem da Casa", eyebrow: "Reputação institucional", pergunta: "Como está a imagem institucional?", legado: "midia" },
+  inteligencia: { titulo: "Publicidade & Conformidade", eyebrow: "Conformidade e risco", pergunta: "Estamos cumprindo as regras?", legado: "inteligencia" },
 };
 
 const APP = "ValorPúblico";
 
 function rotaDoHash() {
-  const bruta = window.location.hash.replace(/^#\/?/, "").trim();
-  return TELAS[bruta] ? bruta : "painel";
+  const bruta = (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "").trim();
+  return TELAS[bruta] ? bruta : "edicao";
 }
 
 function aplicar(rota) {
-  const alvo = TELAS[rota] ? rota : "painel";
+  const alvo = TELAS[rota] ? rota : "edicao";
+  const info = TELAS[alvo];
+  const telaId = info.legado || alvo;
 
   document.querySelectorAll(".tela").forEach((tela) => {
-    tela.classList.toggle("ativa", tela.dataset.tela === alvo);
+    tela.classList.toggle("ativa", tela.dataset.tela === telaId);
   });
 
   document.querySelectorAll("[data-rota]").forEach((link) => {
@@ -32,8 +99,14 @@ function aplicar(rota) {
     else link.removeAttribute("aria-current");
   });
 
-  const info = TELAS[alvo];
+  const titulo = document.getElementById("telaTitulo");
+  const eyebrow = document.getElementById("telaEyebrow");
+  if (titulo) titulo.textContent = info.titulo;
+  if (eyebrow) eyebrow.textContent = info.eyebrow;
+  const pergunta = document.getElementById("telaPergunta");
+  if (pergunta) pergunta.textContent = info.pergunta || "";
   document.title = `${info.titulo} · ${APP}`;
+
   window.scrollTo({ top: 0 });
   document.documentElement.dataset.rota = alvo;
   document.dispatchEvent(new CustomEvent("rota:changed", { detail: { rota: alvo } }));
@@ -42,7 +115,10 @@ function aplicar(rota) {
 export function iniciarRouter() {
   const irPara = (rota) => {
     if (!TELAS[rota]) return;
-    const hash = `#/${rota}`;
+    const consulta = window.location.hash.includes("?")
+      ? window.location.hash.split("?")[1]
+      : "";
+    const hash = consulta ? `#/${rota}?${consulta}` : `#/${rota}`;
     if (window.location.hash === hash) aplicar(rota);
     else window.location.hash = hash;
   };

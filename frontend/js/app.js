@@ -2,6 +2,10 @@ import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
 import { iniciarRouter } from "./router.js";
 import { iniciarMotion } from "./motion.js";
+import { registrarExplicacoes } from "./explicacoes.js";
+import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
+import * as telas from "./telas.js";
+import { redimensionarGraficos } from "./componentes.js";
 import {
   abrirLogin,
   agentesPermitidos,
@@ -513,6 +517,10 @@ async function aplicarFiltros() {
       (snap) => {
         if (snap.exists()) {
           renderizar(snap.data());
+          // Telas novas (E2): leem os mesmos agregados.
+          telas.carregar(estado.db).catch((erro) =>
+            console.warn("[Telas] falha ao carregar:", erro?.message || erro)
+          );
         } else {
           renderizarVazio();
         }
@@ -1508,6 +1516,19 @@ async function bootstrap() {
   iniciarRouter();
   registrarBotaoAuth();
   iniciarMotion();
+  registrarExplicacoes();
+  ligarBarraGlobal();
+  window.addEventListener("resize", () => {
+    redimensionarGraficos();
+    telas.redimensionar();
+  });
+  document.addEventListener("rota:changed", () => {
+    registrarExplicacoes();
+    telas.redimensionar();
+  });
+  aoMudarFiltros(async () => {
+    if (estado.db) await telas.carregar(estado.db);
+  });
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
   $("btnAbrirNewsletter")?.addEventListener("click", abrirNewsletter);
   $("btnSairConta")?.addEventListener("click", alternarAuth);
@@ -1531,6 +1552,7 @@ window.__app_test = {
   renderizarShareOfVoice,
   renderizarCamadaDsm,
   renderizarParlamentaresPorCasa,
+  telas,
   irPara: (rota) => window.__router?.irPara(rota),
 };
 
