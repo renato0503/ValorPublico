@@ -36,6 +36,9 @@ def semana_atual() -> str:
 def orgao_do_escopo(escopo: str) -> str:
     if escopo.startswith("casa-"):
         return POR_CASA_DOC.get(escopo[len("casa-") :], "")
+    if escopo.startswith("agente-"):
+        if "governador" in escopo or "interino" in escopo:
+            return "governo-mt"
     return ""
 
 

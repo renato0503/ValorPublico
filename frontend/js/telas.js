@@ -35,6 +35,7 @@ const estado = {
   varianteAtiva: 0,
   discursoGovernador: null,
   semanaGovernador: "",
+  simulacaoGovernador: null,
   varianteGovernador: 0,
 };
 const graficos = new Map();
@@ -157,6 +158,18 @@ async function lerDiscursoAgente(db, escopoBase) {
   return { doc: null, semana: semanasRecentes(1)[0] };
 }
 
+async function lerSimulacaoAgente(db, escopoBase) {
+  for (const semana of semanasRecentes(4)) {
+    const doc = await lerDocSeguro(
+      db,
+      "simulacao_semanal",
+      `${escopoBase}__${semana}`
+    );
+    if (doc) return { doc, semana };
+  }
+  return { doc: null, semana: semanasRecentes(1)[0] };
+}
+
 export async function carregar(db) {
   estado.db = db;
   const escopo = escopoAtual();
@@ -188,9 +201,15 @@ export async function carregar(db) {
     );
     estado.discursoGovernador = gov.doc;
     estado.semanaGovernador = gov.semana;
+    const simGov = await lerSimulacaoAgente(
+      db,
+      "agente-governador-otaviano-pivetta"
+    );
+    estado.simulacaoGovernador = simGov.doc;
   } else {
     estado.discursoGovernador = null;
     estado.semanaGovernador = "";
+    estado.simulacaoGovernador = null;
   }
   renderizar();
 }
@@ -203,6 +222,7 @@ export function renderizar() {
   renderizarOuvidoria(dados);
   renderizarSemana(dados);
   renderizarGovernadorDiscurso();
+  renderizarRecepcaoGovernador();
   renderizarRedes(dados);
   renderizarConformidade(dados);
   renderizarTendencias(dados);
@@ -608,6 +628,46 @@ function renderizarDiscurso(disc, sim) {
       renderizarDiscurso(disc, sim);
     });
   });
+}
+
+function renderizarRecepcaoGovernador() {
+  const alvo = document.getElementById("recepcaoGovernador");
+  if (!alvo) return;
+  const sim = estado.simulacaoGovernador;
+  const personas = Array.isArray(sim?.personas) ? sim.personas : [];
+  if (!sim || !personas.length) {
+    alvo.innerHTML =
+      '<p class="grafico-leitura">A recepção do discurso do governador ainda não foi simulada nesta semana.</p>';
+    return;
+  }
+  const media = (campo) =>
+    personas.reduce((acc, p) => acc + Number(p[campo] || 0), 0) / personas.length;
+  const variantes = (sim.variantes || [])
+    .map(
+      (v) =>
+        `Variante ${escapar(v.id)}: ${Number(v.adesao || 0).toFixed(1)}` +
+        ` (rejeição ${Math.round(Number(v.rejeicao || 0) * 100)}%)`
+    )
+    .join(" · ");
+  const cards = personas
+    .map(
+      (p) => `<article class="persona-card">
+        <span class="persona-status">${escapar(p.id)}</span>
+        <h3>${escapar(p.rotulo || p.id)}</h3>
+        <span class="persona-tom">${escapar(p.emocao || "reação")}</span>
+        <span class="persona-adesao">${Number(p.adesao || 0).toFixed(1)}</span>
+        <span class="persona-num">IC 90% ${(p.adesao_ic90 || []).map((n) => Number(n).toFixed(1)).join("–")}</span>
+        <span class="persona-rejeicao">rejeição ${Math.round(Number(p.rejeicao || 0) * 100)}%</span>
+        ${p.comentario ? `<span class="persona-comentario">“${escapar(p.comentario)}”</span>` : ""}
+      </article>`
+    )
+    .join("");
+  alvo.innerHTML =
+    `<p class="grafico-leitura">Semana ${escapar(sim.semana || "")} · variante vencedora ` +
+    `<b>${escapar(sim.vencedora || "—")}</b> · adesão média ${media("adesao").toFixed(1)} · ` +
+    `rejeição ${Math.round(media("rejeicao") * 100)}%. ${escapar(variantes)}</p>` +
+    `<div class="personas-grade">${cards}</div>` +
+    `<p class="selo-simulacao">${escapar(sim.aviso || "Simulação (hipótese) — não é pesquisa.")}</p>`;
 }
 
 let textoGovernadorAtual = "";

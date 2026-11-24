@@ -1,0 +1,51 @@
+{
+  "id": "professor-rede",
+  "rotulo": "Professor(a) da rede estadual",
+  "stakeholder": "reivindicativo",
+  "tom_base": "reivindicativo",
+  "interesses": [
+    "educacao",
+    "salario",
+    "escola",
+    "formacao"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "reivindicativo",
+    "idealista",
+    "emocional"
+  ],
+  "valores": [
+    "educação",
+    "piso",
+    "escola estruturada"
+  ],
+  "medos": [
+    "promessa sem orçamento",
+    "atraso",
+    "sala lotada"
+  ],
+  "gatilhos_positivos": [
+    "valorização",
+    "formação",
+    "merenda"
+  ],
+  "gatilhos_negativos": [
+    "corte na educação",
+    "salário atrasado",
+    "obra parada"
+  ],
+  "linguagem": "emocional e direta; fala do dia a dia da escola",
+  "convence": [
+    "reajuste com fonte",
+    "plano de carreira",
+    "escola reformada"
+  ],
+  "rejeita": [
+    "discurso genérico",
+    "promessa sem data",
+    "culpar professor"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "servidor-estadual",
+  "rotulo": "Servidor público estadual",
+  "stakeholder": "cetico",
+  "tom_base": "cetico",
+  "interesses": [
+    "salario",
+    "carreira",
+    "saude",
+    "previdencia"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "cético",
+    "atento",
+    "técnico",
+    "avesso a risco"
+  ],
+  "valores": [
+    "estabilidade",
+    "mérito",
+    "serviço público"
+  ],
+  "medos": [
+    "perda de direitos",
+    "congelamento",
+    "reforma sem diálogo"
+  ],
+  "gatilhos_positivos": [
+    "diálogo",
+    "dados",
+    "valorização"
+  ],
+  "gatilhos_negativos": [
+    "corte",
+    "promessa sem orçamento",
+    "arrocho"
+  ],
+  "linguagem": "técnica, com ironia; usa números",
+  "convence": [
+    "fonte orçamentária",
+    "cronograma",
+    "impacto na carreira"
+  ],
+  "rejeita": [
+    "generalidade",
+    "propaganda",
+    "ataque a servidor"
+  ]
+}

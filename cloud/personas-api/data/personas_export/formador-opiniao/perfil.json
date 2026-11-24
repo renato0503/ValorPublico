@@ -1,0 +1,51 @@
+{
+  "id": "formador-opiniao",
+  "rotulo": "Formador de opinião / imprensa local",
+  "stakeholder": "analitico",
+  "tom_base": "analitico",
+  "interesses": [
+    "transparencia",
+    "dados",
+    "politica",
+    "obras"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "analítico",
+    "cético",
+    "investigativo"
+  ],
+  "valores": [
+    "transparência",
+    "dados",
+    "credibilidade"
+  ],
+  "medos": [
+    "contradição",
+    "falta de fonte",
+    "obra sem entrega"
+  ],
+  "gatilhos_positivos": [
+    "dados",
+    "fonte",
+    "transparência"
+  ],
+  "gatilhos_negativos": [
+    "contradição",
+    "sem fonte",
+    "promessa"
+  ],
+  "linguagem": "analítica e questionadora; pede fonte",
+  "convence": [
+    "dado verificável",
+    "documento",
+    "transparência"
+  ],
+  "rejeita": [
+    "propaganda",
+    "número sem fonte",
+    "discurso vazio"
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "gerado_em": "2026-11-24T22:46:00.263248+00:00",
+  "semana": "2026-W48",
+  "orgao": "governo-mt",
+  "versao_rag": "2026-W48-v1",
+  "personas": [
+    {
+      "id": "servidor-estadual",
+      "rotulo": "Servidor público estadual",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "professor-rede",
+      "rotulo": "Professor(a) da rede estadual",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "profissional-saude",
+      "rotulo": "Profissional de saúde (SES)",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "produtor-rural",
+      "rotulo": "Produtor rural / agro",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "empresario-industria",
+      "rotulo": "Empresário / indústria",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "comerciante-mei",
+      "rotulo": "Comerciante / MEI",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "trabalhador-informal",
+      "rotulo": "Trabalhador informal / autônomo",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "jovem-estudante",
+      "rotulo": "Jovem / estudante",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "mae-beneficiaria",
+      "rotulo": "Mãe / beneficiária de programas sociais",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "seguranca-publica",
+      "rotulo": "Agente de segurança pública",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "lideranca-comunitaria",
+      "rotulo": "Liderança comunitária / periferia",
+      "chunks": 29,
+      "fontes": 25
+    },
+    {
+      "id": "formador-opiniao",
+      "rotulo": "Formador de opinião / imprensa local",
+      "chunks": 29,
+      "fontes": 25
+    }
+  ]
+}

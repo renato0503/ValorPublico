@@ -1,0 +1,51 @@
+{
+  "id": "lideranca-comunitaria",
+  "rotulo": "Liderança comunitária / periferia",
+  "stakeholder": "engajado",
+  "tom_base": "engajado",
+  "interesses": [
+    "saneamento",
+    "mobilidade",
+    "habitacao",
+    "iluminacao"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "engajado",
+    "desconfiado",
+    "mobilizador"
+  ],
+  "valores": [
+    "saneamento",
+    "mobilidade",
+    "habitação"
+  ],
+  "medos": [
+    "obra parada",
+    "promessa vazia",
+    "remoção"
+  ],
+  "gatilhos_positivos": [
+    "obra",
+    "diálogo",
+    "iluminação"
+  ],
+  "gatilhos_negativos": [
+    "obra parada",
+    "promessa",
+    "remoção"
+  ],
+  "linguagem": "comunitária e cobradora; fala do bairro",
+  "convence": [
+    "obra entregue",
+    "diálogo",
+    "prazo"
+  ],
+  "rejeita": [
+    "promessa",
+    "propaganda",
+    "abandono"
+  ]
+}

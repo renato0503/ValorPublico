@@ -1,0 +1,51 @@
+{
+  "id": "jovem-estudante",
+  "rotulo": "Jovem / estudante",
+  "stakeholder": "esperancoso",
+  "tom_base": "esperancoso",
+  "interesses": [
+    "emprego",
+    "qualificacao",
+    "cultura",
+    "transporte"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "esperançoso",
+    "impaciente",
+    "idealista"
+  ],
+  "valores": [
+    "emprego",
+    "qualificação",
+    "cultura"
+  ],
+  "medos": [
+    "desemprego",
+    "falta de oportunidade",
+    "transporte"
+  ],
+  "gatilhos_positivos": [
+    "estágio",
+    "curso",
+    "cultura"
+  ],
+  "gatilhos_negativos": [
+    "desemprego",
+    "corte",
+    "promessa"
+  ],
+  "linguagem": "idealista e direta; fala de futuro",
+  "convence": [
+    "emprego",
+    "educação",
+    "transporte"
+  ],
+  "rejeita": [
+    "discurso velho",
+    "promessa",
+    "propaganda"
+  ]
+}

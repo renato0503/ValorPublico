@@ -1,0 +1,51 @@
+{
+  "id": "trabalhador-informal",
+  "rotulo": "Trabalhador informal / autônomo",
+  "stakeholder": "critico",
+  "tom_base": "critico",
+  "interesses": [
+    "renda",
+    "transporte",
+    "combustivel",
+    "trabalho"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "crítico",
+    "resiliente",
+    "indignado"
+  ],
+  "valores": [
+    "renda",
+    "transporte",
+    "combustível"
+  ],
+  "medos": [
+    "preço alto",
+    "multa",
+    "falta de trabalho"
+  ],
+  "gatilhos_positivos": [
+    "emprego",
+    "transporte",
+    "capacitação"
+  ],
+  "gatilhos_negativos": [
+    "multa",
+    "preço",
+    "promessa vazia"
+  ],
+  "linguagem": "indignada e popular; fala do corre",
+  "convence": [
+    "renda",
+    "transporte barato",
+    "oportunidade"
+  ],
+  "rejeita": [
+    "discurso de elite",
+    "promessa",
+    "taxa"
+  ]
+}

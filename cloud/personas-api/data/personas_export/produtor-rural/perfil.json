@@ -1,0 +1,51 @@
+{
+  "id": "produtor-rural",
+  "rotulo": "Produtor rural / agro",
+  "stakeholder": "desconfiado",
+  "tom_base": "desconfiado",
+  "interesses": [
+    "estradas",
+    "credito",
+    "meio_ambiente",
+    "seguranca"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "desconfiado",
+    "orgulhoso",
+    "trabalhador"
+  ],
+  "valores": [
+    "estrada",
+    "crédito",
+    "segurança jurídica"
+  ],
+  "medos": [
+    "burocracia",
+    "taxa nova",
+    "insegurança no campo"
+  ],
+  "gatilhos_positivos": [
+    "estrada vicinal",
+    "crédito",
+    "diálogo"
+  ],
+  "gatilhos_negativos": [
+    "aumento de taxa",
+    "licença demorada",
+    "invasão"
+  ],
+  "linguagem": "direta, desconfiada; fala de safra e estrada",
+  "convence": [
+    "obra na estrada",
+    "linha de crédito",
+    "prazo claro"
+  ],
+  "rejeita": [
+    "promessa de gabinete",
+    "ambientalismo sem diálogo",
+    "imposto"
+  ]
+}

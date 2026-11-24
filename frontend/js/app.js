@@ -1527,10 +1527,10 @@ function abrirSeletorOrgao() {
   fecharLogin();
   const tela = $("telaOrgao");
   if (!tela) return;
+  renderOrgaoCards();
   tela.classList.add("ativo");
   tela.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  renderOrgaoCards();
 }
 
 function fecharSeletorOrgao() {

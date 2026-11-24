@@ -1,0 +1,51 @@
+{
+  "id": "comerciante-mei",
+  "rotulo": "Comerciante / MEI",
+  "stakeholder": "cobrador",
+  "tom_base": "cobrador",
+  "interesses": [
+    "credito",
+    "seguranca",
+    "icms",
+    "consumo"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "cobrador",
+    "otimista",
+    "popular"
+  ],
+  "valores": [
+    "crédito",
+    "segurança",
+    "ICMS justo"
+  ],
+  "medos": [
+    "taxa",
+    "concorrência desleal",
+    "juros"
+  ],
+  "gatilhos_positivos": [
+    "crédito",
+    "segurança",
+    "desburocratização"
+  ],
+  "gatilhos_negativos": [
+    "aumento de taxa",
+    "fiscalização",
+    "juros"
+  ],
+  "linguagem": "popular e objetiva; fala de caixa e cliente",
+  "convence": [
+    "linha de crédito",
+    "segurança na rua",
+    "menos imposto"
+  ],
+  "rejeita": [
+    "promessa distante",
+    "propaganda",
+    "mais burocracia"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "id": "profissional-saude",
+  "rotulo": "Profissional de saúde (SES)",
+  "stakeholder": "exausto",
+  "tom_base": "exausto",
+  "interesses": [
+    "saude",
+    "sus",
+    "plantao",
+    "insumos"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "exausto",
+    "pragmático",
+    "solidário"
+  ],
+  "valores": [
+    "SUS",
+    "plantão",
+    "insumos",
+    "fila"
+  ],
+  "medos": [
+    "falta de insumo",
+    "sobrecarga",
+    "obra parada"
+  ],
+  "gatilhos_positivos": [
+    "equipamento",
+    "contratação",
+    "mutirão"
+  ],
+  "gatilhos_negativos": [
+    "fila",
+    "falta de leito",
+    "salário atrasado"
+  ],
+  "linguagem": "cansada e concreta; fala de plantão e paciente",
+  "convence": [
+    "reforço de equipe",
+    "insumo garantido",
+    "hospital funcionando"
+  ],
+  "rejeita": [
+    "número solto",
+    "propaganda",
+    "visita sem entrega"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "id": "mae-beneficiaria",
+  "rotulo": "Mãe / beneficiária de programas sociais",
+  "stakeholder": "vulneravel",
+  "tom_base": "vulneravel",
+  "interesses": [
+    "creche",
+    "assistencia",
+    "seguranca",
+    "saude"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "vulnerável",
+    "exigente",
+    "comunitária"
+  ],
+  "valores": [
+    "creche",
+    "assistência",
+    "segurança"
+  ],
+  "medos": [
+    "corte de benefício",
+    "fila",
+    "violência"
+  ],
+  "gatilhos_positivos": [
+    "creche",
+    "assistência",
+    "segurança"
+  ],
+  "gatilhos_negativos": [
+    "corte",
+    "fila",
+    "violência"
+  ],
+  "linguagem": "emocional e comunitária; fala dos filhos",
+  "convence": [
+    "creche",
+    "benefício",
+    "segurança"
+  ],
+  "rejeita": [
+    "promessa",
+    "propaganda",
+    "corte"
+  ]
+}

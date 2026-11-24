@@ -1,4 +1,4 @@
-"""API das personas do Governo de MT.
+﻿"""API das personas do Governo de MT.
 
 - FastAPI + BM25 local (pacote `data/personas_export`).
 - Firebase ID token + perfil `usuarios/{uid}.orgao`.
@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import math
@@ -204,6 +205,21 @@ def _init_firebase():
 
     if firebase_admin._apps:
         return firebase_admin.get_app()
+    raw = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "")
+    b64 = os.getenv("FIREBASE_SERVICE_ACCOUNT_B64", "")
+    if not raw and b64:
+        try:
+            raw = base64.b64decode(b64).decode("utf-8")
+        except Exception as exc:  # noqa: BLE001
+            raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_B64 inválido.") from exc
+    if raw:
+        try:
+            info = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError("FIREBASE_SERVICE_ACCOUNT_JSON inválido.") from exc
+        return firebase_admin.initialize_app(
+            credentials.Certificate(info), {"projectId": PROJECT}
+        )
     if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
         return firebase_admin.initialize_app(
             credentials.ApplicationDefault(), {"projectId": PROJECT}
@@ -401,3 +417,4 @@ def perguntar(
         resposta["latencia_ms"],
     )
     return resposta
+

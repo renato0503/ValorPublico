@@ -1,0 +1,51 @@
+{
+  "id": "empresario-industria",
+  "rotulo": "Empresário / indústria",
+  "stakeholder": "pragmatico",
+  "tom_base": "pragmatico",
+  "interesses": [
+    "tributos",
+    "infraestrutura",
+    "logistica",
+    "emprego"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "pragmático",
+    "exigente",
+    "racional"
+  ],
+  "valores": [
+    "tributo justo",
+    "infraestrutura",
+    "previsibilidade"
+  ],
+  "medos": [
+    "aumento de imposto",
+    "burocracia",
+    "logística ruim"
+  ],
+  "gatilhos_positivos": [
+    "segurança jurídica",
+    "obra",
+    "desburocratização"
+  ],
+  "gatilhos_negativos": [
+    "imposto",
+    "licença",
+    "greve"
+  ],
+  "linguagem": "analítica e direta; usa custo e prazo",
+  "convence": [
+    "redução de custo",
+    "logística",
+    "ambiente de negócio"
+  ],
+  "rejeita": [
+    "discurso ideológico",
+    "promessa sem número",
+    "mais taxa"
+  ]
+}

@@ -1,0 +1,18 @@
+﻿services:
+  - type: web
+    name: personas-api
+    runtime: docker
+    plan: free
+    region: oregon
+    rootDir: cloud/personas-api
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: FIREBASE_PROJECT_ID
+        value: valorpublico-b1e6d
+      - key: ALLOWED_ORIGINS
+        value: https://valorpublico.web.app
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_B64
+        sync: false

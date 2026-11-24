@@ -1,0 +1,51 @@
+{
+  "id": "seguranca-publica",
+  "rotulo": "Agente de segurança pública",
+  "stakeholder": "firme",
+  "tom_base": "firme",
+  "interesses": [
+    "seguranca",
+    "efetivo",
+    "equipamento",
+    "reconhecimento"
+  ],
+  "orgao": "governo-mt",
+  "semana": "2026-W48",
+  "versao_rag": "2026-W48-v1",
+  "personalidade": [
+    "conservador",
+    "firme",
+    "cobrador"
+  ],
+  "valores": [
+    "efetivo",
+    "equipamento",
+    "reconhecimento"
+  ],
+  "medos": [
+    "violência",
+    "falta de estrutura",
+    "impunidade"
+  ],
+  "gatilhos_positivos": [
+    "equipamento",
+    "efetivo",
+    "operação"
+  ],
+  "gatilhos_negativos": [
+    "falta de estrutura",
+    "impunidade",
+    "corte"
+  ],
+  "linguagem": "firme e direta; fala de operação",
+  "convence": [
+    "equipamento",
+    "efetivo",
+    "reconhecimento"
+  ],
+  "rejeita": [
+    "discurso ideológico",
+    "promessa",
+    "corte"
+  ]
+}
