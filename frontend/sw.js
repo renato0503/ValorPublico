@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v17";
+﻿const CACHE_VERSION = "valorpublico-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,6 +16,7 @@ const APP_SHELL = [
   "./js/motion.js",
   "./js/firebase-init.js",
   "./js/orgaos.js",
+  "./js/menu.js",
   "./js/governo.js",
   "./icons/favicon.svg",
   "./icons/icon-192.png",
@@ -93,4 +94,5 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
 

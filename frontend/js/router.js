@@ -65,6 +65,12 @@ const TELAS = {
     eyebrow: "Cobertura da gestão",
     pergunta: "Como a mídia trata o governador?",
   },
+  analise: {
+    titulo: "Análise",
+    eyebrow: "DSM e IRAMUTEQ",
+    pergunta: "Quais são os mundos de sentido e os sinais de risco?",
+    legado: "inteligencia",
+  },
   tendencias: {
     titulo: "Tendências",
     eyebrow: "Interesse da população",

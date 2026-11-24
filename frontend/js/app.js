@@ -7,6 +7,7 @@ import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
 import * as telas from "./telas.js";
 import * as governo from "./governo.js";
+import { renderMenu, marcarAtivo } from "./menu.js";
 import { redimensionarGraficos } from "./componentes.js";
 import {
   abrirLogin,
@@ -1339,12 +1340,17 @@ function aplicarEscopoOrgao(slug) {
   document.body.dataset.orgao = info ? info.slug : "";
   telas.definirOrgao(info);
   governo.definirAtivo(info ? info.slug === "governo-mt" : false);
+  renderMenu(info ? info.slug : "");
   atualizarBotaoOrgao();
   atualizarRotulosOrgao(info);
   // Se estava numa tela do Executivo e trocou de frente, volta para a edição.
   const rotaAtual = (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "");
   if (info && info.slug !== "governo-mt" && (rotaAtual === "governo" || rotaAtual === "governador")) {
     window.location.hash = "#/edicao";
+  }
+  // Ao entrar no Governo, a primeira tela é a Visão do Governo (não a edição genérica).
+  if (info && info.slug === "governo-mt" && (!rotaAtual || rotaAtual === "edicao" || rotaAtual === "painel")) {
+    window.location.hash = "#/governo";
   }
 }
 
@@ -1529,6 +1535,7 @@ window.addEventListener("auth:changed", async () => {
     estado.parlamentar = "";
     appIniciado = false;
     document.body.dataset.orgao = "";
+    renderMenu("");
     if (!modoPublico) abrirLogin();
     return;
   }
@@ -1678,6 +1685,7 @@ async function iniciarApp() {
 
 async function bootstrap() {
   aplicarTemaInicial();
+  renderMenu("");
   iniciarRouter();
   registrarBotaoAuth();
   iniciarMotion();
@@ -1690,6 +1698,7 @@ async function bootstrap() {
   });
   document.addEventListener("rota:changed", () => {
     registrarExplicacoes();
+    marcarAtivo();
     telas.redimensionar();
     governo.redimensionar();
   });
