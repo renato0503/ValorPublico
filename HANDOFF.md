@@ -199,3 +199,34 @@ Mesma estrutura do app principal. O que vale abrir primeiro:
 - Diagnóstico: `window.__erros`, log contextual e `?debug=1`.
 - Templates de e-mail prontos em `docs/emails/` (prévia + copiar); a API Admin recusa alterar o
   template (colagem no Console é manual).
+
+### 1.4 Sessão 24/11/2026 — upgrade E0–E7
+
+| Etapa | Entrega |
+|---|---|
+| E0 | `cerra_nucleo` v0.1.0 vendorizado (`backend/cerra_nucleo/`, `VERSION`, guarda de deriva em `tests/teste_nucleo.py`); SearXNG no lugar do CSE; coletor de Facebook público (sem cookies); páginas legais |
+| E1 | tendências (Trends/Wikipédia/GDELT/YouTube), Telegram `t.me/s`, Ad Library, `demandas.py`, bairros, crise K-28, projeção K-33 |
+| E1b | `midia` no `RawItem`; WebP+pHash; OCR RapidOCR; CLIP/VLM/rosto/C2PA prontos |
+| E1c | `navegador.py`, `evidencia.py`, `previa_publica.py`, `receitas.py`; stealth público |
+| E2 | `explicacoes.js`, `componentes.js`, `filtros.js`, `graficos.js`, `lexical.js`; telas novas; "Fatia da conversa" |
+| E3 | CHD de Reinert real (rainette), corpus IRaMuTeQ, texto verificado, discurso (3 variantes), PDF |
+| E4 | `conectar_conta.py`, `coletar_redes_proprias.py` (piloto) |
+| E5 | `processar_demandas.py` (130 demandas reais) |
+| E6 | `simulacao/` (MiroFish copiado + painel Nível 2 com IC 90%) |
+| E7 | `docs/comercial/` |
+
+**Novos comandos úteis:**
+```powershell
+cd backend
+python tests/teste_nucleo.py            # 33 casos (tag do nucleo + salvaguardas)
+python tests/teste_tendencias.py        # 29 casos (RSS, crise, projeção)
+python tests/teste_imagem.py            # 28 casos (anti-SSRF, pHash, OCR)
+python tests/teste_reinert.py           # 33 casos (rainette real)
+python tests/teste_demandas.py          # 20 casos
+python scripts/atualizar_tendencias.py  # grava metricas*.tendencias/.crise/.previsao
+python scripts/processar_demandas.py --dias 400
+python scripts/semanal/relatorio.py --escopo agente-<id>
+python scripts/semanal/pdf.py
+```
+**Núcleo compartilhado:** editar em `D:\Dev\CerraClipping\cerra_nucleo` e rodar
+`python tools/sync_nucleo.py` (copia para os dois apps e confere a deriva).
