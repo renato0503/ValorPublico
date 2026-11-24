@@ -92,6 +92,18 @@ def numeros_do_json(fatos: dict) -> set[float]:
     return numeros
 
 
+def _sem_acento(texto: str) -> str:
+    """minusculas, sem acento (para comparar 'Cuiabá' com 'cuiaba')."""
+    import unicodedata
+
+    return (
+        unicodedata.normalize("NFKD", texto or "")
+        .encode("ascii", "ignore")
+        .decode("utf-8")
+        .lower()
+    )
+
+
 def formas_do_grafico(fatos: dict) -> set[str]:
     """Todas as palavras citadas no grafico (para checar as entre aspas)."""
     formas: set[str] = set()
@@ -103,9 +115,9 @@ def formas_do_grafico(fatos: dict) -> set[str]:
             if isinstance(item, dict):
                 for chave_item in ("f", "forma", "rotulo", "palavra", "nome", "termo"):
                     if chave_item in item:
-                        formas.add(str(item[chave_item]).lower())
+                        formas.add(_sem_acento(str(item[chave_item])))
             elif isinstance(item, str):
-                formas.add(item.lower())
+                formas.add(_sem_acento(item))
     return formas
 
 
@@ -131,9 +143,9 @@ def verificar(texto: str, fatos: dict) -> tuple[bool, list[str]]:
             continue
         problemas.append(f"numero fora do grafico: {achado}")
 
-    # Palavras entre aspas precisam existir nas formas do grafico.
+    # Palavras entre aspas precisam existir nas formas do grafico (sem acento).
     for citada in re.findall(r"[\"“”']([^\"“”']{2,40})[\"“”']", texto or ""):
-        alvo = citada.strip().lower()
+        alvo = _sem_acento(citada).strip()
         if not alvo or " " in alvo:
             continue
         if any(alvo == forma or alvo in forma.split("-") for forma in formas):

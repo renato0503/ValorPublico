@@ -63,27 +63,30 @@ TEMAS: dict[str, tuple[str, ...]] = {
         "ginásio", "ginasio", "biblioteca",
     ),
     "servicos": (
-        "documento", "cpf", "cadastro", "atendimento", "senha", "fila",
-        "guia", "consulta",
+        "documento", "cpf", "cadastro", "guia", "consulta de processo",
+        "protocolo", "alvara", "licenca",
     ),
 }
 
 # Palavras que indicam um pedido (o cidadao pede, reclama, cobra).
+# Nao entram "como/onde/quando/por que" sozinhos: sao interrogativos comuns em
+# noticia e geram falso positivo.
 RE_PEDIDO = re.compile(
-    r"\b(precis(?:o|am)|preciso|precisa|precisamos|gostaria|queria|quero|"
-    r"quando|onde|como|por que|porque|nao (?:e|e'|foi|funciona|resolveu)|"
+    r"\b(precis(?:o|a|am|amos)|gostaria|queria|quero|"
+    r"nao (?:e|foi|funciona|resolveu|tem|atende)|nunca (?:foi|fizeram|teve)|"
+    r"cheio de|"
     r"faz(?:e|er|endo)?|instala|instale|arruma|arrume|conserta|conserte|"
-    r"solve|resolva|reclamo|reclamacao|denuncia|denuncie|urgente|"
-    r"demora|demorou|tardez|atrasad|nao atend|nao resolveram|prazo|"
-    r"solicito|solicit|requer|encaminha|remete)\b",
+    r"solve|resolva|reclamo|reclamacao|denuncia|denuncie|urgente|urgencia|"
+    r"demora|demorou|demorando|atrasad|nao atend|nao resolveram|prazo|"
+    r"solicito|solicit|requer|encaminha|remete|pedido|pedimos|cobramos)\b",
     re.IGNORECASE,
 )
 
 # Sinais de urgencia (palavras cheias -> urgencia alta).
 RE_URGENCIA_ALTA = re.compile(
-    r"\b(urgente|emergencia|emergencia|perigo|risco|acidente|desabo|"
-    r"alagament|infiltra|infec|doente|internad|criança|child|"
-    r"vulnerable|imediat)\b",
+    r"\b(urgente|urgencia|emergencia|perigo|risco|acidente|desabo|"
+    r"alagament|infiltra|infec|doente|internad|crianc|"
+    r"vulneravel|imediat)\b",
     re.IGNORECASE,
 )
 
@@ -171,6 +174,13 @@ def classificar_demanda(texto: str, minimo_chars: int = 25) -> dict:
         if pontos > melhor:
             melhor = pontos
             tema = nome
+
+    # Sem tema identificado e sem sinal de urgencia, e texto generico (nao e
+    # um pedido concreto): deixa de fora para a fila nao encher de ruido.
+    if tema == "outros" and not RE_URGENCIA_ALTA.search(limpo):
+        saida["motivo"] = "Parece comentario generico, sem pedido concreto identificavel."
+        return saida
+
     saida["tema"] = tema
 
     bairro = detectar_bairro(bruto)
