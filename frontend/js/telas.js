@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Telas do ValorPúblico / "Newsroom" (plano 13 §4, plano 12 §4).
  *
  * Diferenças em relacao ao Assessor (plano 12 §2):
@@ -36,6 +36,9 @@ const estado = {
   discursoGovernador: null,
   semanaGovernador: "",
   simulacaoGovernador: null,
+  discursoInterino: null,
+  semanaInterino: "",
+  varianteInterino: 0,
   varianteGovernador: 0,
 };
 const graficos = new Map();
@@ -206,10 +209,18 @@ export async function carregar(db) {
       "agente-governador-otaviano-pivetta"
     );
     estado.simulacaoGovernador = simGov.doc;
+    const interino = await lerDiscursoAgente(
+      db,
+      "agente-interino-max-russi"
+    );
+    estado.discursoInterino = interino.doc;
+    estado.semanaInterino = interino.semana;
   } else {
     estado.discursoGovernador = null;
     estado.semanaGovernador = "";
     estado.simulacaoGovernador = null;
+    estado.discursoInterino = null;
+    estado.semanaInterino = "";
   }
   renderizar();
 }
@@ -223,6 +234,7 @@ export function renderizar() {
   renderizarSemana(dados);
   renderizarGovernadorDiscurso();
   renderizarRecepcaoGovernador();
+  renderizarInterinoDiscurso();
   renderizarRedes(dados);
   renderizarConformidade(dados);
   renderizarTendencias(dados);
@@ -754,6 +766,11 @@ if (typeof document !== "undefined") {
       window.print();
       setTimeout(() => document.body.classList.remove("print-semana"), 300);
     }
+    if (evento.target.closest("#btnCopiarDiscursoInterino")) {
+      if (textoInterinoAtual) {
+        navigator.clipboard?.writeText(textoInterinoAtual).catch(() => {});
+      }
+    }
     if (evento.target.closest("#btnCopiarDiscursoGovernador")) {
       if (textoGovernadorAtual) {
         navigator.clipboard?.writeText(textoGovernadorAtual).catch(() => {});
@@ -985,3 +1002,58 @@ if (typeof document !== "undefined") {
 }
 
 export default { carregar, renderizar, redimensionar };
+
+let textoInterinoAtual = "";
+
+function renderizarInterinoDiscurso() {
+  const alvo = document.getElementById("discursoInterino");
+  if (!alvo) return;
+  const disc = estado.discursoInterino;
+  const btn = document.getElementById("btnCopiarDiscursoInterino");
+  const variantes = Array.isArray(disc?.variantes) ? disc.variantes : [];
+  if (!variantes.length) {
+    textoInterinoAtual = "";
+    alvo.innerHTML =
+      '<p class="grafico-leitura">O discurso do governador interino desta semana ainda não foi gerado.</p>';
+    if (btn) btn.disabled = true;
+    return;
+  }
+  const idx = Math.min(estado.varianteInterino, variantes.length - 1);
+  estado.varianteInterino = idx;
+  const atual = variantes[idx] || {};
+  const texto = atual.tribuna || atual.texto || "";
+  textoInterinoAtual = texto;
+  const abas = variantes
+    .map(
+      (v, i) =>
+        `<button class="disc-aba${i === idx ? " ativo" : ""}" type="button" data-disc-interino="${i}">${escapar(v.angulo || v.id || `Variante ${i + 1}`)}</button>`
+    )
+    .join("");
+  const fontes = (atual.fontes || [])
+    .slice(0, 10)
+    .map(
+      (f) =>
+        `<li>${escapar(f.veiculo || f.fonte || "Fonte")}${f.data ? " · " + escapar(String(f.data).slice(0, 10)) : ""}${f.url ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>` : ""}</li>`
+    )
+    .join("");
+  alvo.innerHTML =
+    `<div class="disc-tabs" role="tablist">${abas}</div>` +
+    `<article class="disc-texto-ativo">` +
+    `<div class="disc-meta"><span>${escapar(disc.semana || estado.semanaInterino || "")}</span><span>${escapar(disc.modelo || "IA")}</span></div>` +
+    `<p>${escapar(texto).replace(/\n/g, "</p><p>")}</p>` +
+    (atual.video ? `<details class="disc-extra"><summary>Versão para vídeo (60s)</summary><p>${escapar(atual.video)}</p></details>` : "") +
+    (atual.post ? `<details class="disc-extra"><summary>Versão para post</summary><p>${escapar(atual.post)}</p></details>` : "") +
+    (fontes ? `<div class="disc-fontes"><strong>Fontes</strong><ul>${fontes}</ul></div>` : "") +
+    `<p class="disc-aviso">Rascunho gerado por IA — confira as fontes antes de usar.</p>` +
+    `</article>`;
+  if (btn) btn.disabled = false;
+  alvo.querySelectorAll("[data-disc-interino]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      estado.varianteInterino = Number(botao.dataset.discInterino);
+      renderizarInterinoDiscurso();
+    });
+  });
+}
+
+
+
