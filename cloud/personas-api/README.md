@@ -49,3 +49,30 @@ Depois faça o deploy do Hosting. O `personas.js` lê essa meta e habilita o cha
 - O plano free hiberna após inatividade; a primeira pergunta pode demorar ~30 s.
 - A API valida Firebase ID token e `orgao` (governo-mt/admin).
 - A chave DeepSeek e o JSON da service account são secrets do Render; não vão para o repo.
+
+## Cloud Run (Blaze ativo)
+
+Pré-requisitos (com sua conta **owner**, não a service account):
+
+```powershell
+gcloud auth login
+gcloud config set project valorpublico-b1e6d
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
+```
+
+Depois:
+
+```powershell
+cd D:\Dev\CerraClipping\ValorPublico\cloud\personas-api
+.\deploy.ps1
+```
+
+O script:
+- lê a chave do `.env` local (nunca imprime);
+- cria/atualiza o segredo `deepseek-api-key`;
+- concede `secretAccessor` e `datastore.viewer` à service account do Cloud Run;
+- publica o serviço `personas-api` em `southamerica-east1` com `--allow-unauthenticated` (a API valida o Firebase ID token);
+- imprime a URL para colocar no `<meta name="personas-api">`.
+
+Se a conta ativa for `firebase-adminsdk-*`, o script para e pede `gcloud auth login`
+(essa SA não tem permissão de Cloud Run/Service Usage).

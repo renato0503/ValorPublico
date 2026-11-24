@@ -6,6 +6,27 @@
 )
 
 $ErrorActionPreference = "Stop"
+
+$conta = (gcloud auth list --filter=status:ACTIVE --format="value(account)" 2>$null | Select-Object -First 1)
+if (-not $conta) {
+  Write-Host "Nenhuma conta gcloud ativa." -ForegroundColor Red
+  Write-Host "Rode: gcloud auth login"
+  exit 1
+}
+if ($conta -like "firebase-adminsdk-*@*") {
+  Write-Host "A conta ativa é uma service account do Firebase ($conta)." -ForegroundColor Yellow
+  Write-Host "Ela não tem permissão de Cloud Run/Cloud Build/Service Usage."
+  Write-Host "Use sua conta de owner:"
+  Write-Host "  gcloud auth login"
+  Write-Host "  gcloud config set project $Project"
+  exit 1
+}
+gcloud auth print-access-token *> $null
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "A sessão do gcloud expirou. Rode: gcloud auth login" -ForegroundColor Red
+  exit 1
+}
+
 $envFile = Join-Path $PSScriptRoot ".env"
 if (-not (Test-Path $envFile)) { throw "Crie cloud/personas-api/.env com DEEPSEEK_API_KEY antes de deployar." }
 $linha = Get-Content $envFile | Where-Object { $_ -like "DEEPSEEK_API_KEY=*" } | Select-Object -First 1
