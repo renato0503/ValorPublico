@@ -7,6 +7,8 @@ import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
 import * as telas from "./telas.js";
 import * as governo from "./governo.js";
+import * as simulacao from "./simulacao.js";
+import * as personas from "./personas.js";
 import { renderMenu, marcarAtivo } from "./menu.js";
 import { redimensionarGraficos } from "./componentes.js";
 import {
@@ -397,7 +399,8 @@ function renderizarLexical() {
     limparGrafo();
     limparGrafo = null;
   }
-  const aba = document.querySelector(".lex-tab.ativo")?.dataset.lex || "afc";
+  lexical.limparLexicais();
+  const aba = document.querySelector(".lex-tab.ativo")?.dataset.lex || "chd";
   if (aba === "chd") return renderizarChd();
   if (aba === "dendrograma") return renderizarDendrograma();
   if (aba === "grafo") return renderizarGrafo();
@@ -408,9 +411,14 @@ function renderizarAfc() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.afc;
   conteudo.innerHTML =
+    lexical.leituraLexical("afc", dados) +
     `<div class="lex-afc-box" id="canvasAfc" role="img" aria-label="Mapa de proximidade (AFC)"></div>` +
-    `<div class="lex-dica">Arraste para mover e use a roda para dar zoom. Palavras em amarelo; períodos em azul.
-     <button class="btn-texto" type="button" data-lex-dados="afc">Ver dados</button></div>`;
+    `<div class="lex-controles">
+       <span class="lex-dica-texto">Arraste para mover · roda para zoom · passe o mouse para detalhes</span>
+       <button class="btn-texto" type="button" data-lex-dados="afc">Ver dados</button>
+       <button class="btn-texto" type="button" data-lex-csv="afc">Baixar CSV</button>
+       <button class="btn-texto" type="button" data-lex-reset="canvasAfc">Resetar zoom</button>
+     </div>`;
   lexical.desenharAfc($("canvasAfc"), dados);
 }
 
@@ -418,10 +426,14 @@ function renderizarChd() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.chd;
   conteudo.innerHTML =
+    lexical.leituraLexical("chd", dados) +
     `<div id="chdCards"></div>` +
     `<div class="lex-afc-box" id="chdBarras" role="img" aria-label="Participação de cada grupo de assuntos"></div>` +
-    `<div class="lex-dica">Cada grupo reúne textos que usam as mesmas palavras. O tamanho da palavra indica o χ².
-     <button class="btn-texto" type="button" data-lex-dados="chd">Ver dados</button></div>`;
+    `<div class="lex-controles">
+       <span class="lex-dica-texto">Clique em um grupo para ver as palavras típicas · barras = participação</span>
+       <button class="btn-texto" type="button" data-lex-dados="chd">Ver dados</button>
+       <button class="btn-texto" type="button" data-lex-csv="chd">Baixar CSV</button>
+     </div>`;
   lexical.desenharChd($("chdCards"), $("chdBarras"), dados);
 }
 
@@ -429,9 +441,14 @@ function renderizarDendrograma() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.dendrograma;
   conteudo.innerHTML =
+    lexical.leituraLexical("dendrograma", dados, estado.lexical?.chd) +
     `<div class="lex-dendro-box" id="canvasDendro" role="img" aria-label="Dendrograma dos grupos de assuntos"></div>` +
-    `<div class="lex-dica">Cada linha mostra duas ideias que se juntam; quanto mais à direita a fusão, menos parecidas elas são.
-     Use a roda para dar zoom e arraste para navegar.</div>`;
+    `<div class="lex-controles">
+       <span class="lex-dica-texto">Roda para zoom · arraste para navegar · barra inferior para percorrer</span>
+       <button class="btn-texto" type="button" data-lex-dados="dendrograma">Ver dados</button>
+       <button class="btn-texto" type="button" data-lex-csv="dendrograma">Baixar CSV</button>
+       <button class="btn-texto" type="button" data-lex-reset="canvasDendro">Resetar zoom</button>
+     </div>`;
   lexical.desenharDendrograma($("canvasDendro"), dados, estado.lexical?.chd);
 }
 
@@ -439,9 +456,14 @@ function renderizarGrafo() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.grafo;
   conteudo.innerHTML =
+    lexical.leituraLexical("grafo", dados) +
     `<div class="lex-grafo-box" id="canvasGrafo" role="img" aria-label="Rede de palavras"></div>` +
-    `<div class="lex-dica">Palavras ligadas quando aparecem juntas. Arraste os nós, use a roda para dar zoom e passe o mouse para destacar as vizinhas.
-     <button class="btn-texto" type="button" data-lex-dados="grafo">Ver dados</button></div>`;
+    `<div class="lex-controles">
+       <span class="lex-dica-texto">Arraste os nós · roda para zoom · destaque de vizinhas</span>
+       <button class="btn-texto" type="button" data-lex-dados="grafo">Ver dados</button>
+       <button class="btn-texto" type="button" data-lex-csv="grafo">Baixar CSV</button>
+       <button class="btn-texto" type="button" data-lex-reset="canvasGrafo">Resetar zoom</button>
+     </div>`;
   limparGrafo = null;
   lexical.desenharGrafo($("canvasGrafo"), dados);
 }
@@ -496,6 +518,12 @@ async function aplicarFiltros() {
           );
           governo.carregar(estado.db).catch((erro) =>
             console.warn("[Governo] falha ao carregar:", erro?.message || erro)
+          );
+          simulacao.carregar(estado.db, estado.orgaoInfo).catch((erro) =>
+            console.warn("[Simulação] falha ao carregar:", erro?.message || erro)
+          );
+          personas.carregar(estado.db, estado.orgaoInfo).catch((erro) =>
+            console.warn("[Personas] falha ao carregar:", erro?.message || erro)
           );
         } else {
           renderizarVazio();
@@ -1474,18 +1502,68 @@ function fecharSeletorOrgao() {
 /* ---------- graficos lexicais: "ver dados" + resize ---------- */
 
 document.addEventListener("click", (evento) => {
-  const botao = evento.target.closest("[data-lex-dados]");
-  if (!botao) return;
-  evento.preventDefault();
-  const tipo = botao.dataset.lexDados;
-  const dados = estado.lexical?.[tipo === "chd" ? "chd" : tipo] || null;
-  const anterior = document.getElementById("lexDadosTabela");
-  if (anterior) anterior.remove();
-  const caixa = document.createElement("div");
-  caixa.id = "lexDadosTabela";
-  caixa.className = "lex-dados";
-  caixa.innerHTML = lexical.tabelaDadosLexicais(tipo, dados);
-  botao.closest(".lex-dica")?.appendChild(caixa);
+  const botaoDados = evento.target.closest("[data-lex-dados]");
+  if (botaoDados) {
+    evento.preventDefault();
+    const tipo = botaoDados.dataset.lexDados;
+    const dados = estado.lexical?.[tipo] || null;
+    const anterior = document.getElementById("lexDadosTabela");
+    if (anterior) anterior.remove();
+    const caixa = document.createElement("div");
+    caixa.id = "lexDadosTabela";
+    caixa.className = "lex-dados";
+    caixa.innerHTML = lexical.tabelaDadosLexicais(tipo, dados);
+    const conteudo = document.getElementById("lexicalConteudo");
+    if (conteudo) {
+      conteudo.appendChild(caixa);
+      caixa.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    return;
+  }
+
+  const botaoCsv = evento.target.closest("[data-lex-csv]");
+  if (botaoCsv) {
+    evento.preventDefault();
+    const tipo = botaoCsv.dataset.lexCsv;
+    const csv = lexical.csvLexical(tipo, estado.lexical?.[tipo] || null);
+    if (!csv) return;
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `valorpublico-lexical-${tipo}-${(estado.orgao || "escopo")}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    return;
+  }
+
+  const botaoReset = evento.target.closest("[data-lex-reset]");
+  if (botaoReset) {
+    evento.preventDefault();
+    lexical.resetarZoom(botaoReset.dataset.lexReset);
+    return;
+  }
+
+  const classe = evento.target.closest(".lex-classe[data-classe]");
+  if (classe) {
+    const numero = Number(classe.dataset.classe);
+    const classes = estado.lexical?.chd?.classes || [];
+    const alvo = classes.find((c) => Number(c.classe) === numero);
+    const leitura = document.getElementById("lexLeitura");
+    if (alvo && leitura) {
+      classe.parentElement
+        ?.querySelectorAll(".lex-classe")
+        .forEach((c) => c.classList.remove("selecionado"));
+      classe.classList.add("selecionado");
+      const palavras = (alvo.palavras || [])
+        .slice(0, 12)
+        .map((p) => `${p.palavra} (χ² ${p.chi2}, ${p.frequencia}×)`)
+        .join(" · ");
+      leitura.innerHTML =
+        `<strong>Grupo ${alvo.classe} — ${alvo.pct_segmentos}% dos segmentos</strong>` +
+        `<p>Este grupo reúne ${alvo.n_segmentos || 0} segmentos. As palavras mais típicas são: ${palavras}.</p>` +
+        `<p class="lex-como-ler">Clique em outro grupo para comparar. O χ² mede o quanto a palavra é característica deste grupo.</p>`;
+    }
+  }
 });
 
 window.addEventListener("resize", () => {
@@ -1695,12 +1773,14 @@ async function bootstrap() {
     redimensionarGraficos();
     telas.redimensionar();
     governo.redimensionar();
+    simulacao.redimensionar();
   });
   document.addEventListener("rota:changed", () => {
     registrarExplicacoes();
     marcarAtivo();
     telas.redimensionar();
     governo.redimensionar();
+    simulacao.redimensionar();
   });
   aoMudarFiltros(async () => {
     if (estado.db) await telas.carregar(estado.db);
@@ -1731,6 +1811,8 @@ window.__app_test = {
   renderizarParlamentaresPorCasa,
   telas,
   governo,
+  simulacao,
+  personas,
   irPara: (rota) => window.__router?.irPara(rota),
 };
 

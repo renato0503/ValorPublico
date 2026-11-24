@@ -24,6 +24,7 @@ import argparse
 import json
 import sys
 import time
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -32,15 +33,37 @@ sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 from cerra_nucleo.core.logger import get_logger
 from cerra_nucleo.processing import corpus_iramuteq, reinert, textos_graficos
 from config import settings
+from core.orgaos import orgao_do_agente
 
 logger = get_logger(__name__)
 
 # Mapa casa -> como filtrar os agentes. As camaras municipais usam `cidade`
 # (o seed original nao preencheu `casa`); a ALMT usa `casa`.
 CASAS = {
-    "cuiaba": {"campo": "cidade", "valor": "Cuiaba", "rotulo": "Câmara Municipal de Cuiabá"},
-    "varzea-grande": {"campo": "cidade", "valor": "Varzea Grande", "rotulo": "Câmara Municipal de Várzea Grande"},
-    "almt": {"campo": "casa", "valor": "ALMT", "rotulo": "Assembleia Legislativa de Mato Grosso"},
+    "cuiaba": {
+        "campo": "cidade",
+        "valor": "Cuiaba",
+        "rotulo": "Câmara Municipal de Cuiabá",
+        "orgao": "cuiaba",
+    },
+    "varzea-grande": {
+        "campo": "cidade",
+        "valor": "Varzea Grande",
+        "rotulo": "Câmara Municipal de Várzea Grande",
+        "orgao": "varzea-grande",
+    },
+    "almt": {
+        "campo": "casa",
+        "valor": "ALMT",
+        "rotulo": "Assembleia Legislativa de Mato Grosso",
+        "orgao": "almt",
+    },
+    "governo-mt": {
+        "campo": "casa",
+        "valor": "Governo MT",
+        "rotulo": "Governo do Estado de Mato Grosso",
+        "orgao": "governo-mt",
+    },
 }
 
 ANGULOS = [
@@ -52,6 +75,48 @@ ANGULOS = [
 
 def semana_atual() -> str:
     return datetime.now(timezone.utc).strftime("%G-W%V")
+
+
+def orgao_do_escopo(db, escopo: str) -> str:
+    """Resolve o `orgao` do escopo para carimbar os docs semanais."""
+    if escopo.startswith("casa-"):
+        return CASAS.get(escopo[len("casa-") :], {}).get("orgao", "")
+    if escopo.startswith("agente-"):
+        snap = db.collection("agentes_publicos").document(escopo[len("agente-") :]).get()
+        return orgao_do_agente(snap.to_dict() or {}) if snap.exists else ""
+    return ""
+
+
+def carregar_jsonl(caminho: str, orgao: str = "governo-mt") -> list[dict]:
+    """Le um JSONL local (ex.: data/governo_mt/noticias-*.jsonl).
+
+    Permite rodar o pipeline semanal sem gastar cota de leitura do Firestore.
+    """
+    itens: list[dict] = []
+    for linha in Path(caminho).read_text(encoding="utf-8").splitlines():
+        if not linha.strip():
+            continue
+        item = json.loads(linha)
+        texto = f"{item.get('titulo', '')}\n{item.get('resumo', '')}".strip()
+        itens.append(
+            {
+                "texto_limpo": texto,
+                "titulo": item.get("titulo", ""),
+                "data_publicacao": item.get("data"),
+                "temas": item.get("temas") or [],
+                "secretarias": item.get("secretarias") or [],
+                "agente_id": "governo-mt",
+                "casa": "Governo MT",
+                "plataforma": "Web",
+                "tipo": "Noticia",
+                "sentimento": item.get("sentimento", ""),
+                "autor": item.get("veiculo", ""),
+                "veiculo": item.get("veiculo", ""),
+                "url": item.get("url", ""),
+                "extra_fonte_imagem": False,
+            }
+        )
+    return itens
 
 
 def coletar_clippings(db, escopo: str, dias: int = 400) -> tuple[list[dict], str, str]:
@@ -100,6 +165,10 @@ def coletar_clippings(db, escopo: str, dias: int = 400) -> tuple[list[dict], str
             saida.append(
                 {
                     "texto_limpo": dados.get("texto_limpo", ""),
+                    "titulo": dados.get("titulo", ""),
+                    "data_publicacao": bruto,
+                    "temas": dados.get("categorias") or dados.get("temas") or [],
+                    "secretarias": dados.get("secretarias") or [],
                     "agente_id": ref.id,
                     "casa": agente.get("casa", ""),
                     "plataforma": dados.get("plataforma", ""),
@@ -115,8 +184,35 @@ def coletar_clippings(db, escopo: str, dias: int = 400) -> tuple[list[dict], str
 
 
 def montar_briefing(escopo: str, nivel: str, rotulo: str, chd: dict, est: dict, itens: list[dict]) -> dict:
-    """Briefing estruturado: **so fatos** com fonte (plano 09 §3)."""
+    """Briefing estruturado: **fatos da semana** com fonte (plano 09 §3)."""
     classes = chd["classes"][:6]
+
+    def _data(item):
+        return str(item.get("data_publicacao") or "")
+
+    recentes = sorted(itens, key=_data, reverse=True)[:12]
+    fatos = []
+    for item in recentes:
+        titulo = (item.get("titulo") or item.get("texto_limpo") or "").strip().split("\n")[0][:180]
+        if not titulo:
+            continue
+        fonte = item.get("veiculo") or item.get("autor") or "fonte"
+        data = _data(item)[:10]
+        fatos.append(
+            {
+                "id": item.get("url") or titulo,
+                "texto": titulo,
+                "fonte": f"{fonte}, {data}" if data else fonte,
+            }
+        )
+
+    sentimentos = Counter(str(i.get("sentimento") or "neutro") for i in itens)
+    temas = Counter()
+    for item in itens:
+        for tema in item.get("temas") or ([item.get("tema")] if item.get("tema") else []):
+            if tema:
+                temas[str(tema)] += 1
+
     return {
         "escopo": escopo,
         "nivel": nivel,
@@ -133,18 +229,15 @@ def montar_briefing(escopo: str, nivel: str, rotulo: str, chd: dict, est: dict, 
             }
             for c in classes
         ],
-        "fatos": [
-            {
-                "id": f"c{c['id']}",
-                "texto": f"O grupo '{c['forma']}' ocupa {c['pct']:.0f}% dos segmentos",
-                "fonte": "Análise lexical da semana (IRaMuTeQ/rainette)",
-            }
-            for c in classes
-        ],
+        "fatos": fatos,
+        "noticias": fatos,
         "volume": {
-            "mencoes": sum(1 for i in itens if i["sentimento"] != "negativo" or True),
-            "negativas": sum(1 for i in itens if i["sentimento"] == "negativo"),
+            "mencoes": len(itens),
+            "positivas": sentimentos.get("positivo", 0),
+            "negativas": sentimentos.get("negativo", 0),
+            "neutras": sentimentos.get("neutro", 0),
         },
+        "temas_top": [{"tema": t, "total": n} for t, n in temas.most_common(8)],
         "demandas_top": [],
         "tendencias": [],
     }
@@ -253,6 +346,11 @@ def main() -> int:
     parser.add_argument("--modelo", default=settings.IA_LOCAL_MODELO)
     parser.add_argument("--sem-firestore", action="store_true", help="nao grava no Firestore")
     parser.add_argument("--sem-discurso", action="store_true", help="pula a geracao do discurso")
+    parser.add_argument(
+        "--jsonl",
+        default="",
+        help="Le um JSONL local (ex.: data/governo_mt/noticias-2026-11-24.jsonl) e evita ler o Firestore.",
+    )
     args = parser.parse_args()
 
     from core.firebase_client import init_firebase
@@ -273,7 +371,17 @@ def main() -> int:
     for escopo in escopos:
         logger.info("=== %s ===", escopo)
         inicio = time.monotonic()
-        itens, nivel, rotulo = coletar_clippings(db, escopo)
+        if args.jsonl:
+            itens = carregar_jsonl(args.jsonl)
+            nivel = "casa"
+            slug = escopo[len("casa-") :] if escopo.startswith("casa-") else ""
+            rotulo = CASAS.get(slug, {}).get(
+                "rotulo", "Governo do Estado de Mato Grosso"
+            )
+            orgao = CASAS.get(slug, {}).get("orgao", "governo-mt")
+        else:
+            itens, nivel, rotulo = coletar_clippings(db, escopo)
+            orgao = orgao_do_escopo(db, escopo)
         corpus = corpus_iramuteq.montar_corpus(itens)
         if len(corpus) < 5:
             logger.warning("%s: corpus insuficiente (%d itens) — pulando.", escopo, len(corpus))
@@ -296,8 +404,10 @@ def main() -> int:
         variantes = [] if args.sem_discurso else gerar_discursos(briefing, nivel, args.modelo)
 
         relatorio = montar_relatorio(escopo, nivel, rotulo, chd, est, textos)
+        relatorio["orgao"] = orgao
         discurso = {
             "escopo": escopo,
+            "orgao": orgao,
             "nivel": nivel,
             "semana": semana,
             "gerado_em": datetime.now(timezone.utc).isoformat(),
@@ -320,9 +430,17 @@ def main() -> int:
         )
 
         if not args.sem_firestore and chd["ok"]:
-            db.collection("relatorio_semanal").document(f"{escopo}__{semana}").set(relatorio)
-            db.collection("discurso_semanal").document(f"{escopo}__{semana}").set(discurso)
-            logger.info("%s: gravado no Firestore (%s).", escopo, semana)
+            try:
+                db.collection("relatorio_semanal").document(f"{escopo}__{semana}").set(relatorio)
+                db.collection("discurso_semanal").document(f"{escopo}__{semana}").set(discurso)
+                logger.info("%s: gravado no Firestore (%s).", escopo, semana)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning(
+                    "%s: Firestore indisponivel/cota (%s). JSON local preservado em %s.",
+                    escopo,
+                    str(exc)[:120],
+                    pasta,
+                )
 
         duracao = time.monotonic() - inicio
         logger.info("%s: %.1f s | %d classes | %d variantes", escopo, duracao, len(chd["classes"]), len(variantes))

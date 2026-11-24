@@ -233,31 +233,76 @@ def _escopos(clippings: list[dict]) -> dict[str, tuple[dict, list[dict]]]:
     return escopos
 
 
+def carregar_jsonl(caminho: str) -> list[dict]:
+    """Le um JSONL local do Governo sem gastar cota de leitura do Firestore."""
+    import json
+
+    itens: list[dict] = []
+    for linha in Path(caminho).read_text(encoding="utf-8").splitlines():
+        if not linha.strip():
+            continue
+        item = json.loads(linha)
+        itens.append(
+            {
+                "agente_id": "governo-mt",
+                "cidade": "Governo de Mato Grosso",
+                "casa": "Governo MT",
+                "orgao": "governo-mt",
+                "nome_agente": "Governo de Mato Grosso",
+                "texto_limpo": f"{item.get('titulo', '')}\n{item.get('resumo', '')}".strip(),
+                "titulo": item.get("titulo", ""),
+                "data_publicacao": item.get("data"),
+                "plataforma": "Web",
+                "tipo": "Noticia",
+                "sentimento": item.get("sentimento", ""),
+                "url": item.get("url", ""),
+            }
+        )
+    return itens
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Publica analise lexical por escopo no Firestore.")
     parser.add_argument("--n-classes", type=int, default=4, help="Classes na CHD (padrao 4).")
     parser.add_argument("--niveis", type=int, default=8, help="Niveis do dendrograma (padrao 8).")
+    parser.add_argument(
+        "--jsonl",
+        default="",
+        help="Le um JSONL local (ex.: data/governo_mt/noticias-*.jsonl) e evita ler o Firestore.",
+    )
+    parser.add_argument(
+        "--apenas",
+        default="",
+        help="Lista de escopos a publicar (ex.: cidade-governo-de-mato-grosso).",
+    )
     args = parser.parse_args()
 
     db = init_firebase()
-    clippings = []
-    for agente in db.collection(settings.COLLECTION_AGENTES).stream():
-        ad = agente.to_dict()
-        nome_agente = ad.get("nome_urna") or ad.get("nome") or agente.id
-        for clip in agente.reference.collection(settings.SUBCOLLECTION_CLIPPINGS).stream():
-            clippings.append(
-                {
-                    "agente_id": agente.id,
-                    "cidade": ad.get("cidade", ""),
-                    "casa": ad.get("casa", ""),
-                    "orgao": orgao_do_agente(ad),
-                    "nome_agente": nome_agente,
-                    **clip.to_dict(),
-                }
-            )
+    if args.jsonl:
+        clippings = carregar_jsonl(args.jsonl)
+    else:
+        clippings = []
+        for agente in db.collection(settings.COLLECTION_AGENTES).stream():
+            ad = agente.to_dict()
+            nome_agente = ad.get("nome_urna") or ad.get("nome") or agente.id
+            for clip in agente.reference.collection(settings.SUBCOLLECTION_CLIPPINGS).stream():
+                clippings.append(
+                    {
+                        "agente_id": agente.id,
+                        "cidade": ad.get("cidade", ""),
+                        "casa": ad.get("casa", ""),
+                        "orgao": orgao_do_agente(ad),
+                        "nome_agente": nome_agente,
+                        **clip.to_dict(),
+                    }
+                )
     logger.info("Corpus carregado: %d clippings.", len(clippings))
 
     escopos = _escopos(clippings)
+    if args.apenas:
+        alvos = {x.strip() for x in args.apenas.split(",") if x.strip()}
+        escopos = {k: v for k, v in escopos.items() if k in alvos}
+        logger.info("Escopos filtrados: %s", ", ".join(escopos.keys()) or "(nenhum)")
     total = len(escopos)
     publicados = 0
     for i, (chave, (escopo_meta, clips)) in enumerate(escopos.items(), start=1):

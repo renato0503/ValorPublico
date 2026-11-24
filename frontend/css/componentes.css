@@ -386,3 +386,43 @@
 .gov-lista li { padding: 6px 0; border-bottom: 1px solid var(--border, rgba(255,255,255,.1)); }
 .gov-data { color: var(--texto-mutado, #94a3b8); margin-right: 8px; font-variant-numeric: tabular-nums; }
 .gov-vazio { color: var(--texto-mutado, #94a3b8); font-size: 13px; }
+
+/* ---------- Leitura e controles da análise lexical ---------- */
+.lex-leitura {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border, rgba(148,163,184,.25));
+  border-left: 3px solid var(--bronze, #7a541a);
+  border-radius: 8px;
+  background: rgba(122, 84, 26, 0.06);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.lex-leitura strong { display: block; margin-bottom: 4px; color: var(--navy, #1d3557); }
+.lex-leitura p { margin: 0 0 6px; }
+.lex-leitura .lex-como-ler { font-size: 0.8rem; color: var(--texto-mutado, #94a3b8); }
+html[data-tema="escuro"] .lex-leitura {
+  background: rgba(122, 84, 26, 0.16);
+  border-color: var(--border);
+}
+html[data-tema="escuro"] .lex-leitura strong { color: var(--texto, #f2ecdf); }
+.lex-controles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0 14px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border, rgba(148,163,184,.2));
+}
+.lex-dica-texto {
+  flex: 1 1 240px;
+  font-size: 0.78rem;
+  color: var(--texto-mutado, #94a3b8);
+}
+.lex-classe.selecionado {
+  border-color: var(--bronze, #7a541a);
+  box-shadow: 0 0 0 2px rgba(122, 84, 26, 0.18);
+}
+.lex-classe:focus-visible { outline: 2px solid var(--azul, #2563eb); outline-offset: 2px; }
+.lex-dados { margin-top: 12px; overflow-x: auto; }

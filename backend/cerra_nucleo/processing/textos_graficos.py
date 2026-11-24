@@ -224,14 +224,17 @@ def escrever_texto(
 # --------------------------------------------------------------------------
 # Discurso (plano 09 §5)
 # --------------------------------------------------------------------------
-PROMPT_DISCURSO = """Você redige o discurso de um agente público a partir do briefing.
+PROMPT_DISCURSO = """Você redige um discurso institucional a partir do briefing da semana.
 
 Regras obrigatórias:
-- Use SOMENTE os fatos do briefing. Se não está no briefing, não escreva.
+- Use SOMENTE os fatos do briefing (notícias, números, fontes). Se não está no briefing, não escreva.
+- NÃO fale sobre metodologia, IRaMuTeQ, classes, "termo", "segmentos" ou "análise lexical".
+- Comece pelo que aconteceu na semana: entregas, obras, anúncios, decisões e crises.
 - Cite a fonte entre parênteses quando usar um número (ex.: (G1, 22/11)).
 - Português natural, falado, ~5 minutos de tribuna.
 - Sem promessa impossível de cumprir pelo cargo.
 - Não ataque pessoal.
+- Se o briefing tiver poucas notícias, seja honesto e fale do que há, sem inventar.
 
 BRIEFING (JSON):
 {briefing}

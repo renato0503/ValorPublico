@@ -219,6 +219,29 @@ service cloud.firestore {
     }
 
     // ------------------------------------------------------------------
+    // Simulação (MiroFish/personas) e perfis das personas
+    // ------------------------------------------------------------------
+    // `simulacao_semanal/{escopo}__{semana}`: relatório de recepção.
+    // `personas/{id}`: perfil sintético; leitura só do órgão/admin.
+    match /simulacao_semanal/{docId} {
+      allow read: if acessoPublico()
+        || usuarioEhAdmin()
+        || (usuarioComAcesso()
+            && orgaoDoUsuario() != ''
+            && orgaoDoUsuario() == orgaoDoDoc());
+      allow write: if false;
+    }
+
+    match /personas/{docId} {
+      allow read: if acessoPublico()
+        || usuarioEhAdmin()
+        || (usuarioComAcesso()
+            && orgaoDoUsuario() != ''
+            && orgaoDoUsuario() == orgaoDoDoc());
+      allow write: if false;
+    }
+
+    // ------------------------------------------------------------------
     // Plano 13 — fila de demandas (Base / Ouvidoria)
     // ------------------------------------------------------------------
     // `demandas/{id}`: pedido do cidadao. **Privado por escopo**: o gabinete

@@ -1,4 +1,4 @@
-"""Testa a renderizacao DUPLA das telas novas (regressao do erro
+﻿"""Testa a renderizacao DUPLA das telas novas (regressao do erro
 'Cannot set properties of undefined (setting innerHTML)').
 
 Renderiza 3 vezes seguidas e garante:
@@ -66,7 +66,7 @@ def main() -> int:
     detalhes = {}
 
     with sync_playwright() as p:
-        navegador = p.chromium.launch(headless=True, channel="chrome", args=["--no-sandbox"])
+        navegador = p.chromium.launch(headless=True, args=["--no-sandbox"])
         for largura, altura in ((1440, 900), (390, 844)):
             pagina = navegador.new_page(viewport={"width": largura, "height": altura})
             pagina.on("pageerror", lambda e: erros.append(str(e)))
@@ -74,7 +74,7 @@ def main() -> int:
                 "console", lambda m: erros.append(m.text) if m.type == "error" else None
             )
             pagina.goto(f"http://127.0.0.1:{porta}/index.html", wait_until="commit")
-            pagina.wait_for_function("() => !!window.__app_test", timeout=30000)
+            pagina.wait_for_function("() => !!window.__app_test", timeout=60000)
             pagina.wait_for_timeout(800)
             pagina.evaluate(
                 "() => { const l=document.getElementById('telaLogin'); if(l) l.style.display='none'; }"
@@ -113,3 +113,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+

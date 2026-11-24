@@ -30,7 +30,7 @@ const ITENS = {
 
 const MENUS = {
   "governo-mt": {
-    principal: ["governo", "governador", "semana", "analise", "relatorios"],
+    principal: ["governo", "governador", "semana", "analise", "simulacao", "personas", "relatorios"],
     mais: ["clipping", "imagem", "conformidade", "tendencias", "redes", "sistema"],
   },
   default: {

@@ -71,6 +71,16 @@ const TELAS = {
     pergunta: "Quais são os mundos de sentido e os sinais de risco?",
     legado: "inteligencia",
   },
+  simulacao: {
+    titulo: "Simulação",
+    eyebrow: "Recepção pelas 12 personas",
+    pergunta: "Como as personas reagiram ao discurso?",
+  },
+  personas: {
+    titulo: "Personas",
+    eyebrow: "Chat com personas",
+    pergunta: "O que cada persona perguntaria ou responderia?",
+  },
   tendencias: {
     titulo: "Tendências",
     eyebrow: "Interesse da população",
@@ -93,6 +103,7 @@ const TELAS = {
 };
 
 const APP = "ValorPúblico";
+const GOVMT_ONLY = new Set(["governo", "governador", "simulacao", "personas"]);
 
 function rotaDoHash() {
   const bruta = (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "").trim();
@@ -103,11 +114,7 @@ function aplicar(rota) {
   let alvo = TELAS[rota] ? rota : "edicao";
   // As telas do Executivo só existem na frente Governo de MT.
   const orgao = document.body.dataset.orgao || "";
-  if (
-    (alvo === "governo" || alvo === "governador") &&
-    orgao &&
-    orgao !== "governo-mt"
-  ) {
+  if (GOVMT_ONLY.has(alvo) && orgao && orgao !== "governo-mt") {
     alvo = "edicao";
   }
   const info = TELAS[alvo];

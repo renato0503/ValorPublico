@@ -51,6 +51,8 @@ COLLECTIONS = [
     "releases_ia",
     "relatorio_semanal",
     "discurso_semanal",
+    "simulacao_semanal",
+    "personas",
     "demandas",
 ]
 

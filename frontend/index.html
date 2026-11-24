@@ -488,8 +488,8 @@
           <span id="lexicalEscopo" class="lexical-escopo">Escopo: Todos</span>
         </div>
         <div class="lex-tabs" role="tablist" aria-label="Abas de análise lexical">
-          <button class="lex-tab ativo" data-lex="afc" role="tab">Mapa Fatorial (AFC)</button>
-          <button class="lex-tab" data-lex="chd" role="tab">Classes (CHD)</button>
+          <button class="lex-tab" data-lex="afc" role="tab">Mapa Fatorial (AFC)</button>
+          <button class="lex-tab ativo" data-lex="chd" role="tab">Classes (CHD)</button>
           <button class="lex-tab" data-lex="dendrograma" role="tab">Dendrograma</button>
           <button class="lex-tab" data-lex="grafo" role="tab">Grafo de Similaridade</button>
         </div>
@@ -759,6 +759,62 @@
             <thead><tr><th>Data</th><th>Notícia</th><th>Veículo</th><th></th></tr></thead>
             <tbody id="govTabelaGovernador"></tbody>
           </table>
+        </div>
+      </article>
+    </section>
+        </section>
+        <section class="tela" id="tela-simulacao" data-tela="simulacao">
+    <section class="grade-principal" aria-label="Indicadores da simulação">
+      <article class="card kpi" id="simKpiPersonas"></article>
+      <article class="card kpi" id="simKpiAdesao"></article>
+      <article class="card kpi" id="simKpiRejeicao"></article>
+      <article class="card kpi" id="simKpiPolarizacao"></article>
+    </section>
+    <section class="grade-secundaria" aria-label="Recepção pelas personas">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Recepção do discurso pelas 12 personas</h2>
+            <span class="painel-sub" id="simSemana">Simulação do Governo de MT</span>
+          </div>
+          <select id="simVariante" aria-label="Variante do discurso"></select>
+        </div>
+        <p class="selo-simulacao">Simulação (hipótese) — não é pesquisa. Uso interno.</p>
+        <div id="simPersonas" class="personas-grade"></div>
+        <div id="simFrasesRisco" class="sim-frases"></div>
+      </article>
+    </section>
+        </section>
+
+        <section class="tela" id="tela-personas" data-tela="personas">
+    <section class="grade-detalhe" aria-label="Personas do Governo">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Personas do Governo de MT</h2>
+            <span class="painel-sub" id="personasStatus">12 personas sintéticas</span>
+          </div>
+        </div>
+        <div id="personasGrade" class="personas-grade"></div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Conversar com uma persona</h2>
+            <span class="painel-sub">DeepSeek + RAG da persona, com citações</span>
+          </div>
+        </div>
+        <div class="persona-chat">
+          <label class="filtro">
+            <span class="filtro-rotulo">Persona</span>
+            <select id="chatPersona"></select>
+          </label>
+          <div id="chatMensagens" class="chat-mensagens"></div>
+          <form id="chatForm" class="chat-form">
+            <input id="chatPergunta" type="text" placeholder="Pergunte no lugar desta persona..." autocomplete="off" />
+            <button class="btn-atualizar" id="btnPerguntar" type="submit">Perguntar</button>
+          </form>
+          <p id="chatAviso" class="grafico-leitura">Resposta sintética de uma persona. Não é pesquisa nem opinião de pessoa real.</p>
         </div>
       </article>
     </section>

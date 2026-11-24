@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v18";
+﻿const CACHE_VERSION = "valorpublico-v20";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -18,6 +18,8 @@ const APP_SHELL = [
   "./js/orgaos.js",
   "./js/menu.js",
   "./js/governo.js",
+  "./js/simulacao.js",
+  "./js/personas.js",
   "./icons/favicon.svg",
   "./icons/icon-192.png",
   "./icons/icon-maskable-512.png",
@@ -94,5 +96,7 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
+
 
 

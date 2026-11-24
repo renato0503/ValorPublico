@@ -19,6 +19,8 @@ const COLECOES_NOVAS = [
   { nome: "imagens", doc: "abc123phash" },
   { nome: "relatorio_semanal", doc: "agente-agente-a__2026-W48", orgao: "cuiaba" },
   { nome: "discurso_semanal", doc: "agente-agente-a__2026-W48", orgao: "cuiaba" },
+  { nome: "simulacao_semanal", doc: "casa-governo-mt__2026-W48", orgao: "governo-mt" },
+  { nome: "personas", doc: "servidor-estadual", orgao: "governo-mt" },
   { nome: "demandas", doc: "agente-agente-a", orgao: "cuiaba" },
   { nome: "auditoria", doc: "2026-11-24T10:00:00" },
   { nome: "metricas_por_casa", doc: "camara-cuiaba", orgao: "cuiaba" },
@@ -141,6 +143,22 @@ async function testarColecoesNovas(ctx, helpers) {
     usuario("uid-admin").firestore().collection("metricas_por_secretaria").doc("saude").get());
   await deveBloquear("escrita em metricas_por_secretaria", () =>
     usuario("uid-governo").firestore().collection("metricas_por_secretaria").doc("saude").set({ a: 1 }));
+
+  // --- simulação e personas: só Governo/admin ---
+  await devePermitir("Governo le simulacao_semanal", () =>
+    usuario("uid-governo").firestore().collection("simulacao_semanal").doc("casa-governo-mt__2026-W48").get());
+  await deveBloquear("Camara NAO le simulacao_semanal do Governo", () =>
+    usuario("uid-agente").firestore().collection("simulacao_semanal").doc("casa-governo-mt__2026-W48").get());
+  await devePermitir("admin le simulacao_semanal", () =>
+    usuario("uid-admin").firestore().collection("simulacao_semanal").doc("casa-governo-mt__2026-W48").get());
+  await devePermitir("Governo le persona do proprio orgao", () =>
+    usuario("uid-governo").firestore().collection("personas").doc("servidor-estadual").get());
+  await deveBloquear("Camara NAO le persona do Governo", () =>
+    usuario("uid-agente").firestore().collection("personas").doc("servidor-estadual").get());
+  await deveBloquear("escrita em simulacao_semanal", () =>
+    usuario("uid-governo").firestore().collection("simulacao_semanal").doc("x").set({ a: 1 }));
+  await deveBloquear("escrita em personas", () =>
+    usuario("uid-governo").firestore().collection("personas").doc("x").set({ a: 1 }));
 
   // --- execucoes_navegador: so admin ---
   await devePermitir("admin le execucoes_navegador", () =>
