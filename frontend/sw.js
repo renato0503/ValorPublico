@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v46";
+﻿const CACHE_VERSION = "valorpublico-v47";
 const APP_SHELL = [
   "./",
   "./index.html",

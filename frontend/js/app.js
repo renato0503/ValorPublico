@@ -1681,8 +1681,8 @@ function alternarMenuMobile(forcar) {
   document.body.classList.toggle("menu-aberto", aberto);
   const backdrop = $("menuBackdrop");
   if (backdrop) backdrop.hidden = !aberto;
-  const shell = $("appShell");
-  if (shell) shell.inert = aberto;
+  const conteudo = $("conteudo");
+  if (conteudo) conteudo.inert = aberto;
   $("btnMenu")?.setAttribute("aria-expanded", String(aberto));
   if (aberto) {
     alternarFiltrosLateral(false);
