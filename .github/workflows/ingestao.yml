@@ -93,6 +93,11 @@ jobs:
           fi
           exit $code
 
+      - name: Atualizar tendências, crise e previsão
+        continue-on-error: true
+        working-directory: backend
+        run: |
+          python scripts/atualizar_tendencias.py
 
       - name: Análise lexical por escopo (AFC, CHD, grafo, dendrograma)
         continue-on-error: true
