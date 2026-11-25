@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" data-tema="claro">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ValorPúblico — painel institucional de mídia</title>
   <meta name="theme-color" content="#f2ecdf" />
-  <meta name="personas-api" content="" />
+  <meta name="personas-api" content="https://personas-api-t6uevn6ita-rj.a.run.app" />
   <meta name="description" content="BI institucional de mídia: audiência, valoração, parlamentares e inteligência de clipping." />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/identidade.css" />
   <link rel="stylesheet" href="css/telas.css" />
+  <link rel="stylesheet" href="css/impressao.css" media="print" />
   <link rel="stylesheet" href="css/componentes.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="vendor/echarts.min.js"></script>
@@ -31,6 +32,14 @@
   </script>
 </head>
 <body data-produto="valor">
+  <a class="pular-conteudo" href="#conteudo">Pular para o conteúdo</a>
+  <header id="printCabecalho" class="print-only" aria-hidden="true">
+    <span class="print-marca">ValorPúblico</span>
+    <strong id="printTitulo">Relatório</strong>
+    <span id="printMeta"></span>
+  </header>
+  <footer id="printRodape" class="print-only" aria-hidden="true">ValorPúblico · documento institucional · gerado automaticamente</footer>
+  <div id="barraCarregando" class="barra-carregando" hidden></div>
     <svg class="svg-sprite" aria-hidden="true" focusable="false">
     <symbol id="i-painel" viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M7 8.5h6M7 12h6M7 15.5h4M16.5 8.5h2M16.5 12h2M16.5 15.5h2"/></symbol>
     <symbol id="i-midia" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.2"/><path d="M7.7 7.7a6 6 0 0 0 0 8.6M16.3 7.7a6 6 0 0 1 0 8.6M4.9 4.9a10 10 0 0 0 0 14.2M19.1 4.9a10 10 0 0 1 0 14.2"/></symbol>
@@ -39,6 +48,37 @@
     <symbol id="i-relatorios" viewBox="0 0 24 24"><path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18M9.8 12.5h5.4M9.8 16h5.4"/></symbol>
     <symbol id="i-sistema" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="18" cy="17" r="1.6"/></symbol>
     <symbol id="i-mais" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+    <symbol id="i-filtro" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></symbol>
+    <symbol id="i-tema" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-atualizar" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-copiar" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+    <symbol id="i-baixar" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></symbol>
+    <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M7 3.5h6.5L18 8v12.5H7z"/><path d="M13.5 3.5V8H18"/><path d="M9 13h6M9 16.5h4"/></symbol>
+    <symbol id="i-email" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></symbol>
+    <symbol id="i-enviar" viewBox="0 0 24 24"><path d="m4 4 17 8-17 8 3-8-3-8z"/><path d="M7 12h14"/></symbol>
+    <symbol id="i-perguntar" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.8 8.8 0 0 1-3.5-.7L3 21l1.8-5.5A8.4 8.4 0 1 1 21 11.5z"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.7"/><circle cx="12" cy="16" r=".6"/></symbol>
+    <symbol id="i-investigar" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5"/><path d="M8.5 11h5M11 8.5v5"/></symbol>
+    <symbol id="i-entrar" viewBox="0 0 24 24"><path d="M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h5"/><path d="m14 7 5 5-5 5"/><path d="M19 12H9"/></symbol>
+    <symbol id="i-sair" viewBox="0 0 24 24"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="m10 7-5 5 5 5"/><path d="M5 12h10"/></symbol>
+    <symbol id="i-chave" viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="m10.5 10.5 8 8M15 15l2-2M18 18l2-2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><circle cx="12" cy="8" r=".7"/></symbol>
+    <symbol id="i-fechar" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+    <symbol id="i-orgao" viewBox="0 0 24 24"><path d="M4 21h16M6 21V9l6-4 6 4v12"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01"/></symbol>
+    <symbol id="i-tabela" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11M15 9v11"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5M8.5 11h5M11 8.5v5"/></symbol>
+    <symbol id="i-analise" viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3M20 16V6"/></symbol>
+    <symbol id="i-mencoes" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 8.8 8.8 0 0 1-3.5-.7L3 21l1.8-5.5A8.4 8.4 0 1 1 21 11.5z"/><path d="M8 10h8M8 13h5"/></symbol>
+    <symbol id="i-concorrencia" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3.5 20c.8-3.2 2.9-5 5.5-5s4.7 1.8 5.5 5"/><path d="M15 15c2.3.2 4 1.8 4.7 4.5"/></symbol>
+    <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2M14 17h2"/></symbol>
+    <symbol id="i-discurso" viewBox="0 0 24 24"><path d="M4 5h16v10H9l-5 4V5z"/><path d="M8 9h8M8 12h5"/></symbol>
+    <symbol id="i-simulacao" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-tendencia" viewBox="0 0 24 24"><path d="M4 19h16M5 15l5-5 3 3 5-6M18 7h3v3"/></symbol>
+    <symbol id="i-governo" viewBox="0 0 24 24"><path d="M4 21h16M6 21V9l6-4 6 4v12"/><path d="M9 21v-5h6v5M9 11h.01M15 11h.01"/></symbol>
+    <symbol id="i-governador" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5.5 21c.8-4 3.3-6.5 6.5-6.5s5.7 2.5 6.5 6.5"/><path d="m18 3 .6 1.4L20 5l-1.4.6L18 7l-.6-1.4L16 5l1.4-.6z"/></symbol>
+    <symbol id="i-clipping" viewBox="0 0 24 24"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v9a4 4 0 0 1-4 4"/><path d="M7 8h7M7 11h7M7 14h5"/></symbol>
+    <symbol id="i-seta-baixo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+    <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 12 18 6M4 12h2M18 12h2M12 4v2M12 18v2"/></symbol>
   </svg>
 
   <div id="splashPwa" class="splash-pwa" aria-hidden="true">
@@ -68,11 +108,11 @@
       </div>
 
       <div class="acoes-topo">
-        <button id="btnTema" class="btn-tema" type="button" title="Alternar tema">
-          <span class="btn-tema-icone">☾</span>
-        </button>
-        <button id="btnFiltros" class="btn-filtros" type="button" aria-expanded="false" aria-controls="filtrosPainel">
-          <span aria-hidden="true">☰</span> Filtros
+        <button id="btnMenu" class="btn-menu" type="button" aria-label="Abrir menu" aria-controls="navPrincipal" aria-expanded="false"><svg class="icone-btn" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <button id="btnSidebar" class="btn-sidebar" type="button" aria-label="Recolher navegação" aria-expanded="true"><svg class="icone-btn" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <button id="btnTema" class="btn-tema" type="button" title="Alternar tema"></button>
+        <button id="btnFiltros" class="btn-filtros" type="button" aria-expanded="false" aria-controls="filtrosLateral">
+          Filtros
         </button>
         <button
         id="btnRelatorio"
@@ -104,7 +144,6 @@
         type="button"
         title="Limpa o cache e recarrega os dados mais recentes"
       >
-        <span aria-hidden="true">↻</span>
         <span class="btn-atualizar-texto">Atualizar</span>
       </button>
       </div>
@@ -112,7 +151,17 @@
 
         <nav id="navPrincipal" class="nav-jornal" aria-label="Seções"></nav>
 
-    <div class="filtros-barra">
+  </header>
+
+    <div class="filtros-barra" id="filtrosLateral" aria-label="Filtros">
+      <div class="filtros-cabecalho">
+        <div>
+          <span class="filtros-eyebrow" id="filtrosEscopo">Painel</span>
+          <h2>Filtros</h2>
+        </div>
+        <button class="btn-texto" id="btnFecharFiltros" type="button" aria-label="Recolher filtros">Fechar</button>
+      </div>
+      <p class="filtros-nota" id="filtrosNota">Período afeta os gráficos e KPIs do painel. Parlamentar filtra o painel e os módulos do órgão.</p>
       <div class="filtros" id="filtrosPainel" role="group" aria-label="Filtros do painel">
       <label class="filtro">
         <span class="filtro-rotulo">Período</span>
@@ -122,42 +171,16 @@
           <option value="7d">Últimos 7 dias</option>
           <option value="15d">Últimos 15 dias</option>
           <option value="30d">Últimos 30 dias</option>
-          <option value="90d">Últimos 90 dias</option>
-          <option value="12m">Últimos 12 meses</option>
         </select>
       </label>
-      <label class="filtro">
-        <span class="filtro-rotulo">Comparar com</span>
-        <select id="filtroComparar" aria-label="Comparar com">
-          <option value="anterior">Período anterior</option>
-          <option value="ano">Mesma época do ano passado</option>
-          <option value="nenhum">Nenhum</option>
-        </select>
-      </label>
-      <label class="filtro">
+      <label class="filtro" id="filtroCidadeCampo" hidden>
         <span class="filtro-rotulo">Instituição</span>
         <select id="filtroCidade" aria-label="Instituição selecionada" disabled>
           <option value="">Selecione o órgão</option>
         </select>
       </label>
-      <label class="filtro">
-        <span class="filtro-rotulo">Canal</span>
-        <select id="filtroCanal" aria-label="Filtrar por canal">
-          <option value="">Todos os canais</option>
-          <option value="imprensa">Imprensa (portal/jornal)</option>
-          <option value="tvradio">TV e rádio</option>
-          <option value="redes">Redes sociais</option>
-          <option value="oficial">Oficial (diário e sites públicos)</option>
-        </select>
-      </label>
-      <label class="filtro">
-        <span class="filtro-rotulo">Tema</span>
-        <select id="filtroTema" aria-label="Filtrar por tema">
-          <option value="">Todos os temas</option>
-        </select>
-      </label>
-      <label class="filtro">
-        <span class="filtro-rotulo">Parlamentar</span>
+      <label class="filtro" id="filtroParlamentarCampo">
+        <span class="filtro-rotulo" id="rotuloFiltroAgente">Parlamentar</span>
         <select id="filtroParlamentar" aria-label="Filtrar por parlamentar">
           <option value="">Todos os parlamentares</option>
         </select>
@@ -165,9 +188,13 @@
       </div>
       <div class="filtros-ativos oculto" id="filtrosAtivos" aria-label="Filtros ativos"></div>
     </div>
-  </header>
 
-  <main class="conteudo">
+  <div id="filtrosBackdrop" class="filtros-backdrop" hidden></div>
+  <div id="menuBackdrop" class="menu-backdrop" hidden></div>
+
+  <div class="app-shell" id="appShell">
+    <aside id="appSidebar" class="app-sidebar" aria-label="Navegação principal"></aside>
+    <main id="conteudo" class="conteudo">
     <div id="aviso" class="aviso oculto" role="status"></div>
 
     <section class="tela ativa" id="tela-painel" data-tela="edicao">
@@ -206,36 +233,7 @@
       </article>
   
     </section>
-    <section class="kpis kpis-dsm" aria-label="Indicadores da Camada DSM">
-      <article class="card kpi kpi-ambar">
-        <div class="kpi-cabecalho">
-          <span class="kpi-rotulo">Menções Diretas</span>
-        </div>
-        <span class="kpi-valor" id="kpiMencoesDiretas">–</span>
-        <span class="kpi-nota" id="kpiMencoesDiretasNota">direta / indireta / indeterminada</span>
-      </article>
-      <article class="card kpi kpi-verde">
-        <div class="kpi-cabecalho">
-          <span class="kpi-rotulo">Alertas Críticos</span>
-        </div>
-        <span class="kpi-valor" id="kpiAlertasCriticos">–</span>
-        <span class="kpi-nota" id="kpiAlertasNota">exigem ação imediata</span>
-      </article>
-      <article class="card kpi kpi-azul">
-        <div class="kpi-cabecalho">
-          <span class="kpi-rotulo">SLA de Coleta</span>
-        </div>
-        <span class="kpi-valor" id="kpiSlaMedio">–</span>
-        <span class="kpi-nota" id="kpiSlaNota">publicação → disponibilidade</span>
-      </article>
-      <article class="card kpi kpi-roxo">
-        <div class="kpi-cabecalho">
-          <span class="kpi-rotulo">Valor AVPE</span>
-        </div>
-        <span class="kpi-valor" id="kpiAvpe">–</span>
-        <span class="kpi-nota" id="kpiAvpeNota">centimetragem estimada</span>
-      </article>
-    </section>
+    
     <section class="insights" aria-label="Insights principais">
       <article class="card insight">
         <span class="insight-rotulo">Maior Cobertura</span>
@@ -250,18 +248,6 @@
         <span class="insight-valor" id="insightTendencia">—</span>
       </article>
     </section>
-    <div class="grade-secundaria">
-      <article class="card painel painel-full">
-        <div class="painel-cabecalho">
-          <h2>Últimas Notícias</h2>
-          <span class="painel-sub">Menções mais recentes · clique para ver detalhes</span>
-        </div>
-        <div class="noticias" id="noticiasLista"></div>
-      </article>
-</div>
-</section>
-
-    <section class="tela" id="tela-midia" data-tela="midia">
     <section class="grade-principal" aria-label="Série temporal e sentimento">
       <article class="card painel painel-temporal">
         <div class="painel-cabecalho">
@@ -279,6 +265,19 @@
         <div class="sentimento-lista" id="sentimentoLista"></div>
       </article>
     </section>
+    <div class="grade-secundaria">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <h2>Últimas Notícias</h2>
+          <span class="painel-sub">Menções mais recentes · clique para ver detalhes</span>
+        </div>
+        <div class="noticias" id="noticiasLista"></div>
+      </article>
+</div>
+</section>
+
+    <section class="tela" id="tela-midia" data-tela="midia">
+    
     <section class="grade-secundaria" aria-label="Distribuição de mídia e valoração">
       <article class="card painel">
         <div class="painel-cabecalho">
@@ -422,13 +421,14 @@
     </section>
     </section>
 
-    <section class="tela" id="tela-inteligencia" data-tela="inteligencia">
+    <section class="tela" id="tela-radar" data-tela="radar">
 <section class="grade-detalhe" aria-label="Camada DSM">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
             <h2>Camada DSM — Radar, Alertas, Menções e Cobertura</h2>
             <span class="painel-sub">Radar de propaganda pública · alertas acionáveis · menção direta/indireta · SLA de coleta</span>
+            <span class="fonte-dados" id="dsmFonte"></span>
           </div>
           <div class="dsm-acoes">
             <button id="btnNewsletterDsm" class="btn-atualizar btn-relatorio" type="button" title="Abrir a newsletter consolidada do período">
@@ -480,7 +480,11 @@
         </div>
       </article>
     </section>
-    <section class="grade-detalhe" aria-label="Análise lexical">
+    
+    </section>
+
+    <section class="tela" id="tela-inteligencia" data-tela="inteligencia">
+<section class="grade-detalhe" aria-label="Análise lexical">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
@@ -527,9 +531,11 @@
             <span class="painel-sub">Tudo o que saiu sobre a Casa. Filtre, selecione para o boletim ou exporte.</span>
           </div>
           <div class="redes-filtros">
+            <input id="filtroClipBusca" type="search" placeholder="Buscar título, veículo ou texto" aria-label="Buscar no clipping" />
             <select id="filtroClipVeiculo" aria-label="Filtrar por veículo"><option value="">Todos os veículos</option></select>
             <select id="filtroClipTier" aria-label="Filtrar por nível"><option value="">Todos os níveis</option><option value="Tier 1">Grandes veículos</option><option value="Tier 2">Veículos de média audiência</option></select>
             <select id="filtroClipTipo" aria-label="Filtrar por tipo de menção"><option value="">Todas as menções</option><option value="direta">Diretas</option><option value="indireta">Indiretas</option></select>
+            <button class="btn-texto" id="btnBaixarPdfClipping" type="button">Baixar PDF</button>
           </div>
         </div>
         <div class="tabela-wrapper">
@@ -538,6 +544,7 @@
             <tbody id="corpoClipping"></tbody>
           </table>
         </div>
+        <div id="paginacaoClipping" class="paginacao" aria-label="Paginação do clipping"></div>
         <p class="grafico-leitura" id="clippingNota"></p>
       </article>
     </section>
@@ -662,6 +669,23 @@
 
 
         <section class="tela" id="tela-governo" data-tela="governo">
+    <nav class="abas-governo" aria-label="Seções do Governo">
+      <a href="#/governo" data-rota="governo" class="aba-governo">Visão geral</a>
+      <a href="#/governador" data-rota="governador" class="aba-governo">Governador</a>
+      <button type="button" class="aba-governo" data-gov-secretarias>Secretarias</button>
+    </nav>
+    <div class="painel-cabecalho gov-export">
+      <div>
+        <h2>Governo de Mato Grosso</h2>
+        <span class="painel-sub">Recorte atual do período selecionado. Exporte os dados para análise externa.</span>
+      </div>
+      <div class="redes-filtros">
+        <button class="btn-texto" id="btnBaixarPdfGoverno" type="button">PDF do Governo</button>
+        <button class="btn-texto" id="btnExportarGoverno" type="button">CSV do Governo</button>
+        <button class="btn-texto" id="btnExportarSecretarias" type="button">CSV das secretarias</button>
+        <button class="btn-texto" id="btnExportarGovernador" type="button">CSV do governador</button>
+      </div>
+    </div>
     <section class="grade-principal" aria-label="Indicadores do Governo do Estado">
       <article class="card kpi" id="kpiGovMencoes"></article>
       <article class="card kpi" id="kpiGovSaldo"></article>
@@ -670,7 +694,36 @@
       <article class="card kpi" id="kpiGovAlertas"></article>
       <article class="card kpi" id="kpiGovPastas"></article>
     </section>
-    <section class="grade-secundaria" aria-label="Gráficos do Governo">
+    <section class="grade-detalhe" id="govSecretarias" aria-label="Secretarias e autarquias">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Secretarias e autarquias</h2>
+            <span class="painel-sub">Escolha uma pasta ou clique num card para filtrar o gráfico e as notícias</span>
+          </div>
+          <label class="filtro filtro-secretaria">
+            <span class="filtro-rotulo">Secretaria</span>
+            <select id="filtroGovSecretaria" aria-label="Filtrar por secretaria">
+              <option value="">Todas as secretarias</option>
+            </select>
+          </label>
+        </div>
+        <div class="gov-grade" id="govGradePastas"></div>
+      </article>
+    </section>
+    <section class="grade-detalhe" aria-label="Cobertura por secretaria e tom">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Onde o governo aparece — por tom</h2>
+            <span class="painel-sub">Cada barra é uma secretaria dividida em positivo, neutro e negativo</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="G-33" aria-label="O que é o ranking de secretarias?">ⓘ</button>
+        </div>
+        <div class="grafico-area" id="graficoGovPastas"></div>
+      </article>
+    </section>
+    <section class="grade-detalhe" aria-label="Opinião sobre o Governo">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
@@ -681,46 +734,27 @@
         </div>
         <div class="grafico-area" id="graficoGovSentimento"></div>
       </article>
-      <article class="card painel">
-        <div class="painel-cabecalho">
-          <div>
-            <h2>Onde o governo aparece</h2>
-            <span class="painel-sub">Secretarias e autarquias por número de notícias</span>
-          </div>
-          <button class="btn-info" type="button" data-explicacao="G-33" aria-label="O que é o ranking de secretarias?">ⓘ</button>
-        </div>
-        <div class="grafico-area" id="graficoGovPastas"></div>
-      </article>
-      <article class="card painel">
-        <div class="painel-cabecalho">
-          <div>
-            <h2>Secretarias e autarquias</h2>
-            <span class="painel-sub">Clique numa pasta para filtrar o gráfico</span>
-          </div>
-        </div>
-        <div class="gov-grade" id="govGradePastas"></div>
-      </article>
     </section>
-    <section class="grade-detalhe" aria-label="Últimas notícias do Governo">
+    <section class="grade-detalhe" aria-label="Notícias por secretaria">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
-            <h2>Últimas notícias do Governo</h2>
-            <span class="painel-sub">As matérias mais recentes coletadas sobre o Executivo estadual, com a pasta responsável</span>
+            <h2>Notícias por secretaria</h2>
+            <span class="painel-sub">Abra uma pasta para ver as matérias mais recentes daquela secretaria ou autarquia</span>
           </div>
-          <button class="btn-info" type="button" data-explicacao="T-15" aria-label="O que é esta tabela?">ⓘ</button>
+          <button class="btn-info" type="button" data-explicacao="T-15" aria-label="O que são as notícias por secretaria?">ⓘ</button>
         </div>
-        <div class="tabela-wrapper">
-          <table class="tabela">
-            <thead><tr><th>Data</th><th>Notícia</th><th>Veículo</th><th>Tema</th><th></th></tr></thead>
-            <tbody id="govTabelaNoticias"></tbody>
-          </table>
-        </div>
+        <div id="govNoticiasSecretarias" class="gov-noticias-secretarias"></div>
       </article>
     </section>
         </section>
 
         <section class="tela" id="tela-governador" data-tela="governador">
+    <nav class="abas-governo" aria-label="Seções do Governo">
+      <a href="#/governo" data-rota="governo" class="aba-governo">Visão geral</a>
+      <a href="#/governador" data-rota="governador" class="aba-governo">Governador</a>
+      <button type="button" class="aba-governo" data-gov-secretarias>Secretarias</button>
+    </nav>
     <section class="grade-principal" aria-label="Indicadores do governador">
       <article class="card kpi" id="kpiGovMencoesGovernador"></article>
       <article class="card kpi" id="kpiGovSaldoGovernador"></article>
@@ -734,7 +768,10 @@
             <h2>Como a mídia trata o governador</h2>
             <span class="painel-sub">Notícias por dia, por tom</span>
           </div>
-          <button class="btn-info" type="button" data-explicacao="G-03" aria-label="O que é a linha do tempo da opinião?">ⓘ</button>
+          <div class="redes-filtros">
+            <label class="filtro filtro-semana"><span class="filtro-rotulo">Semana</span><select id="filtroSemanaGovernador" data-semana aria-label="Semana do governador"></select></label>
+            <button class="btn-info" type="button" data-explicacao="G-03" aria-label="O que é a linha do tempo da opinião?">ⓘ</button>
+          </div>
         </div>
         <div class="grafico-area" id="graficoGovGovernador"></div>
       </article>
@@ -818,6 +855,7 @@
             <span class="painel-sub" id="simSemana">Simulação do Governo de MT</span>
           </div>
           <select id="simVariante" aria-label="Variante do discurso"></select>
+          <p id="simVarianteResumo" class="grafico-leitura"></p>
         </div>
         <p class="selo-simulacao">Simulação (hipótese) — não é pesquisa. Uso interno.</p>
         <div id="simPersonas" class="personas-grade"></div>
@@ -834,6 +872,7 @@
             <h2>Personas do Governo de MT</h2>
             <span class="painel-sub" id="personasStatus">12 personas sintéticas</span>
           </div>
+          <button class="btn-texto" id="btnBaixarPdfPersonas" type="button">Baixar PDF</button>
         </div>
         <div id="personasGrade" class="personas-grade"></div>
       </article>
@@ -860,6 +899,11 @@
     </section>
         </section>
         <section class="tela" id="tela-semana" data-tela="semana">
+    <nav class="abas-semana" role="tablist" aria-label="Seções da semana">
+      <button type="button" class="aba-semana ativo" data-semana-aba="relatorio">Relatório</button>
+      <button type="button" class="aba-semana" data-semana-aba="discurso">Discurso</button>
+      <a href="#/simulacao" class="aba-semana">Simulação</a>
+    </nav>
     <section class="grade-principal" aria-label="Indicadores da semana">
       <article class="card kpi" id="kpiSemanaVariedade">
         <div class="kpi-cabecalho"><span class="kpi-rotulo">Variedade de assuntos</span></div>
@@ -879,18 +923,21 @@
       </article>
     </section>
     <section class="grade-secundaria" aria-label="Relatório e discurso da semana">
-      <article class="card painel painel-full">
+      <article class="card painel painel-full" data-semana-bloco="relatorio">
         <div class="painel-cabecalho">
           <div>
             <h2>Relatório da semana da Casa</h2>
             <span class="painel-sub">Assuntos, o que mudou, opinião e o que comunicar</span>
           </div>
-          <button class="btn-atualizar btn-relatorio" id="btnBaixarPdfSemanal" type="button">Baixar PDF</button>
+          <div class="redes-filtros">
+            <label class="filtro filtro-semana"><span class="filtro-rotulo">Semana</span><select id="filtroSemana" data-semana aria-label="Semana do relatório e do discurso"></select></label>
+            <button class="btn-atualizar btn-relatorio" id="btnBaixarPdfSemanal" type="button">Baixar PDF</button>
+          </div>
         </div>
         <div class="grafico-area" id="graficoSemanaClasses"></div>
         <div class="grafico-leitura" id="semanaLeitura"><span class="grafico-leitura-rotulo">Leitura do momento</span>O relatório da semana é gerado aos domingos, na máquina da Secom. Ele aparece aqui quando a coleta da semana terminar.</div>
       </article>
-      <article class="card painel painel-full">
+      <article class="card painel painel-full" data-semana-bloco="discurso">
         <div class="painel-cabecalho">
           <div>
             <h2>Discurso institucional da semana</h2>
@@ -908,6 +955,13 @@
         </section>
 
         <section class="tela" id="tela-redes" data-tela="redes">
+    <div class="painel-cabecalho tela-cabecalho">
+      <div>
+        <h2>Redes da Casa</h2>
+        <span class="painel-sub">Publicações, imagens, comentários e leitura de tom</span>
+      </div>
+      <button class="btn-texto" id="btnBaixarPdfRedes" type="button">Baixar PDF</button>
+    </div>
     <section class="grade-principal" aria-label="Contas institucionais">
       <article class="card kpi" id="kpiRedesSeguidores">
         <div class="kpi-cabecalho"><span class="kpi-rotulo">Seguidores</span></div>
@@ -926,6 +980,23 @@
         <span class="kpi-valor">–</span>
       </article>
     </section>
+    <section class="grade-detalhe" aria-label="Posts do Instagram">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Posts do Instagram</h2>
+            <span class="painel-sub" id="redesPostsResumo">Imagem principal, legenda, comentários e o que foi mais importante</span>
+            <span class="fonte-dados">Comentários públicos captados; sem DMs ou dados privados.</span>
+          </div>
+          <div class="redes-filtros">
+            <input id="filtroRedesBusca" type="search" placeholder="Buscar legenda ou comentário" aria-label="Buscar nos posts" />
+            <select id="filtroRedesAgente" aria-label="Filtrar por agente"><option value="">Todos os agentes</option></select>
+            <select id="filtroRedesTom" aria-label="Filtrar por tom"><option value="">Todos os tons</option><option value="positivo">Positivo</option><option value="neutro">Neutro</option><option value="negativo">Negativo</option></select>
+          </div>
+        </div>
+        <div id="redesPosts" class="redes-posts"></div>
+      </article>
+    </section>
     <section class="grade-secundaria" aria-label="Contas e posts">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
@@ -936,6 +1007,20 @@
         </div>
         <div class="redes-kpis" id="redesContas"></div>
         <div class="grafico-area" id="graficoFunilRedes"></div>
+      </article>
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Posts monitorados</h2>
+            <span class="painel-sub">Publicações recentes captadas nas redes e o tom de cada uma</span>
+          </div>
+        </div>
+        <div class="tabela-wrapper">
+          <table class="tabela">
+            <thead><tr><th>Data</th><th>Rede</th><th>Publicação</th><th>Tom</th><th></th></tr></thead>
+            <tbody id="corpoRedes"></tbody>
+          </table>
+        </div>
       </article>
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
@@ -1001,6 +1086,13 @@
         </section>
 
         <section class="tela" id="tela-tendencias" data-tela="tendencias">
+    <div class="painel-cabecalho tela-cabecalho">
+      <div>
+        <h2>Tendências</h2>
+        <span class="painel-sub">O que a população está buscando e como isso conversa com a pauta</span>
+      </div>
+      <button class="btn-texto" id="btnBaixarPdfTendencias" type="button">Baixar PDF</button>
+    </div>
     <section class="grade-principal" aria-label="Indicadores de tendência">
       <article class="card kpi" id="kpiTendInteresse">
         <div class="kpi-cabecalho"><span class="kpi-rotulo">Interesse nas buscas</span></div>
@@ -1025,6 +1117,7 @@
           <div>
             <h2>Em alta em MT</h2>
             <span class="painel-sub">Os assuntos mais buscados em Mato Grosso hoje, com as notícias ligadas</span>
+            <span class="fonte-dados" id="tendenciasFonte"></span>
           </div>
           <div class="redes-filtros">
             <select id="filtroTendGeo" aria-label="Geografia"><option value="BR-MT">Mato Grosso</option><option value="BR">Brasil</option></select>
@@ -1153,7 +1246,30 @@
       <div class="tabela-wrapper relatorio-lista" id="relLista"></div>
     </div>
   </div>
+  <div class="modal-overlay oculto" id="modalPost" aria-hidden="true">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="postTitulo">
+      <button class="modal-fechar" id="fecharPost" aria-label="Fechar">&times;</button>
+      <div class="post-detalhe">
+        <div class="post-detalhe-imagem"><div id="postImagem" class="post-imagem-vazia">Sem imagem</div></div>
+        <div class="post-detalhe-info">
+          <span class="post-rede" id="postConta"></span>
+          <h2 id="postTitulo"></h2>
+          <p id="postTexto"></p>
+          <div class="post-metricas" id="postMetricas"></div>
+          <div class="post-resumo" id="postResumo"></div>
+        </div>
+      </div>
+      <h3 class="post-comentarios-titulo">Comentários</h3>
+      <div id="postComentarios" class="post-comentarios"></div>
+      <div class="post-nav">
+        <button type="button" class="btn-texto" id="postAnterior">‹ Anterior</button>
+        <span id="postPosicao" class="post-posicao"></span>
+        <button type="button" class="btn-texto" id="postProximo">Próximo ›</button>
+      </div>
+    </div>
+  </div>
   </main>
+  </div>
 
   <footer class="rodape">
     <span>ValorPúblico · painel institucional</span>
@@ -1190,7 +1306,7 @@
     </div>
   </div>
 
-  <div id="telaOrgao" class="tela-login" aria-hidden="true">
+  <div id="telaOrgao" class="tela-login tela-orgao" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="login-folha">
       <h2>Escolha o órgão</h2>
       <p class="login-sub">
@@ -1208,3 +1324,18 @@
   <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

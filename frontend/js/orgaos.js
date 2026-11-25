@@ -115,14 +115,14 @@ export function orgaosDisponiveis(perfil) {
 }
 
 /** Persiste a escolha e avisa o app para recarregar. */
-export function definirOrgao(uid, slug) {
+export function definirOrgao(uid, slug, notificar = true) {
   if (!ORGAOS.some((o) => o.slug === slug)) return;
   try {
     localStorage.setItem(chave(uid), slug);
   } catch {
     /* navegador sem storage: a seleção vale só para a sessão */
   }
-  window.dispatchEvent(new CustomEvent("orgao:changed"));
+  if (notificar) window.dispatchEvent(new CustomEvent("orgao:changed"));
 }
 
 export function limparOrgao(uid) {

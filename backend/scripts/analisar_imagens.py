@@ -77,14 +77,28 @@ def _processar_item(item: dict, pasta: Path, galeria: dict, vistos: dict, use_vl
     midia = item["midia"][:3]  # analisar os 3 primeiros (carrossel)
     for indice, entrada in enumerate(midia):
         url = (entrada.get("url_original") or "").strip()
-        if not url:
-            continue
-        try:
-            from cerra_nucleo.processing.imagem import baixar
+        local = (entrada.get("arquivo_local") or "").strip()
+        dados = None
+        if local:
+            candidatos = [
+                settings.BASE_DIR / local,
+                settings.BASE_DIR.parent / "docs" / local,
+                Path(local),
+            ]
+            for candidato in candidatos:
+                if candidato.exists():
+                    dados = candidato.read_bytes()
+                    break
+        if dados is None and url:
+            try:
+                from cerra_nucleo.processing.imagem import baixar
 
-            dados = baixar(url)
-        except Exception as exc:  # noqa: BLE001
-            logger.info("Download recusado (%s): %s", url[:80], str(exc)[:80])
+                dados = baixar(url)
+            except Exception as exc:  # noqa: BLE001
+                logger.info("Download recusado (%s): %s", url[:80], str(exc)[:80])
+                continue
+        if dados is None:
+            logger.info("Imagem sem arquivo local nem URL utilizável: %s", local or url[:80])
             continue
 
         processado = processar_imagem(dados, pasta=pasta, nome="img")
@@ -133,10 +147,16 @@ def _processar_item(item: dict, pasta: Path, galeria: dict, vistos: dict, use_vl
             rosto = comparar_com_agentes(dados, galeria.get("rostos", {}))
 
         c2pa = ler_c2pa(dados)
+        meta_clip = item["clipping"].get("metadados") or {}
+        id_externo = str(item["clipping"].get("id_externo") or "")
+        post_shortcode = str(meta_clip.get("post_shortcode") or id_externo)
 
         return {
             "phash": processado.phash,
             "thumb": processado.base64_160[:4000],
+            "id_externo": id_externo,
+            "post_shortcode": post_shortcode,
+            "titulo": str(meta_clip.get("titulo") or (item["clipping"].get("texto_limpo") or "").split("\n", 1)[0][:140]),
             "rede": item["clipping"].get("plataforma", ""),
             "data": str(item["clipping"].get("data_publicacao") or "")[:10],
             "url": item["clipping"].get("url", ""),
@@ -218,6 +238,7 @@ def main() -> int:
     logger.info("Clippings com midia: %d", len(itens))
 
     galeria_por_agente: dict[str, list[dict]] = {}
+    casa_por_agente: dict[str, str] = {}
     vistos: dict[str, dict] = {}
     processados = 0
 
@@ -230,6 +251,7 @@ def main() -> int:
         processados += 1
         agente_id = item["agente_id"]
         galeria_por_agente.setdefault(agente_id, []).append(registro)
+        casa_por_agente[agente_id] = str((item.get("agente") or {}).get("casa") or "")
 
     logger.info("Imagens processadas: %d (pHash unicos: %d)", processados, len(vistos))
 
@@ -269,6 +291,43 @@ def main() -> int:
             merge=True,
         )
     logger.info("metricas_por_agente.imagens gravado para %d agentes.", len(galeria_por_agente))
+
+    # Agrega também por casa/órgão para as telas do Valor.
+    from collections import defaultdict
+    from scripts.atualizar_metricas import _slug_casa
+
+    por_casa: dict[str, list[dict]] = defaultdict(list)
+    for agente_id, registros in galeria_por_agente.items():
+        casa = casa_por_agente.get(agente_id, "")
+        if casa:
+            por_casa[casa].extend(registros)
+    mais_circularam = sorted(vistos.values(), key=lambda v: -v.get("n_posts", 0))[:TETO_MAIS_CIRCULARAM]
+    for casa, registros in por_casa.items():
+        kpis = _kpis(registros)
+        ordenados = sorted(registros, key=lambda r: (r.get("data") or ""), reverse=True)[:TETO_GALERIA]
+        db.collection("metricas_por_casa").document(_slug_casa(casa)).set(
+            {
+                "imagens": {
+                    "kpis": kpis,
+                    "por_tipo": kpis["k73_engajamento_por_tipo"],
+                    "galeria": [
+                        {k: v for k, v in r.items() if not k.startswith("_") and k != "c2pa"}
+                        for r in ordenados
+                    ],
+                    "mais_circularam": [
+                        {
+                            "n_posts": v.get("n_posts", 0),
+                            "redes": v.get("redes", []),
+                            "primeira_vez": v.get("primeira_vez", ""),
+                        }
+                        for v in mais_circularam
+                    ],
+                    "atualizado_em": datetime.now(timezone.utc).isoformat(),
+                }
+            },
+            merge=True,
+        )
+    logger.info("metricas_por_casa.imagens gravado para %d casas.", len(por_casa))
 
     # Grava os agregados gerais.
     todos = [r for rs in galeria_por_agente.values() for r in rs]

@@ -1,4 +1,4 @@
-"""Validacao de UI: telas x temas x larguras, com dados simulados.
+﻿"""Validacao de UI: telas x temas x larguras, com dados simulados.
 
 Serve ``frontend/`` local, esconde o gate de login (para fotografar o painel),
 injeta dados pelo gancho ``window.__app_test``, percorre as rotas em 390 e
@@ -133,8 +133,12 @@ def servir(diretorio: Path):
             pass
 
     handler = functools.partial(_Quieto, directory=str(diretorio))
-    httpd = socketserver.TCPServer(("127.0.0.1", PORT), handler)
-    httpd.allow_reuse_address = True
+
+    class Servidor(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+        daemon_threads = True
+
+    httpd = Servidor(("127.0.0.1", PORT), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd
 
@@ -251,3 +255,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+

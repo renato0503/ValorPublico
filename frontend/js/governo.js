@@ -13,7 +13,7 @@
 
 import { cartaoKpi, cartaoGrafico, escapar } from "./componentes.js";
 import { explicacao, registrarExplicacoes } from "./explicacoes.js";
-import { barrasHorizontais, linhasSentimento } from "./graficos.js";
+import { barrasEmpilhadas, barrasHorizontais, linhasSentimento } from "./graficos.js";
 
 const estado = {
   db: null,
@@ -23,6 +23,7 @@ const estado = {
   interino: null,
   pastaSelecionada: "",
   ativo: false,
+  periodo: "",
 };
 
 const graficos = new Map();
@@ -75,6 +76,18 @@ export function definirAtivo(ativo) {
     estado.pastaSelecionada = "";
   }
   renderizar();
+}
+
+/** Aplica o recorte de período global aos agregados do Governo. */
+export function definirPeriodo(periodo) {
+  estado.periodo = periodo || "";
+  if (estado.casa) renderizar();
+}
+
+function _janela(dados) {
+  if (!dados || !estado.periodo) return dados;
+  const recorte = dados.por_periodo?.[estado.periodo];
+  return recorte ? { ...dados, ...recorte } : null;
 }
 
 /** Carrega os agregados do Governo (somente quando a frente é governo-mt). */
@@ -153,7 +166,7 @@ function _dinheiro(n) {
 /* V12 — Governo de MT                                                */
 /* ------------------------------------------------------------------ */
 function renderizarGoverno() {
-  const casa = estado.casa;
+  const casa = _janela(estado.casa);
   if (!casa) {
     _estadoVazio(
       [
@@ -210,18 +223,45 @@ function renderizarGoverno() {
     if (grafico) graficos.set("graficoGovSentimento", grafico);
   }
 
-  // Ranking de secretarias (G-33)
+  // Cobertura por secretaria e tom (G-33)
   const canvas2 = document.getElementById("graficoGovPastas");
   if (canvas2) {
     const itens = estado.secretarias
       .filter((p) => !estado.pastaSelecionada || p.id === estado.pastaSelecionada)
-      .slice(0, 12)
-      .map((p) => ({
-        rotulo: `${p.pasta?.sigla || p.id}`,
-        valor: p.total_clippings || 0,
-      }));
-    const grafico2 = barrasHorizontais(canvas2, itens);
+      .map((p) => {
+        const dados = _janela(p) || {};
+        const dist = dados.distribuicao_sentimento || p.distribuicao_sentimento || {};
+        const positivo = Number(dist.positivo || 0);
+        const neutro = Number(dist.neutro || 0);
+        const negativo = Number(dist.negativo || 0);
+        const total = positivo + neutro + negativo;
+        return {
+          rotulo: p.pasta?.sigla || p.id,
+          positivo: total ? Math.round((positivo / total) * 100) : 0,
+          neutro: total ? Math.round((neutro / total) * 100) : 0,
+          negativo: total ? Math.round((negativo / total) * 100) : 0,
+          total,
+        };
+      })
+      .filter((item) => item.total > 0)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 14);
+    const grafico2 = barrasEmpilhadas(canvas2, itens);
     if (grafico2) graficos.set("graficoGovPastas", grafico2);
+  }
+
+  // Menu de secretarias
+  const seletorSecretaria = document.getElementById("filtroGovSecretaria");
+  if (seletorSecretaria) {
+    const atual = estado.pastaSelecionada;
+    seletorSecretaria.innerHTML = '<option value="">Todas as secretarias</option>' +
+      estado.secretarias
+        .map((p) => {
+          const nome = p.pasta?.nome || ROTULO_PASTA[p.id] || p.id;
+          return `<option value="${escapar(p.id)}">${escapar(nome)}</option>`;
+        })
+        .join("");
+    seletorSecretaria.value = atual;
   }
 
   // Grade de secretarias
@@ -244,25 +284,68 @@ function renderizarGoverno() {
       .join("");
   }
 
-  // Tabela de noticias recentes
-  const corpo = document.getElementById("govTabelaNoticias");
-  if (corpo) {
-    const recentes = (casa.noticias_recentes || []).slice(0, 25);
-    const explicacaoT = explicacao("T-15");
-    corpo.innerHTML = recentes.length
-      ? recentes
-          .map(
-            (n) => `<tr>
-              <td>${escapar((n.data_publicacao || n.data || "").toString().slice(0, 10))}</td>
-              <td>${escapar(n.titulo || "")}</td>
-              <td>${escapar(n.veiculo || n.autor || "—")}</td>
-              <td>${escapar(n.tema || "—")}</td>
-              <td>${n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">abrir</a>` : "—"}</td>
-            </tr>`
-          )
-          .join("")
-      : `<tr><td colspan="5">${explicacaoT ? escapar(explicacaoT.oQueE) : "Sem notícias carregadas."}</td></tr>`;
+  renderizarNoticiasPorSecretaria(casa);
+}
+
+function _dataNoticia(valor) {
+  if (!valor) return "—";
+  if (valor.toDate) return valor.toDate().toLocaleDateString("pt-BR");
+  const d = new Date(valor);
+  return isNaN(d) ? String(valor).slice(0, 10) : d.toLocaleDateString("pt-BR");
+}
+
+function renderizarNoticiasPorSecretaria(casa) {
+  const alvo = document.getElementById("govNoticiasSecretarias");
+  if (!alvo) return;
+  const selecionada = estado.pastaSelecionada;
+  const pastas = (estado.secretarias || []).filter(
+    (p) => !selecionada || p.id === selecionada
+  );
+  const blocos = [];
+  pastas.forEach((p, indice) => {
+    const item = _janela(p) || {};
+    const noticias = (item.noticias_recentes || []).slice(0, 8);
+    const total = Number(item.total_clippings ?? p.total_clippings ?? 0);
+    if (!noticias.length && !selecionada) return;
+    const sigla = p.pasta?.sigla || p.id;
+    const nome = p.pasta?.nome || ROTULO_PASTA[p.id] || sigla;
+    blocos.push(
+      `<details class="gov-sec-news"${indice === 0 || selecionada ? " open" : ""}>
+        <summary>
+          <span class="gov-sec-sigla">${escapar(sigla)}</span>
+          <span class="gov-sec-nome">${escapar(nome)}</span>
+          <span class="gov-sec-total">${_numero(total)} notícias</span>
+        </summary>
+        ${
+          noticias.length
+            ? `<ul>${noticias
+                .map(
+                  (n) => `<li>
+                    <span class="gov-data">${escapar(_dataNoticia(n.data_publicacao || n.data))}</span>
+                    ${n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">${escapar(n.titulo || "notícia")}</a>` : escapar(n.titulo || "notícia")}
+                    <span class="gov-sec-veiculo">${escapar(n.veiculo || n.autor || "—")}</span>
+                  </li>`
+                )
+                .join("")}</ul>`
+            : '<p class="gov-vazio">Sem notícias nesta secretaria para o período.</p>'
+        }
+      </details>`
+    );
+  });
+  if (blocos.length) {
+    alvo.innerHTML = blocos.join("");
+    return;
   }
+  const recentes = (casa.noticias_recentes || []).slice(0, 10);
+  alvo.innerHTML = recentes.length
+    ? `<p class="grafico-leitura">Ainda sem notícias vinculadas a uma secretaria. Últimas do Governo:</p><ul class="gov-sec-lista">${recentes
+        .map(
+          (n) => `<li><span class="gov-data">${escapar(_dataNoticia(n.data_publicacao || n.data))}</span> ${
+            n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">${escapar(n.titulo || "notícia")}</a>` : escapar(n.titulo || "notícia")
+          }</li>`
+        )
+        .join("")}</ul>`
+    : '<p class="gov-vazio">Sem notícias por secretaria neste período.</p>';
 }
 
 function _serieSentimento(dados) {
@@ -290,7 +373,18 @@ function _serieSentimento(dados) {
 function renderizarGovernador() {
   const alvo = document.getElementById("tela-governador");
   if (!alvo || !estado.governador) return;
-  const g = estado.governador;
+  const g = _janela(estado.governador);
+  if (!g) {
+    cartaoKpi("kpiGovMencoesGovernador", { codigo: "K-01", semBase: true, motivo: "sem dados nesta janela" });
+    cartaoKpi("kpiGovSaldoGovernador", { codigo: "K-03", semBase: true, motivo: "sem dados nesta janela" });
+    cartaoKpi("kpiGovValorGovernador", { codigo: "K-08", semBase: true, motivo: "sem dados nesta janela" });
+    cartaoKpi("kpiGovCrise", { codigo: "K-28", semBase: true, motivo: "sem dados nesta janela" });
+    const corpo = document.getElementById("govTabelaGovernador");
+    if (corpo) corpo.innerHTML = '<tr><td colspan="4">Sem notícias do governador nesta janela.</td></tr>';
+    const interino = document.getElementById("govInterino");
+    if (interino) interino.innerHTML = '<p class="gov-vazio">Sem dados nesta janela.</p>';
+    return;
+  }
 
   cartaoKpi("kpiGovMencoesGovernador", {
     codigo: "K-01",
@@ -339,7 +433,7 @@ function renderizarGovernador() {
 
   const interino = document.getElementById("govInterino");
   if (interino) {
-    const i = estado.interino;
+    const i = _janela(estado.interino);
     interino.innerHTML = i
       ? `<div class="gov-aviso"><b>${escapar(i.total_clippings || 0)}</b> notícias citaram o governador interino
          <span class="gov-selo">cargo por ausência</span></div>
@@ -384,3 +478,113 @@ export function redimensionar() {
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* Exportações CSV (Governo, secretarias e governador)                */
+/* ------------------------------------------------------------------ */
+
+function _csv(valor) {
+  const texto = String(valor ?? "");
+  return /[";\n]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+}
+
+function _dataCsv(valor) {
+  if (!valor) return "";
+  if (valor.toDate) return valor.toDate().toISOString().slice(0, 10);
+  const d = new Date(valor);
+  return isNaN(d) ? String(valor).slice(0, 10) : d.toISOString().slice(0, 10);
+}
+
+function _baixarCsv(nome, linhas) {
+  const csv = linhas.map((linha) => linha.map(_csv).join(";")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function _sufixoPeriodo() {
+  return estado.periodo ? `-${estado.periodo}` : "";
+}
+
+function exportarGoverno() {
+  const casa = _janela(estado.casa);
+  if (!casa) return;
+  const linhas = [
+    ["indicador", "valor"],
+    ["total_clippings", casa.total_clippings ?? 0],
+    ["total_veiculos", casa.total_veiculos ?? 0],
+    ["saldo_opiniao", _saldo(casa)],
+    ["valoracao_total", casa.valoracao_total ?? 0],
+    ["alertas_total", casa.alertas?.total ?? 0],
+    [],
+    ["data", "titulo", "veiculo", "sentimento", "url"],
+  ];
+  (casa.noticias_recentes || []).forEach((n) => {
+    linhas.push([_dataCsv(n.data_publicacao), n.titulo || "", n.veiculo || "", n.sentimento || "", n.url || ""]);
+  });
+  _baixarCsv(`valorpublico-governo${_sufixoPeriodo()}.csv`, linhas);
+}
+
+function exportarSecretarias() {
+  const linhas = [
+    ["secretaria", "total_clippings", "saldo_opiniao", "valoracao_total", "veiculos"],
+  ];
+  (estado.secretarias || []).forEach((s) => {
+    const item = _janela(s) || {};
+    linhas.push([
+      s.id,
+      item.total_clippings ?? 0,
+      _saldo(item),
+      item.valoracao_total ?? 0,
+      item.total_veiculos ?? 0,
+    ]);
+  });
+  _baixarCsv(`valorpublico-secretarias${_sufixoPeriodo()}.csv`, linhas);
+}
+
+function exportarGovernador() {
+  const g = _janela(estado.governador);
+  const i = _janela(estado.interino);
+  if (!g && !i) return;
+  const linhas = [
+    ["cargo", "total_clippings", "saldo_opiniao", "valoracao_total", "veiculos"],
+    ["governador", g?.total_clippings ?? 0, _saldo(g || {}), g?.valoracao_total ?? 0, g?.total_veiculos ?? 0],
+    ["interino", i?.total_clippings ?? 0, _saldo(i || {}), i?.valoracao_total ?? 0, i?.total_veiculos ?? 0],
+    [],
+    ["cargo", "data", "titulo", "veiculo", "sentimento", "url"],
+  ];
+  [["governador", g], ["interino", i]].forEach(([cargo, dados]) => {
+    (dados?.noticias_recentes || []).forEach((n) => {
+      linhas.push([cargo, _dataCsv(n.data_publicacao), n.titulo || "", n.veiculo || "", n.sentimento || "", n.url || ""]);
+    });
+  });
+  _baixarCsv(`valorpublico-governador${_sufixoPeriodo()}.csv`, linhas);
+}
+
+if (typeof document !== "undefined") {
+  document.getElementById("btnExportarGoverno")?.addEventListener("click", exportarGoverno);
+  document.getElementById("btnBaixarPdfGoverno")?.addEventListener("click", () => {
+    document.body.classList.add("print-governo");
+    window.print();
+    setTimeout(() => document.body.classList.remove("print-governo"), 300);
+  });
+  document.getElementById("btnExportarSecretarias")?.addEventListener("click", exportarSecretarias);
+  document.getElementById("btnExportarGovernador")?.addEventListener("click", exportarGovernador);
+}
+
+
+
+
+
+
+
+if (typeof document !== "undefined") {
+  document.getElementById("filtroGovSecretaria")?.addEventListener("change", (evento) => {
+    filtrarPasta(evento.target.value);
+  });
+}

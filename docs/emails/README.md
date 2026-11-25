@@ -1,25 +1,14 @@
-﻿# E-mails de acesso (Firebase Auth)
+# E-mails de acesso — ValorPúblico
 
-## Redefinição de senha
+Templates prontos para o **Firebase Console → Authentication → Templates**.
+A API Admin não altera esses textos; a colagem é manual, uma vez por projeto.
 
-O app já tem o fluxo **“Esqueci minha senha”** na tela de login
-(`js/auth.js` → `sendPasswordResetEmail`, com `languageCode = "pt-BR"`).
+| Template | Assunto | Arquivo |
+|---|---|---|
+| Verificação de e-mail | `Ative seu acesso · ValorPúblico` | `verify-email.html` |
+| Redefinição de senha | `Redefinir a senha · ValorPúblico` | `reset-password.html` |
+| Alteração de e-mail | `Confirme seu novo e-mail · ValorPúblico` | `change-email.html` |
 
-O **conteúdo** do e-mail é um template do Firebase. A API de Admin **não permite
-alterá-lo** (`EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`) — a troca é manual, uma vez por projeto:
+Abra `preview.html` para ver os três e copiar o HTML de cada um. O botão “Copiar HTML” funciona no navegador; se abrir como arquivo local e o navegador bloquear o clipboard, use o campo de código abaixo de cada prévia. Confirme o **Nome público** em Configurações do projeto para o `%APP_NAME%`.
 
-1. Firebase Console → **Authentication** → aba **Templates** → **Redefinição de senha**.
-2. Assunto: `Redefinir a senha · ValorPúblico` .
-3. Cole o conteúdo de [`reset-password.html`](./reset-password.html) no corpo (modo HTML).
-   Para copiar com um clique, abra [`preview.html`](./preview.html): mostra a prévia e tem
-   os botões **Copiar assunto** e **Copiar HTML do e-mail**.
-4. Confira o “Nome do remetente” em **Configurações do projeto → Nome público**
-   (é o `%APP_NAME%` que aparece no e-mail).
-5. Envie um teste para o seu próprio e-mail.
-
-> O remetente padrão é `noreply@<projeto>.firebaseapp.com`. Para usar um domínio próprio
-> é preciso configurar SMTP no mesmo painel (não é necessário para o fluxo atual).
-
-**Atenção:** o link de redefinição é gerado pelo Firebase e aponta para a página de ação do
-projeto, já em português por causa do `languageCode`.
-
+Placeholders usados: `%EMAIL%`, `%NEW_EMAIL%`, `%LINK%`.

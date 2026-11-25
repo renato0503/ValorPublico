@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Camada DSM — radar de propaganda pública, alertas acionáveis, menções/
    porta-vozes e cobertura/SLA.
 
@@ -22,7 +22,7 @@ export const estadoDsm = {
   janela: "30d",
 };
 
-const JANELAS = ["hoje", "7d", "15d", "30d"];
+const JANELAS = ["hoje", "7d", "15d", "30d", "todas"];
 
 const CORES_MENCAO = {
   direta: "#f59e0b",
@@ -154,6 +154,14 @@ export function definirJanelaDsm(periodo) {
 }
 
 export function renderizarCamadaDsm() {
+  const fonte = $("dsmFonte");
+  if (fonte) {
+    const quando = estadoDsm.radar?.atualizado_em || estadoDsm.alertas?.atualizado_em;
+    const data = quando ? new Date(quando) : null;
+    fonte.textContent = data && !isNaN(data)
+      ? `Fonte: coleta DSM · atualizado em ${data.toLocaleString("pt-BR")}`
+      : "Fonte: coleta DSM";
+  }
   renderizarRadar();
   renderizarAlertas();
   renderizarMencoes();
@@ -262,6 +270,13 @@ function renderizarMencoes() {
       indireta: resumo.indireta || 0,
       indeterminada: resumo.indeterminada || 0,
     };
+    const totalMencoes = Object.values(dados).reduce((a, b) => a + Number(b || 0), 0);
+    const caixa = canvas.closest(".canvas-box");
+    if (caixa) caixa.style.display = totalMencoes ? "" : "none";
+    if (!totalMencoes) {
+      if (portas) portas.innerHTML = '<p class="dsm-vazio">Sem menções classificadas no período.</p>';
+      return;
+    }
     charts.criarGraficoDonut(
       "graficoMencoes",
       dados,
@@ -354,3 +369,5 @@ export async function copiarNewsletter() {
     return false;
   }
 }
+
+

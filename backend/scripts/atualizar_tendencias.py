@@ -141,11 +141,10 @@ def main() -> int:
 
     db = init_firebase()
 
-    # Clippings para a crise e a previsao (L1 ja traz o sentimento).
-    clippings: list[dict] = []
-    for doc in db.collection("agentes_publicos").stream():
-        for clip in doc.reference.collection("clippings").stream():
-            clippings.append(clip.to_dict())
+    # Clippings para a crise e a previsao (com casa/cidade/orgao do agente).
+    from scripts.atualizar_metricas import coletar_clippings
+
+    clippings: list[dict] = coletar_clippings(db)
     logger.info("Lidos %d clippings para o calculo de crise e previsao.", len(clippings))
 
     hora = datetime.now(timezone.utc)
@@ -170,13 +169,29 @@ def main() -> int:
 
     # Por cidade (usa o mesmo doc que o front ja le).
     cidades = sorted({str(c.get("cidade") or "sem cidade") for c in clippings})
-    from scripts.atualizar_metricas import slugify_cidade
+    from scripts.atualizar_metricas import _slug_casa, slugify_cidade
+
+    patch_casa = {
+        "tendencias": gerais,
+        "crise": crise,
+        "previsao": patch_geral["previsao"],
+    }
+    if anuncios:
+        patch_casa["anuncios_politicos"] = patch_geral["anuncios_politicos"]
 
     for cidade in cidades:
         db.collection("metricas_por_cidade").document(slugify_cidade(cidade)).set(
             {"tendencias": gerais, "crise": crise}, merge=True
         )
     logger.info("metricas_por_cidade: %d documentos atualizados.", len(cidades))
+
+    # Por casa/orgao: o front do Valor le `metricas_por_casa`.
+    casas = sorted({str(c.get("casa") or "Camara Cuiaba") for c in clippings})
+    for casa in casas:
+        db.collection("metricas_por_casa").document(_slug_casa(casa)).set(
+            patch_casa, merge=True
+        )
+    logger.info("metricas_por_casa: %d documentos atualizados.", len(casas))
 
     # Por agente: interesse de busca + pico (wikipedia/trends).
     total = 0

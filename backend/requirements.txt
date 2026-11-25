@@ -18,12 +18,16 @@ feedparser>=6.0.10
 lxml>=5.1.0
 beautifulsoup4>=4.12.0
 
-# Automacao de navegador (Facebook)
+# Automacao de navegador (Facebook / Instagram pelo navegador real)
 playwright>=1.44.0
+# Stealth do navegador (drop-in do Playwright) usado pelo coletor do Instagram
+patchright>=1.40.0
 
 # Redes sociais
 twscrape>=0.4.5
 instaloader>=4.10.0
+# Conversao das capas do Instagram para PNG
+pillow>=10.0.0
 
 # YouTube
 yt-dlp>=2025.1.0

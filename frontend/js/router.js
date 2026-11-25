@@ -65,10 +65,15 @@ const TELAS = {
     eyebrow: "Cobertura da gestão",
     pergunta: "Como a mídia trata o governador?",
   },
+  radar: {
+    titulo: "Radar & Alertas",
+    eyebrow: "Sinais de risco e propaganda pública",
+    pergunta: "O que exige atenção agora?",
+  },
   analise: {
-    titulo: "Análise",
-    eyebrow: "DSM e IRAMUTEQ",
-    pergunta: "Quais são os mundos de sentido e os sinais de risco?",
+    titulo: "Análise do discurso",
+    eyebrow: "IRAMUTEQ",
+    pergunta: "Quais são os mundos de sentido da cobertura?",
     legado: "inteligencia",
   },
   simulacao: {
@@ -168,3 +173,4 @@ export function iniciarRouter() {
 
   window.__router = { irPara, rotaAtual: rotaDoHash };
 }
+

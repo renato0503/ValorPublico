@@ -1,4 +1,4 @@
-"""Recalcula metricas agregadas do dashboard e grava no Firestore.
+﻿"""Recalcula metricas agregadas do dashboard e grava no Firestore.
 
 Produz documentos otimizados para leitura em tempo real no PWA:
   metricas/geral               -> visao global (KPIs + series + top fontes)
@@ -45,17 +45,19 @@ def _timestamp_clip(c: dict) -> float:
         return 0.0
 
 
-def _redes_sociais(clippings: list[dict]) -> dict:
+def _redes_sociais(clippings: list[dict], com_posts: bool = False) -> dict:
     """Agregado das redes sociais (o front nunca le clippings brutos).
 
-    Inclui Instagram/Facebook/Twitter/TikTok/Threads/Kwai e comentarios do
-    YouTube. Guarda apenas o que o buscador exibiu publicamente (titulo,
-    snippet, url, data) - sem dados de comentaristas alem do trecho (LGPD).
+    `posts` (quando com_posts=True) traz posts do Instagram com comentários
+    públicos para a tela de detalhe. O agregado por período fica compacto.
     """
     por_rede: Counter = Counter()
     sentimento_por_rede: defaultdict[str, Counter] = defaultdict(Counter)
     comentarios = 0
     itens: list[dict] = []
+    posts: dict[str, dict] = {}
+    comentarios_por_post: defaultdict[str, list[dict]] = defaultdict(list)
+
     for c in clippings:
         plataforma = c.get("plataforma", "")
         tipo = c.get("tipo", "")
@@ -68,6 +70,55 @@ def _redes_sociais(clippings: list[dict]) -> dict:
         sentimento_por_rede[plataforma][c.get("sentimento") or "neutro"] += 1
         if tipo == "Comentario":
             comentarios += 1
+        if not com_posts:
+            continue
+        meta = c.get("metadados") or {}
+        shortcode = str(meta.get("post_shortcode") or "")
+        if tipo == "Postagem":
+            id_externo = str(c.get("id_externo") or "")
+            if not id_externo:
+                continue
+            texto = c.get("texto_limpo") or ""
+            posts[id_externo] = {
+                "id_externo": id_externo,
+                "shortcode": id_externo,
+                "agente": c.get("nome_agente") or c.get("agente_id") or "",
+                "rede": plataforma,
+                "titulo": meta.get("titulo") or texto.split("\n", 1)[0][:140],
+                "texto": texto[:700],
+                "data": c.get("data_publicacao"),
+                "data_publicacao": c.get("data_publicacao"),
+                "url": c.get("url") or "",
+                "sentimento": c.get("sentimento") or "neutro",
+                "curtidas": int(meta.get("curtidas") or 0),
+                "comentarios_total": int(meta.get("comentarios") or 0),
+                "comentarios_coletados": int(meta.get("comentarios_coletados") or 0),
+                "tipo_midia": meta.get("tipo_midia") or "",
+                "comentarios": [],
+            }
+        elif tipo == "Comentario" and shortcode:
+            comentarios_por_post[shortcode].append(
+                {
+                    "id_externo": str(c.get("id_externo") or ""),
+                    "autor": c.get("autor") or "",
+                    "texto": (c.get("texto_limpo") or "")[:240],
+                    "data": c.get("data_publicacao"),
+                    "sentimento": c.get("sentimento") or "neutro",
+                    "curtidas": int(c.get("alcance") or 0),
+                }
+            )
+
+    if com_posts:
+        for shortcode, lista in comentarios_por_post.items():
+            if shortcode in posts:
+                posts[shortcode]["comentarios"] = sorted(
+                    lista, key=lambda item: item.get("curtidas") or 0, reverse=True
+                )[:6]
+        posts_out = sorted(
+            posts.values(), key=_timestamp_clip, reverse=True
+        )[:30]
+    else:
+        posts_out = []
 
     recentes = sorted(itens, key=_timestamp_clip, reverse=True)[:40]
     recentes_out = []
@@ -77,6 +128,8 @@ def _redes_sociais(clippings: list[dict]) -> dict:
             {
                 "rede": c.get("plataforma", ""),
                 "tipo": c.get("tipo") or "Postagem",
+                "id_externo": c.get("id_externo") or "",
+                "post_shortcode": meta.get("post_shortcode") or "",
                 "agente": c.get("nome_agente") or c.get("agente_id") or "",
                 "titulo": meta.get("titulo") or "",
                 "snippet": (meta.get("snippet") or c.get("texto_limpo") or "")[:280],
@@ -86,13 +139,16 @@ def _redes_sociais(clippings: list[dict]) -> dict:
                 "confianca": meta.get("confianca") or "",
             }
         )
-    return {
+    resultado = {
         "por_rede": dict(por_rede),
         "sentimento_por_rede": {k: dict(v) for k, v in sentimento_por_rede.items()},
         "comentarios_total": comentarios,
         "total": len(itens),
         "recentes": recentes_out,
     }
+    if com_posts:
+        resultado["posts"] = posts_out
+    return resultado
 
 
 def _slug_casa(casa: str) -> str:
@@ -389,25 +445,39 @@ def _agregar(clippings: list[dict]) -> dict:
         except Exception:  # noqa: BLE001
             return 0
 
-    recents = sorted(clippings, key=_ts, reverse=True)[:10]
-    noticias_recentes = [
-        {
-            "id_clipping": c.get("id_clipping") or "",
-            "texto_limpo": (c.get("texto_limpo") or "")[:300],
-            "veiculo": c.get("metadados", {}).get("veiculo") or c.get("autor") or "Sem fonte",
-            "plataforma": c.get("plataforma", "Web"),
-            "data_publicacao": c.get("data_publicacao"),
-            "sentimento": c.get("sentimento", "neutro"),
-            "valor_estimado": round(float(c.get("valor_estimado") or 0), 2),
-            "alcance": int(c.get("alcance") or 0),
-            "url": c.get("url") or "",
-            "categorias": c.get("categorias") or [],
-            "agente": c.get("nome_agente") or "",
-            "cidade": c.get("cidade") or "",
-        }
-        for c in recents
-    ]
-
+    # Comentários não entram na lista de notícias; seguem nos agregados/DSM.
+    recents = sorted(
+        [c for c in clippings if str(c.get("tipo") or "") != "Comentario"],
+        key=_ts,
+        reverse=True,
+    )[:200]
+    noticias_recentes = []
+    for c in recents:
+        meta = c.get("metadados") or {}
+        mencao = c.get("mencao")
+        tipo_mencao = c.get("tipo_mencao") or (
+            mencao.get("tipo") if isinstance(mencao, dict) else ""
+        )
+        noticias_recentes.append(
+            {
+                "id_clipping": c.get("id_clipping") or "",
+                "titulo": meta.get("titulo") or c.get("titulo") or "",
+                "tipo": c.get("tipo") or "",
+                "texto_limpo": (c.get("texto_limpo") or "")[:300],
+                "veiculo": meta.get("veiculo") or c.get("autor") or "Sem fonte",
+                "plataforma": c.get("plataforma", "Web"),
+                "data_publicacao": c.get("data_publicacao"),
+                "sentimento": c.get("sentimento", "neutro"),
+                "tier": meta.get("tier") or c.get("tier") or "",
+                "tipo_mencao": tipo_mencao or "",
+                "valor_estimado": round(float(c.get("valor_estimado") or 0), 2),
+                "alcance": int(c.get("alcance") or 0),
+                "url": c.get("url") or "",
+                "categorias": c.get("categorias") or [],
+                "agente": c.get("nome_agente") or "",
+                "cidade": c.get("cidade") or "",
+            }
+        )
     agregado = {
         "total_clippings": len(clippings),
         "total_veiculos": len(veiculos),
@@ -465,6 +535,7 @@ def agregar(clippings: list[dict]) -> dict:
     ao frontend alternar o período sem nova consulta ao Firestore.
     """
     base = _agregar(clippings)
+    base["redes_sociais"] = _redes_sociais(clippings, com_posts=True)
 
     hoje = datetime.now(timezone.utc).date().isoformat()
     janelas = {"hoje": [], "7d": [], "15d": [], "30d": []}
@@ -479,8 +550,15 @@ def agregar(clippings: list[dict]) -> dict:
         if _dentro_janela(c.get("data_publicacao"), 30):
             janelas["30d"].append(c)
 
+    # O recorte de período alimenta apenas KPIs no front. Repetir as 200
+    # notícias em cada janela estourava o limite de 1 MiB do documento.
+    def _sem_lista_de_noticias(agregado: dict) -> dict:
+        recorte = dict(agregado)
+        recorte.pop("noticias_recentes", None)
+        return recorte
+
     base["por_periodo"] = {
-        chave: _agregar(clips)
+        chave: _sem_lista_de_noticias(_agregar(clips))
         for chave, clips in janelas.items()
     }
     return base
@@ -517,6 +595,18 @@ def coletar_clippings(db) -> list[dict]:
                 }
             )
     return clippings
+
+
+def _gravar_agregado_com_merge(ref, dados: dict) -> None:
+    """Preserva imagens/tendencias sem manter mapas antigos gigantes.
+
+    `set(..., merge=True)` faz merge recursivo: `noticias_recentes` antigas
+    dentro de `por_periodo` continuavam no documento. Limpar o mapa antes e
+    regravar o valor exato mantem o documento abaixo de 1 MiB.
+    """
+    ref.update({"por_periodo": {}})
+    ref.set(dados, merge=True)
+    ref.update({"por_periodo": dados.get("por_periodo") or {}})
 
 
 def main() -> None:
@@ -582,8 +672,9 @@ def main() -> None:
     for casa, clips in por_casa.items():
         agregado_casa = agregar(clips)
         agregado_casa["orgao"] = orgao_da_casa(casa)
-        db.collection("metricas_por_casa").document(_slug_casa(casa)).set(
-            agregado_casa
+        _gravar_agregado_com_merge(
+            db.collection("metricas_por_casa").document(_slug_casa(casa)),
+            agregado_casa,
         )
 
     for agente_id, clips in por_agente.items():
@@ -592,8 +683,9 @@ def main() -> None:
             (clips[0].get("orgao") if clips else "")
             or orgao_do_agente(clips[0] if clips else {})
         )
-        db.collection("metricas_por_agente").document(agente_id).set(
-            agregado_agente
+        _gravar_agregado_com_merge(
+            db.collection("metricas_por_agente").document(agente_id),
+            agregado_agente,
         )
 
     logger.info(
@@ -604,4 +696,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main_com_cota(main, "atualizar_metricas")
+
+
 

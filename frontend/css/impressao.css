@@ -1,0 +1,149 @@
+﻿/* ============================================================
+   Padrão único de impressão/PDF — ValorPúblico
+   A4, cabeçalho, rodapé, tipografia, tabelas e quebras.
+   ============================================================ */
+.print-only { display: none; }
+
+@media print {
+  @page { size: A4 portrait; margin: 17mm 15mm 18mm; }
+
+  html, body {
+    background: #fff !important;
+    color: #111827 !important;
+    font-size: 10.5pt !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body * { visibility: hidden !important; }
+
+  .masthead, .rodape, .app-sidebar, .nav-jornal, .filtros-barra,
+  .filtros-backdrop, .menu-backdrop, #barraCarregando, #aviso,
+  .grafico-acoes, .btn-atualizar, .btn-texto, .btn-info, .modal-fechar,
+  .abas-governo, .abas-semana, .gov-export .redes-filtros,
+  .redes-filtros, #btnFiltros, #btnMenu, #btnSidebar, #btnSidebarToggle {
+    display: none !important;
+  }
+
+  body.print-relatorio #modalRelatorio,
+  body.print-relatorio #modalRelatorio *,
+  body.print-semana #tela-semana,
+  body.print-semana #tela-semana *,
+  body.print-governador #tela-governador,
+  body.print-governador #tela-governador *,
+  body.print-governo #tela-governo,
+  body.print-governo #tela-governo *,
+  body.print-redes #tela-redes,
+  body.print-redes #tela-redes *,
+  body.print-tendencias #tela-tendencias,
+  body.print-tendencias #tela-tendencias *,
+  body.print-clipping #tela-clipping,
+  body.print-clipping #tela-clipping *,
+  body.print-personas #tela-personas,
+  body.print-personas #tela-personas *,
+  #printCabecalho, #printCabecalho *,
+  #printRodape, #printRodape * {
+    visibility: visible !important;
+  }
+
+  .app-shell { display: block !important; padding-left: 0 !important; }
+  .conteudo { max-width: none !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+  .tela { display: none !important; }
+  body.print-semana #tela-semana,
+  body.print-governador #tela-governador,
+  body.print-governo #tela-governo,
+  body.print-redes #tela-redes,
+  body.print-tendencias #tela-tendencias,
+  body.print-clipping #tela-clipping,
+  body.print-personas #tela-personas { display: block !important; }
+  body.print-relatorio #modalRelatorio {
+    display: block !important;
+    position: static !important;
+    inset: auto !important;
+    background: #fff !important;
+    padding: 0 !important;
+    backdrop-filter: none !important;
+  }
+  body.print-relatorio #modalRelatorio .modal {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+
+  #printCabecalho {
+    display: flex !important;
+    position: static !important;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 0 8mm;
+    margin: 0 0 6mm;
+    border-bottom: 1px solid #9ca3af;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 8pt;
+    color: #374151;
+  }
+  #printCabecalho .print-marca { font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+  #printCabecalho strong { font-family: "Newsreader", Georgia, serif; font-size: 18pt; font-weight: 600; color: #111827; }
+  #printCabecalho #printMeta { text-align: right; max-width: 42%; line-height: 1.35; }
+
+  #printRodape {
+    display: block !important;
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-top: 6mm;
+    padding-top: 3mm;
+    border-top: 1px solid #d1d5db;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 7pt;
+    color: #6b7280;
+  }
+
+  .card, .painel, .kpi, .grafico-area, .tabela-wrapper, .insight, .rel-card {
+    break-inside: avoid !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    border-color: #d1d5db !important;
+  }
+  .card { margin: 0 0 3mm !important; }
+  .kpis, .grade-secundaria, .grade-detalhe {
+    display: block !important;
+  }
+  .kpis {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 3mm !important;
+  }
+  .grade-principal { display: grid !important; gap: 3mm !important; grid-template-columns: 1.6fr 1fr !important; }
+  #tela-governo .grade-principal { grid-template-columns: repeat(5, 1fr) !important; }
+  #tela-governador .grade-principal { grid-template-columns: repeat(4, 1fr) !important; }
+  #tela-semana .grade-principal { grid-template-columns: repeat(4, 1fr) !important; }
+  .kpi { padding: 2.5mm !important; border: 1px solid #e5e7eb !important; border-radius: 2mm !important; }
+  .kpi-valor { font-size: 14pt !important; }
+  .grafico-area, .canvas-box { min-height: 38mm; }
+  .canvas-box canvas { max-width: 100% !important; height: auto !important; }
+
+  h1, h2, h3 { color: #111827 !important; break-after: avoid; }
+  h2 { font-size: 15pt !important; }
+  h3 { font-size: 12pt !important; }
+  p, li, td, th { color: #1f2937 !important; }
+  .painel-sub, .kpi-rotulo, .kpi-sufixo, .grafico-subtitulo, .fonte-dados {
+    color: #4b5563 !important;
+  }
+
+  table { width: 100% !important; border-collapse: collapse !important; font-size: 8.5pt !important; }
+  thead { display: table-header-group !important; }
+  tfoot { display: table-footer-group !important; }
+  tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+  th, td { padding: 2mm 1.5mm !important; border-bottom: 1px solid #d1d5db !important; }
+  a { color: #111827 !important; text-decoration: none !important; }
+
+  .tela-governo .aba-governo,
+  [data-semana-bloco][hidden] { display: none !important; }
+  [data-semana-bloco] { display: block !important; }
+  [data-semana-bloco] .card { margin-bottom: 4mm !important; }
+}
+
+

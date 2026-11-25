@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Componentes padrão do front (plano 17 §4).
  *
  *   4.1 Cartão de KPI    — nome amigável + ⓘ + valor + variação (cor+seta+texto)
@@ -37,6 +37,18 @@ export function cartaoKpi(idElemento, opcoes = {}) {
   const item = explicacao(codigo);
   const nome = opcoes.nome || nomeAmigavel(codigo);
 
+  const valorBruto = opcoes.valor;
+  const semBase =
+    opcoes.semBase === true ||
+    valorBruto === null ||
+    valorBruto === undefined ||
+    valorBruto === "–" ||
+    valorBruto === "—";
+  const valor = semBase ? "—" : String(valorBruto);
+  const sufixo = semBase
+    ? (opcoes.motivo || opcoes.sufixo || "sem base")
+    : opcoes.sufixo;
+
   const variacao = opcoes.variacao;
   let classeVariacao = "";
   let setaVariacao = "";
@@ -54,19 +66,19 @@ export function cartaoKpi(idElemento, opcoes = {}) {
     }`;
   }
 
-  elemento.className = `card kpi ${opcoes.classe || ""} ${opcoes.valorMidia ? "valor-midia" : ""}`.trim();
+  elemento.className = `card kpi ${opcoes.classe || ""} ${opcoes.valorMidia ? "valor-midia" : ""} ${semBase ? "kpi-sem-base" : ""}`.trim();
   elemento.innerHTML = `
     <div class="kpi-cabecalho">
       <span class="kpi-rotulo">${escapar(nome)}</span>
       <button class="btn-info" type="button" data-explicacao="${escapar(codigo)}" aria-label="O que é ${escapar(nome)}?">ⓘ</button>
     </div>
-    <span class="kpi-valor">${escapar(String(opcoes.valor ?? "–"))}</span>
+    <span class="kpi-valor">${escapar(valor)}</span>
     ${
       textoVariacao
         ? `<span class="kpi-variacao ${classeVariacao}">${escapar(textoVariacao)}</span>`
         : ""
     }
-    ${opcoes.sufixo ? `<span class="kpi-sufixo">${escapar(opcoes.sufixo)}</span>` : ""}
+    ${sufixo ? `<span class="kpi-sufixo">${escapar(sufixo)}</span>` : ""}
     <div class="kpi-spark" id="spark-${idElemento}"></div>
   `;
   registrarExplicacoes(elemento);
@@ -177,3 +189,4 @@ export function redimensionarGraficos() {
 export function limparGraficos() {
   graficosAtivos.clear();
 }
+

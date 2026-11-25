@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Barra global de filtros (plano 13 §2) — vale para todas as telas.
  *
  * Filtros: Período · Comparar com · Escopo/Casa · Canal · Tema
@@ -19,8 +19,6 @@ export const PERIODOS = [
   { valor: "7d", rotulo: "Últimos 7 dias" },
   { valor: "15d", rotulo: "Últimos 15 dias" },
   { valor: "30d", rotulo: "Últimos 30 dias" },
-  { valor: "90d", rotulo: "Últimos 90 dias" },
-  { valor: "12m", rotulo: "Últimos 12 meses" },
 ];
 
 export const CANAIS = [
@@ -33,7 +31,7 @@ export const CANAIS = [
 
 const estado = {
   periodo: "",
-  comparar: "anterior",
+  comparar: "",
   escopo: "",
   canal: "",
   tema: "",
@@ -97,7 +95,7 @@ export function aplicarFiltros(novoEstado = {}) {
 
 /** Limpa todos os filtros. */
 export function limparFiltros() {
-  aplicarFiltros({ periodo: "", comparar: "anterior", escopo: "", canal: "", tema: "", parlamentar: "" });
+  aplicarFiltros({ periodo: "", comparar: "", escopo: "", canal: "", tema: "", parlamentar: "" });
 }
 
 /* ------------------------------------------------------------------ */
@@ -147,9 +145,11 @@ export function atualizarChips() {
 
   const resumo = document.getElementById("filtrosResumo");
   if (resumo) {
-    const periodo = PERIODOS.find((p) => p.valor === estado.periodo)?.rotulo || "Todo o período";
-    const canal = CANAIS.find((c) => c.valor === estado.canal)?.rotulo || "Todos os canais";
-    resumo.textContent = `${periodo} · ${canal}`;
+    const partes = [
+      PERIODOS.find((p) => p.valor === estado.periodo)?.rotulo || "Todo o período",
+    ];
+    if (estado.parlamentar) partes.push("Parlamentar selecionado");
+    resumo.textContent = partes.join(" · ");
   }
 }
 
@@ -159,11 +159,8 @@ export function atualizarChips() {
 
 export function ligarBarraGlobal() {
   const mapa = {
-    filtroPeriodoGlobal: "periodo",
-    filtroCompararGlobal: "comparar",
-    filtroEscopoGlobal: "escopo",
-    filtroCanalGlobal: "canal",
-    filtroTemaGlobal: "tema",
+    filtroPeriodo: "periodo",
+    filtroParlamentar: "parlamentar",
   };
   Object.entries(mapa).forEach(([idElemento, chave]) => {
     const elemento = document.getElementById(idElemento);
@@ -182,8 +179,15 @@ export function ligarBarraGlobal() {
   });
   atualizarChips();
 
+  // Avisa as telas já no primeiro render, sem reescrever a URL.
+  document.dispatchEvent(new CustomEvent("filtros:mudou", { detail: filtros() }));
+
   // Botão "voltar" do navegador refaz a tela no mesmo estado.
+  let ultimaConsulta = window.location.hash.split("?")[1] || "";
   window.addEventListener("hashchange", () => {
+    const consulta = window.location.hash.split("?")[1] || "";
+    if (consulta === ultimaConsulta) return;
+    ultimaConsulta = consulta;
     lerDaUrl();
     atualizarChips();
     document.dispatchEvent(new CustomEvent("filtros:mudou", { detail: filtros() }));
@@ -200,3 +204,4 @@ export function resumoFiltros() {
 }
 
 export default { filtros, aplicarFiltros, limparFiltros, ligarBarraGlobal, aoMudarFiltros };
+

@@ -1,4 +1,4 @@
-import * as charts from "./charts.js";
+﻿import * as charts from "./charts.js";
 import { montarGrafo } from "./grafo.js";
 import { iniciarRouter } from "./router.js";
 import * as lexical from "./lexical.js";
@@ -42,6 +42,9 @@ import {
 } from "./dsm.js";
 
 const $ = (id) => document.getElementById(id);
+const UX_NAV2 = new URLSearchParams(window.location.search).get("ux") !== "nav1";
+if (UX_NAV2) document.documentElement.dataset.ux = "nav2";
+const CHAVE_SIDEBAR = "vp_sidebar_colapsada";
 
 const estado = {
   db: null,
@@ -231,8 +234,6 @@ function aplicarTemaInicial() {
 function atualizarBotaoTema(tema) {
   const el = $("btnTema");
   if (!el) return;
-  const icone = el.querySelector(".btn-tema-icone");
-  icone.textContent = tema === "claro" ? "☾" : "☀";
   el.title = tema === "claro" ? "Mudar para o tema escuro" : "Mudar para o tema claro";
 }
 
@@ -353,7 +354,7 @@ function popularFiltros() {
 
 function atualizarParlamentares() {
   const sel = $("filtroParlamentar");
-  const valorAtual = sel.value;
+  const pretendido = estado.parlamentar || sel.value;
   sel.innerHTML = '<option value="">Todos os parlamentares</option>';
   const agentes = estado.cidade
     ? estado.agentes.filter((a) => a.cidade === estado.cidade)
@@ -364,7 +365,8 @@ function atualizarParlamentares() {
     opt.textContent = a.nome_urna;
     sel.appendChild(opt);
   });
-  sel.value = estado.agentes.some((a) => a.id === valorAtual) ? valorAtual : "";
+  sel.value = estado.agentes.some((a) => a.id === pretendido) ? pretendido : "";
+  estado.parlamentar = sel.value;
 }
 
 /* ---------- análise lexical (IRAMUTEQ) ---------- */
@@ -400,6 +402,7 @@ async function carregarLexical() {
       renderizarLexical();
       return;
     }
+    if (!estado.db) return;
     const { doc, getDoc } = await import("firebase/firestore");
     const snap = await getDoc(doc(estado.db, "analise_lexical", chave));
     estado.lexical = snap.exists() ? snap.data() : null;
@@ -497,7 +500,14 @@ function desinscreverTudo() {
   estado.desinscrever = [];
 }
 
+
+function mostrarCarregando(ativo) {
+  const barra = $("barraCarregando");
+  if (barra) barra.hidden = !ativo;
+  $("appShell")?.setAttribute("aria-busy", String(!!ativo));
+}
 async function aplicarFiltros() {
+  mostrarCarregando(true);
   desinscreverTudo();
   // O parlamentar selecionado tem de ser do órgão ativo.
   if (
@@ -525,6 +535,7 @@ async function aplicarFiltros() {
 
   if (!ref) {
     renderizarVazio();
+    mostrarCarregando(false);
     return;
   }
 
@@ -535,23 +546,19 @@ async function aplicarFiltros() {
         if (snap.exists()) {
           renderizar(snap.data());
           // Telas novas (E2): leem os mesmos agregados.
-          telas.carregar(estado.db).catch((erro) =>
-            console.warn("[Telas] falha ao carregar:", erro?.message || erro)
-          );
-          governo.carregar(estado.db).catch((erro) =>
-            console.warn("[Governo] falha ao carregar:", erro?.message || erro)
-          );
-          simulacao.carregar(estado.db, estado.orgaoInfo).catch((erro) =>
-            console.warn("[Simulação] falha ao carregar:", erro?.message || erro)
-          );
-          personas.carregar(estado.db, estado.orgaoInfo).catch((erro) =>
-            console.warn("[Personas] falha ao carregar:", erro?.message || erro)
-          );
+          Promise.allSettled([
+            telas.carregar(estado.db),
+            governo.carregar(estado.db),
+            simulacao.carregar(estado.db, estado.orgaoInfo),
+            personas.carregar(estado.db, estado.orgaoInfo),
+          ]).finally(() => mostrarCarregando(false));
         } else {
           renderizarVazio();
+          mostrarCarregando(false);
         }
       },
       (erro) => {
+        mostrarCarregando(false);
         capturarErro(erro?.message || "Falha ao carregar dados em tempo real.", "rede");
       }
     )
@@ -573,10 +580,11 @@ function renderizar(dados) {
   }
   estado.ultimosDados = dados;
   const view = dadosDePeriodo(dados);
-  $("kpiVeiculos").textContent = formatarNumero(view.total_veiculos);
-  $("kpiAudiencia").textContent = formatarNumero(view.audiencia_total);
-  $("kpiValoracao").textContent = formatarValor(view.valoracao_total);
-  $("kpiClippings").textContent = formatarNumero(view.total_clippings);
+  const semRecorte = estado.periodo && Object.keys(view).length === 0;
+  $("kpiVeiculos").textContent = semRecorte ? "—" : formatarNumero(view.total_veiculos);
+  $("kpiAudiencia").textContent = semRecorte ? "—" : formatarNumero(view.audiencia_total);
+  $("kpiValoracao").textContent = semRecorte ? "—" : formatarValor(view.valoracao_total);
+  $("kpiClippings").textContent = semRecorte ? "—" : formatarNumero(view.total_clippings);
 
   renderizarTendencias(view);
   renderizarInsights(view);
@@ -722,7 +730,7 @@ function renderizarShareOfVoice(view, dados) {
 function dadosDePeriodo(dados) {
   if (!estado.periodo) return dados;
   const sub = (dados.por_periodo || {})[estado.periodo];
-  if (!sub || !sub.total_clippings) return dados;
+  if (!sub) return {};
   return sub;
 }
 
@@ -1358,7 +1366,7 @@ function gerarRelatorio() {
 
 function abrirModal(id) {
   // Fecha qualquer outro modal antes de abrir um novo
-  ["modalDetalhe", "modalRelatorio"].forEach((outroId) => {
+  ["modalDetalhe", "modalRelatorio", "modalPost"].forEach((outroId) => {
     if (outroId !== id) {
       const outro = $(outroId);
       if (outro) fecharModal(outroId);
@@ -1403,6 +1411,7 @@ function aplicarEscopoOrgao(slug) {
   telas.definirOrgao(info);
   governo.definirAtivo(info ? info.slug === "governo-mt" : false);
   renderMenu(info ? info.slug : "");
+  aplicarSidebar();
   atualizarBotaoOrgao();
   atualizarRotulosOrgao(info);
   // Se estava numa tela do Executivo e trocou de frente, volta para a edição.
@@ -1465,6 +1474,15 @@ async function entrarApp() {
     return;
   }
   const uid = estadoAuth.usuario?.uid || "";
+  // Usuário de um só órgão entra direto, sem a tela de escolha.
+  if (disponiveis.length === 1) {
+    const slug = disponiveis[0].slug;
+    definirOrgao(uid, slug, false);
+    fecharSeletorOrgao();
+    aplicarEscopoOrgao(slug);
+    await iniciarApp();
+    return;
+  }
   const salvo = orgaoSalvo(uid);
   const o = orgaoAtual(perfil, uid);
   if (salvo && salvo === o && disponiveis.some((x) => x.slug === o)) {
@@ -1508,7 +1526,7 @@ function renderOrgaoCards() {
     .map(
       (o) =>
         `<a href="#" class="orgao-card" data-orgao="${o.slug}" role="button">` +
-        `<span class="orgao-sigla">${esc(o.slug)}</span>` +
+        `<span class="orgao-sigla">${esc(o.curto || o.slug)}</span>` +
         `<span class="orgao-rotulo">${esc(o.rotulo)}</span>` +
         `<span class="orgao-cidade">${esc(o.cidade)}</span>` +
         `</a>`
@@ -1517,6 +1535,8 @@ function renderOrgaoCards() {
   grid.querySelectorAll(".orgao-card").forEach((card) => {
     card.addEventListener("click", (ev) => {
       ev.preventDefault();
+      card.classList.add("carregando");
+      card.setAttribute("aria-busy", "true");
       definirOrgao(estadoAuth.usuario?.uid || "", card.dataset.orgao);
       fecharSeletorOrgao();
     });
@@ -1621,23 +1641,314 @@ $("filtroCidade").addEventListener("change", (e) => {
   aplicarFiltros();
 });
 
-$("filtroParlamentar").addEventListener("change", (e) => {
-  estado.parlamentar = e.target.value;
-  aplicarFiltros();
-});
-
 $("filtroMes").addEventListener("change", (e) => {
   estadoNuvem.mes = e.target.value;
   desenharNuvem();
 });
 
-$("filtroPeriodo").addEventListener("change", (e) => {
-  estado.periodo = e.target.value;
-  if (estado.ultimosDados) renderizar(estado.ultimosDados);
-  carregarLexical();
-  definirJanelaDsm(estado.periodo || "30d");
-});
+function alternarFiltrosLateral(forcar) {
+  const aberto = typeof forcar === "boolean"
+    ? forcar
+    : !document.body.classList.contains("filtros-aberto");
+  document.body.classList.toggle("filtros-aberto", aberto);
+  const backdrop = $("filtrosBackdrop");
+  if (backdrop) backdrop.hidden = !aberto;
+  const shell = $("appShell");
+  if (shell) shell.inert = aberto;
+  if (aberto) {
+    alternarMenuMobile(false);
+    setTimeout(() => $("btnFecharFiltros")?.focus(), 40);
+  } else if (document.activeElement?.closest?.("#filtrosLateral")) {
+    $("btnFiltros")?.focus();
+  }
+  $("btnFiltros")?.setAttribute("aria-expanded", String(aberto));
+}
 
+function registrarFiltrosLateral() {
+  $("btnFiltros")?.addEventListener("click", () => alternarFiltrosLateral());
+  $("btnFecharFiltros")?.addEventListener("click", () => alternarFiltrosLateral(false));
+  $("filtrosBackdrop")?.addEventListener("click", () => alternarFiltrosLateral(false));
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") alternarFiltrosLateral(false);
+  });
+}
+
+function alternarMenuMobile(forcar) {
+  const aberto =
+    typeof forcar === "boolean"
+      ? forcar
+      : !document.body.classList.contains("menu-aberto");
+  document.body.classList.toggle("menu-aberto", aberto);
+  const backdrop = $("menuBackdrop");
+  if (backdrop) backdrop.hidden = !aberto;
+  const shell = $("appShell");
+  if (shell) shell.inert = aberto;
+  $("btnMenu")?.setAttribute("aria-expanded", String(aberto));
+  if (aberto) {
+    alternarFiltrosLateral(false);
+    setTimeout(() => $("navFecharMobile")?.focus(), 40);
+  } else if (document.activeElement?.closest?.("#navPrincipal")) {
+    $("btnMenu")?.focus();
+  }
+}
+
+
+function atualizarAlturaHeader() {
+  const header = document.querySelector(".masthead");
+  const altura = header ? Math.round(header.getBoundingClientRect().height) : 72;
+  document.documentElement.style.setProperty("--masthead-h", `${altura}px`);
+}
+
+function aplicarSidebar() {
+  if (!UX_NAV2) return;
+  let colapsada = false;
+  try {
+    colapsada = localStorage.getItem(CHAVE_SIDEBAR) === "1";
+  } catch {
+    colapsada = false;
+  }
+  document.body.classList.toggle("sidebar-colapsada", colapsada);
+  $("btnSidebar")?.setAttribute("aria-expanded", String(!colapsada));
+  $("btnSidebar")?.setAttribute("aria-label", colapsada ? "Expandir navegação" : "Recolher navegação");
+  $("btnSidebarToggle")?.setAttribute("aria-expanded", String(!colapsada));
+  $("btnSidebarToggle")?.setAttribute("aria-label", colapsada ? "Expandir navegação" : "Recolher navegação");
+  atualizarAlturaHeader();
+}
+
+function alternarSidebar() {
+  if (!UX_NAV2) return;
+  const colapsada = !document.body.classList.contains("sidebar-colapsada");
+  document.body.classList.toggle("sidebar-colapsada", colapsada);
+  try {
+    localStorage.setItem(CHAVE_SIDEBAR, colapsada ? "1" : "0");
+  } catch {
+    /* sem storage */
+  }
+  aplicarSidebar();
+  redimensionarGraficos();
+  telas.redimensionar();
+  governo.redimensionar();
+  simulacao.redimensionar();
+}
+
+
+function ativarAbaSemana(aba) {
+  document.querySelectorAll("[data-semana-bloco]").forEach((bloco) => {
+    bloco.hidden = bloco.dataset.semanaBloco !== aba;
+  });
+  document.querySelectorAll("[data-semana-aba]").forEach((botao) => {
+    const ativo = botao.dataset.semanaAba === aba;
+    botao.classList.toggle("ativo", ativo);
+    botao.setAttribute("aria-selected", String(ativo));
+  });
+}
+
+function registrarAbas() {
+  document.addEventListener("click", (evento) => {
+    const aba = evento.target.closest("[data-semana-aba]");
+    if (aba) {
+      evento.preventDefault();
+      ativarAbaSemana(aba.dataset.semanaAba);
+      return;
+    }
+    const secretarias = evento.target.closest("[data-gov-secretarias]");
+    if (secretarias) {
+      evento.preventDefault();
+      if (window.location.hash !== "#/governo") window.location.hash = "#/governo";
+      setTimeout(() => {
+        document.getElementById("govSecretarias")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
+    }
+  });
+}
+function registrarSidebar() {
+  aplicarSidebar();
+  document.addEventListener("click", (evento) => {
+    if (evento.target.closest("#btnSidebar") || evento.target.closest("#btnSidebarToggle")) {
+      evento.preventDefault();
+      alternarSidebar();
+      return;
+    }
+    if (evento.target.closest("#sidebarFiltros")) {
+      evento.preventDefault();
+      alternarFiltrosLateral();
+    }
+
+  });
+  window.addEventListener("resize", atualizarAlturaHeader);
+  document.addEventListener("click", (evento) => {
+    const link = evento.target.closest("[data-rota]");
+    if (!link) return;
+    window.dispatchEvent(
+      new CustomEvent("nav:click", { detail: { rota: link.dataset.rota } })
+    );
+  });
+}
+function registrarMenuMobile() {
+  $("btnMenu")?.addEventListener("click", (evento) => {
+    evento.stopPropagation();
+    alternarMenuMobile();
+  });
+  $("menuBackdrop")?.addEventListener("click", () => alternarMenuMobile(false));
+  document.addEventListener("click", (evento) => {
+    if (!document.body.classList.contains("menu-aberto")) return;
+    if (evento.target.closest("#navFecharMobile")) {
+      evento.preventDefault();
+      alternarMenuMobile(false);
+      return;
+    }
+    if (evento.target.closest("#navPrincipal") || evento.target.closest("#btnMenu")) return;
+    alternarMenuMobile(false);
+  });
+  document.addEventListener("keydown", (evento) => {
+    if (evento.key === "Escape") alternarMenuMobile(false);
+  });
+}
+
+const ICONES_POR_ID = {
+  btnTema: "i-tema",
+  btnTemaConta: "i-tema",
+  btnFiltros: "i-filtro",
+  btnFecharFiltros: "i-fechar",
+  btnRelatorio: "i-relatorios",
+  btnAbrirRelatorio: "i-relatorios",
+  btnGerarRelatorio: "i-relatorios",
+  btnOrgao: "i-orgao",
+  btnAtualizar: "i-atualizar",
+  btnSairConta: "i-sair",
+  btnAbrirNewsletter: "i-email",
+  btnNewsletterDsm: "i-email",
+  btnCopiarNewsletter: "i-copiar",
+  btnCopiarDiscurso: "i-copiar",
+  btnCopiarDiscursoGovernador: "i-copiar",
+  btnCopiarDiscursoInterino: "i-copiar",
+  btnBaixarPdfSemanal: "i-pdf",
+  btnBaixarPdfGovernador: "i-pdf",
+  btnExportarPdf: "i-pdf",
+  btnBaixarPdfGoverno: "i-pdf",
+  btnPerguntar: "i-perguntar",
+  btnInvestigar: "i-investigar",
+  btnEnviarBoletim: "i-enviar",
+  btnEntrar: "i-entrar",
+  btnEsqueci: "i-chave",
+};
+
+const ICONES_POR_TEXTO = [
+  ["copiar", "i-copiar"],
+  ["csv", "i-baixar"],
+  ["pdf", "i-pdf"],
+  ["baixar", "i-baixar"],
+  ["ver dados", "i-tabela"],
+  ["resetar", "i-zoom"],
+  ["fechar", "i-fechar"],
+  ["limpar", "i-fechar"],
+  ["abrir", "i-relatorios"],
+  ["enviar", "i-enviar"],
+  ["investigar", "i-investigar"],
+  ["perguntar", "i-perguntar"],
+];
+
+function svgIcone(id) {
+  return `<svg class="icone-btn" aria-hidden="true" focusable="false"><use href="#${id}"></use></svg>`;
+}
+
+function decorarBotao(botao) {
+  if (!botao || botao.dataset.icone === "1") return;
+  const texto = (botao.textContent || "").trim().toLowerCase();
+  let icone = ICONES_POR_ID[botao.id] || "";
+  let somenteIcone = false;
+
+  if (botao.classList.contains("btn-info")) {
+    icone = "i-info";
+    somenteIcone = true;
+  } else if (botao.classList.contains("modal-fechar")) {
+    icone = "i-fechar";
+    somenteIcone = true;
+  } else if (!icone && botao.id === "btnAuth") {
+    icone = texto.includes("sair") ? "i-sair" : "i-entrar";
+  } else if (!icone && botao.classList.contains("btn-texto")) {
+    icone = ICONES_POR_TEXTO.find(([chave]) => texto.includes(chave))?.[1] || "";
+  }
+
+  if (!icone) return;
+  botao.dataset.icone = "1";
+  if (somenteIcone) {
+    botao.innerHTML = svgIcone(icone);
+  } else {
+    botao.insertAdjacentHTML("afterbegin", svgIcone(icone));
+  }
+}
+
+function decorarBotoes(raiz = document) {
+  raiz.querySelectorAll("button").forEach(decorarBotao);
+}
+
+function iniciarIconesBotoes() {
+  decorarBotoes();
+  const observador = new MutationObserver((mutacoes) => {
+    mutacoes.forEach((mutacao) => {
+      mutacao.addedNodes.forEach((no) => {
+        if (no.nodeType === 3 && no.parentElement?.matches?.("button")) {
+          const botao = no.parentElement;
+          if (!botao.querySelector(".icone-btn")) {
+            botao.dataset.icone = "";
+            decorarBotao(botao);
+          }
+          return;
+        }
+        if (no.nodeType !== 1) return;
+        if (no.matches?.("button")) decorarBotao(no);
+        no.querySelectorAll?.("button").forEach(decorarBotao);
+      });
+    });
+  });
+  observador.observe(document.body, { childList: true, subtree: true });
+}
+const ROTAS_SEM_FILTROS_GLOBAIS = new Set([
+  "clipping",
+  "semana",
+  "simulacao",
+  "personas",
+  "relatorios",
+  "sistema",
+]);
+
+function rotaAtualSimples() {
+  return (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "").toLowerCase();
+}
+
+function atualizarFiltrosContexto() {
+  const rota = rotaAtualSimples();
+  const temFiltros = !ROTAS_SEM_FILTROS_GLOBAIS.has(rota);
+  const botao = $("btnFiltros");
+  if (botao) botao.hidden = !temFiltros;
+  if (!temFiltros) alternarFiltrosLateral(false);
+
+  const governo = estado.orgao === "governo-mt";
+  const campoParlamentar = $("filtroParlamentarCampo");
+  if (campoParlamentar) {
+    const usaAgente =
+      !rota || rota === "edicao" || rota === "painel" || rota === "analise";
+    campoParlamentar.hidden = !usaAgente;
+  }
+  const escopo = $("filtrosEscopo");
+  if (escopo) escopo.textContent = estado.orgaoInfo?.curto || "Painel";
+  const rotulo = $("rotuloFiltroAgente");
+  if (rotulo) rotulo.textContent = governo ? "Agente/pasta" : "Parlamentar";
+  const seletor = $("filtroParlamentar");
+  if (seletor) {
+    seletor.setAttribute(
+      "aria-label",
+      governo ? "Filtrar por agente ou pasta" : "Filtrar por parlamentar"
+    );
+  }
+  const nota = $("filtrosNota");
+  if (nota) {
+    nota.textContent = governo
+      ? "Período afeta o painel e os gráficos. Agente/pasta filtra a edição e a análise."
+      : "Período afeta o painel e os gráficos. Parlamentar filtra a edição e a análise.";
+  }
+}
 window.addEventListener("auth:changed", async () => {
   const uid = estadoAuth.usuario?.uid || "";
   if (uid) estado.uid = uid;
@@ -1822,13 +2133,20 @@ async function iniciarApp() {
 async function bootstrap() {
   aplicarTemaInicial();
   aplicarPreferenciaValor();
+  iniciarIconesBotoes();
   abrirLogin();
   renderMenu("");
   iniciarRouter();
+  atualizarFiltrosContexto();
   registrarBotaoAuth();
   iniciarMotion();
   registrarExplicacoes();
-  ligarBarraGlobal();
+  registrarFiltrosLateral();
+  registrarMenuMobile();
+  registrarSidebar();
+  registrarAbas();
+  ativarAbaSemana("relatorio");
+  telas.iniciarSemanas();
   window.addEventListener("resize", () => {
     redimensionarGraficos();
     telas.redimensionar();
@@ -1838,13 +2156,26 @@ async function bootstrap() {
   document.addEventListener("rota:changed", () => {
     registrarExplicacoes();
     marcarAtivo();
+    atualizarFiltrosContexto();
+    alternarMenuMobile(false);
+    alternarFiltrosLateral(false);
     telas.redimensionar();
     governo.redimensionar();
     simulacao.redimensionar();
   });
-  aoMudarFiltros(async () => {
-    if (estado.db) await telas.carregar(estado.db);
+  aoMudarFiltros(async (f) => {
+    estado.periodo = f.periodo || "";
+    if (f.parlamentar !== estado.parlamentar) {
+      estado.parlamentar = f.parlamentar || "";
+      if (estado.db) await aplicarFiltros();
+    }
+    if (estado.ultimosDados) renderizar(estado.ultimosDados);
+    carregarLexical();
+    definirJanelaDsm(estado.periodo || "todas");
+    telas.definirPeriodo(estado.periodo);
+    governo.definirPeriodo(estado.periodo);
   });
+  ligarBarraGlobal();
   $("btnAbrirRelatorio")?.addEventListener("click", () => abrirModal("modalRelatorio"));
   $("btnAbrirNewsletter")?.addEventListener("click", () => {
     const resultado = abrirNewsletter();
@@ -1890,6 +2221,60 @@ async function bootstrap() {
 }
 
 bootstrap();
+const BOTOES_PDF = {
+  btnBaixarPdfClipping: "print-clipping",
+  btnBaixarPdfRedes: "print-redes",
+  btnBaixarPdfTendencias: "print-tendencias",
+  btnBaixarPdfPersonas: "print-personas",
+};
+Object.entries(BOTOES_PDF).forEach(([id, classe]) => {
+  $("" + id)?.addEventListener("click", () => {
+    document.body.classList.add(classe);
+    window.print();
+    setTimeout(() => document.body.classList.remove(classe), 500);
+  });
+});
+let tituloAntesDaImpressao = "";
+function prepararCabecalhoImpressao() {
+  const titulo = document.getElementById("printTitulo");
+  const meta = document.getElementById("printMeta");
+  if (!titulo || !meta) return;
+  const mapa = {
+    "print-relatorio": "Relatório executivo",
+    "print-semana": "Semana & Discurso",
+    "print-governador": "Governador",
+    "print-governo": "Governo de Mato Grosso",
+    "print-redes": "Redes da Casa",
+    "print-tendencias": "Tendências",
+    "print-clipping": "Clipping",
+    "print-personas": "Personas",
+  };
+  const classe = Object.keys(mapa).find((c) => document.body.classList.contains(c));
+  const tituloTela = classe ? mapa[classe] : (document.querySelector(".tela.ativa h2")?.textContent || document.title);
+  titulo.textContent = tituloTela.trim();
+  tituloAntesDaImpressao = document.title;
+  document.title = `${tituloTela.trim()} — ValorPúblico`;
+  const partes = [
+    estado.orgaoInfo?.rotulo || "ValorPúblico",
+    estado.periodo ? `Período: ${estado.periodo}` : "Todo o período",
+    new Date().toLocaleDateString("pt-BR"),
+  ];
+  meta.textContent = partes.join(" · ");
+  document.querySelectorAll("details:not([open])").forEach((detalhe) => {
+    detalhe.dataset.abertoAntesDaImpressao = "1";
+    detalhe.open = true;
+  });
+}
+
+window.addEventListener("beforeprint", prepararCabecalhoImpressao);
+window.addEventListener("afterprint", () => {
+  document.querySelectorAll("details[data-aberto-antes-da-impressao]").forEach((detalhe) => {
+    detalhe.open = false;
+    delete detalhe.dataset.abertoAntesDaImpressao;
+  });
+  if (tituloAntesDaImpressao) document.title = tituloAntesDaImpressao;
+});
+
 
 // Gancho de depuracao (usado pelo smoke test do painel e pelo console do browser)
 window.__app_test = {
@@ -1918,3 +2303,34 @@ document.addEventListener("click", (evento) => {
   governo.filtrarPasta(slug === (window.__pastaSelecionada || "") ? "" : slug);
   window.__pastaSelecionada = slug === (window.__pastaSelecionada || "") ? "" : slug;
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -84,6 +84,32 @@ function _numero(n, casas = 1) {
   return Number(n || 0).toFixed(casas);
 }
 
+let resumoLigado = false;
+
+function _atualizarResumoVariante(dados) {
+  const alvo = document.getElementById("simVarianteResumo");
+  const seletor = document.getElementById("simVariante");
+  if (!alvo) return;
+  if (!dados || !seletor?.value) {
+    alvo.textContent = "";
+    return;
+  }
+  const variante = (dados.variantes || []).find(
+    (v) => String(v.id) === String(seletor.value)
+  );
+  if (!variante) {
+    alvo.textContent = "";
+    return;
+  }
+  const rejeicao = variante.rejeicao !== undefined
+    ? `${Math.round(Number(variante.rejeicao || 0) * 100)}%`
+    : "—";
+  const polarizacao = variante.polarizacao !== undefined
+    ? _numero(variante.polarizacao, 2)
+    : "—";
+  alvo.textContent = `Variante ${variante.id}: adesão ${_numero(variante.adesao)} (nota de 1 a 7) · rejeição ${rejeicao} · polarização ${polarizacao}.`;
+}
+
 export function renderizar() {
   const dados = estado.dados;
   const personas = Array.isArray(dados?.personas) ? dados.personas : [];
@@ -134,6 +160,11 @@ export function renderizar() {
           .join("")
       : '<option value="">Sem variantes</option>';
     seletor.disabled = !variantes.length;
+    if (!resumoLigado) {
+      seletor.addEventListener("change", () => _atualizarResumoVariante(estado.dados));
+      resumoLigado = true;
+    }
+    _atualizarResumoVariante(dados);
   }
 
   const grade = document.getElementById("simPersonas");

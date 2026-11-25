@@ -32,6 +32,8 @@ const estado = {
   discurso: null,
   simulacao: null,
   semana: "",
+  semanaFixa: "",
+  periodo: "",
   varianteAtiva: 0,
   discursoGovernador: null,
   semanaGovernador: "",
@@ -42,10 +44,66 @@ const estado = {
   varianteGovernador: 0,
 };
 const graficos = new Map();
+let paginaClipping = 1;
+const CLIPPING_POR_PAGINA = 25;
 
 /** Define o órgão ativo (a Casa). Sem ele nenhuma tela lê dados. */
 export function definirOrgao(info) {
   estado.orgao = info || null;
+}
+
+/** Aplica o recorte de período global às telas institucionais. */
+export function definirPeriodo(periodo) {
+  estado.periodo = periodo || "";
+  if (estado.dados) renderizar();
+}
+
+function rotuloSemana(semana) {
+  const m = /^(\d{4})-W(\d{2})$/.exec(semana || "");
+  if (!m) return semana || "Semana";
+  const ano = Number(m[1]);
+  const numero = Number(m[2]);
+  const jan4 = new Date(Date.UTC(ano, 0, 4));
+  const dia = jan4.getUTCDay() || 7;
+  const segunda = new Date(jan4);
+  segunda.setUTCDate(jan4.getUTCDate() - dia + 1 + (numero - 1) * 7);
+  const domingo = new Date(segunda);
+  domingo.setUTCDate(segunda.getUTCDate() + 6);
+  const fmt = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
+  return `Semana ${numero} · ${fmt.format(segunda)}–${fmt.format(domingo)}`;
+}
+
+function preencherSelectsSemana() {
+  const semanas = semanasRecentes(12);
+  const selecionada = estado.semanaFixa || estado.semana || semanas[0];
+  document.querySelectorAll("select[data-semana]").forEach((select) => {
+    select.innerHTML = semanas
+      .map((s) => `<option value="${s}">${escapar(rotuloSemana(s))}</option>`)
+      .join("");
+    select.value = semanas.includes(selecionada) ? selecionada : semanas[0];
+  });
+}
+
+/** Troca a semana exibida em Semana/Governador (relatório, discurso e simulação). */
+export function iniciarSemanas() {
+  preencherSelectsSemana();
+}
+
+export function definirSemana(semana) {
+  estado.semanaFixa = semana || "";
+  if (estado.db) carregar(estado.db);
+}
+
+/** Injeção para testes de UI (sem Firestore). */
+export function definirDados(dados) {
+  estado.dados = dados || null;
+  renderizar();
+}
+
+function dadosDaJanela(dados) {
+  if (!estado.periodo) return dados;
+  const recorte = dados?.por_periodo?.[estado.periodo];
+  return recorte ? { ...dados, ...recorte } : {};
 }
 
 function guardar(id, instancia) {
@@ -109,10 +167,10 @@ function semanasRecentes(quantidade = 4) {
  * Carrega relatório, discurso e simulação da semana para a Casa atual.
  * Procura nas últimas 4 semanas (a geração pode ter falhado em uma delas).
  */
-async function lerSemana(db, orgao) {
+async function lerSemana(db, orgao, semanaFixa = "") {
   if (!orgao) return { relatorio: null, discurso: null, simulacao: null, semana: "" };
   const escopo = `casa-${orgao.slug}`;
-  for (const semana of semanasRecentes(4)) {
+  for (const semana of (semanaFixa ? [semanaFixa] : semanasRecentes(4))) {
     const [relatorio, discurso, simulacao] = await Promise.all([
       lerDocSeguro(db, "relatorio_semanal", `${escopo}__${semana}`),
       lerDocSeguro(db, "discurso_semanal", `${escopo}__${semana}`),
@@ -126,7 +184,7 @@ async function lerSemana(db, orgao) {
     relatorio: null,
     discurso: null,
     simulacao: null,
-    semana: semanasRecentes(1)[0],
+    semana: semanaFixa || semanasRecentes(1)[0],
   };
 }
 
@@ -149,8 +207,8 @@ export function escopoAtual() {
   return { tipo: "nenhum", id: "" };
 }
 
-async function lerDiscursoAgente(db, escopoBase) {
-  for (const semana of semanasRecentes(4)) {
+async function lerDiscursoAgente(db, escopoBase, semanaFixa = "") {
+  for (const semana of (semanaFixa ? [semanaFixa] : semanasRecentes(4))) {
     const doc = await lerDocSeguro(
       db,
       "discurso_semanal",
@@ -158,11 +216,11 @@ async function lerDiscursoAgente(db, escopoBase) {
     );
     if (doc) return { doc, semana };
   }
-  return { doc: null, semana: semanasRecentes(1)[0] };
+  return { doc: null, semana: semanaFixa || semanasRecentes(1)[0] };
 }
 
-async function lerSimulacaoAgente(db, escopoBase) {
-  for (const semana of semanasRecentes(4)) {
+async function lerSimulacaoAgente(db, escopoBase, semanaFixa = "") {
+  for (const semana of (semanaFixa ? [semanaFixa] : semanasRecentes(4))) {
     const doc = await lerDocSeguro(
       db,
       "simulacao_semanal",
@@ -170,7 +228,7 @@ async function lerSimulacaoAgente(db, escopoBase) {
     );
     if (doc) return { doc, semana };
   }
-  return { doc: null, semana: semanasRecentes(1)[0] };
+  return { doc: null, semana: semanaFixa || semanasRecentes(1)[0] };
 }
 
 export async function carregar(db) {
@@ -192,7 +250,7 @@ export async function carregar(db) {
     estado.dados = null;
   }
   estado.demandas = await lerDemandas(db, estado.orgao?.slug);
-  const semana = await lerSemana(db, estado.orgao);
+  const semana = await lerSemana(db, estado.orgao, estado.semanaFixa);
   estado.relatorio = semana.relatorio;
   estado.discurso = semana.discurso;
   estado.simulacao = semana.simulacao;
@@ -200,18 +258,21 @@ export async function carregar(db) {
   if (estado.orgao?.slug === "governo-mt") {
     const gov = await lerDiscursoAgente(
       db,
-      "agente-governador-otaviano-pivetta"
+      "agente-governador-otaviano-pivetta",
+      estado.semanaFixa
     );
     estado.discursoGovernador = gov.doc;
     estado.semanaGovernador = gov.semana;
     const simGov = await lerSimulacaoAgente(
       db,
-      "agente-governador-otaviano-pivetta"
+      "agente-governador-otaviano-pivetta",
+      estado.semanaFixa
     );
     estado.simulacaoGovernador = simGov.doc;
     const interino = await lerDiscursoAgente(
       db,
-      "agente-interino-max-russi"
+      "agente-interino-max-russi",
+      estado.semanaFixa
     );
     estado.discursoInterino = interino.doc;
     estado.semanaInterino = interino.semana;
@@ -226,7 +287,7 @@ export async function carregar(db) {
 }
 
 export function renderizar() {
-  const dados = estado.dados || {};
+  const dados = dadosDaJanela(estado.dados || {});
   renderizarEdicao(dados);
   renderizarClipping(dados);
   renderizarImagem(dados);
@@ -238,6 +299,7 @@ export function renderizar() {
   renderizarRedes(dados);
   renderizarConformidade(dados);
   renderizarTendencias(dados);
+  preencherSelectsSemana();
   registrarExplicacoes();
 }
 
@@ -254,34 +316,51 @@ function saldoDeOpiniao(dados) {
 
 /* ---- V1 / Edição do dia ---- */
 function renderizarEdicao(dados) {
+  const tem = (v) => v !== undefined && v !== null;
   cartaoKpi("kpiEdicaoMatarias", {
     codigo: "K-01",
-    valor: new Intl.NumberFormat("pt-BR").format(Number(dados.total_clippings ?? 0)),
+    valor: tem(dados.total_clippings)
+      ? new Intl.NumberFormat("pt-BR").format(Number(dados.total_clippings))
+      : "—",
+    ...(tem(dados.total_clippings) ? {} : { semBase: true, motivo: "sem clippings no período" }),
   });
   cartaoKpi("kpiEdicaoSentimento", {
     codigo: "K-03",
-    valor: Number(saldoDeOpiniao(dados)).toFixed(0),
+    valor: tem(dados.distribuicao_sentimento) ? Number(saldoDeOpiniao(dados)).toFixed(0) : "—",
+    ...(tem(dados.distribuicao_sentimento) ? {} : { semBase: true, motivo: "sem sentimento classificado" }),
   });
   cartaoKpi("kpiEdicaoAlcance", {
     codigo: "K-05",
-    valor: new Intl.NumberFormat("pt-BR").format(Number(dados.audiencia_total ?? 0)),
+    valor: tem(dados.audiencia_total)
+      ? new Intl.NumberFormat("pt-BR").format(Number(dados.audiencia_total))
+      : "—",
+    ...(tem(dados.audiencia_total) ? {} : { semBase: true, motivo: "sem audiência calculada" }),
   });
   cartaoKpi("kpiEdicaoValor", {
     codigo: "K-08",
-    valor: new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      maximumFractionDigits: 0,
-    }).format(Number(dados.valor_avpe_total ?? dados.valoracao_total ?? 0)),
+    valor: tem(dados.valor_avpe_total) || tem(dados.valoracao_total)
+      ? new Intl.NumberFormat("pt-BR", {
+          style: "currency",
+          currency: "BRL",
+          maximumFractionDigits: 0,
+        }).format(Number(dados.valor_avpe_total ?? dados.valoracao_total))
+      : "—",
     valorMidia: true,
+    ...(tem(dados.valor_avpe_total) || tem(dados.valoracao_total)
+      ? {}
+      : { semBase: true, motivo: "valor de mídia não calculado" }),
   });
   cartaoKpi("kpiEdicaoAlertas", {
     codigo: "K-20",
-    valor: String(Number(dados.alertas?.total ?? 0)),
+    valor: tem(dados.alertas?.total) ? String(Number(dados.alertas.total)) : "—",
+    ...(tem(dados.alertas?.total) ? {} : { semBase: true, motivo: "sem alertas calculados" }),
   });
   cartaoKpi("kpiEdicaoSla", {
     codigo: "K-60",
-    valor: `${Math.round(Number(dados.cobertura?.sla_min_medio ?? 0))} min`,
+    valor: tem(dados.cobertura?.sla_min_medio)
+      ? `${Math.round(Number(dados.cobertura.sla_min_medio))} min`
+      : "—",
+    ...(tem(dados.cobertura?.sla_min_medio) ? {} : { semBase: true, motivo: "sem SLA calculado" }),
   });
 
   const canvas = document.getElementById("graficoEdicaoSentimento");
@@ -306,6 +385,7 @@ function renderizarClipping(dados) {
   const selVeiculo = document.getElementById("filtroClipVeiculo");
   const selTier = document.getElementById("filtroClipTier");
   const selTipo = document.getElementById("filtroClipTipo");
+  const busca = document.getElementById("filtroClipBusca");
 
   if (selVeiculo) {
     const atual = selVeiculo.value;
@@ -321,41 +401,93 @@ function renderizarClipping(dados) {
     selTier.title = temTier ? "" : "O tier não está disponível neste agregado.";
     if (!temTier) selTier.value = "";
   }
+  if (selTipo) {
+    const temTipo = itens.some((n) => n.tipo_mencao || n.tipo);
+    selTipo.disabled = !temTipo;
+    selTipo.title = temTipo ? "" : "O tipo de menção não está disponível neste agregado.";
+    if (!temTipo) selTipo.value = "";
+  }
 
   const veiculo = selVeiculo?.value || "";
   const tier = selTier?.value || "";
   const tipo = selTipo?.value || "";
+  const termo = (busca?.value || "").trim().toLowerCase();
   const filtrados = itens.filter((n) => {
     if (veiculo && n.veiculo !== veiculo) return false;
     if (tier && n.tier !== tier) return false;
     const tipoItem = n.tipo_mencao || n.tipo || "";
     if (tipo && tipoItem !== tipo) return false;
+    if (termo) {
+      const alvo = `${n.titulo || ""} ${n.texto_limpo || ""} ${n.veiculo || ""}`.toLowerCase();
+      if (!alvo.includes(termo)) return false;
+    }
     return true;
   });
 
-  corpo.innerHTML = filtrados.length
-    ? filtrados
-        .slice(0, 100)
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / CLIPPING_POR_PAGINA));
+  paginaClipping = Math.min(Math.max(1, paginaClipping), totalPaginas);
+  const inicio = (paginaClipping - 1) * CLIPPING_POR_PAGINA;
+  const visiveis = filtrados.slice(inicio, inicio + CLIPPING_POR_PAGINA);
+
+  corpo.innerHTML = visiveis.length
+    ? visiveis
         .map(
           (n) => `<tr>
-            <td>${n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">${escapar(n.titulo || "notícia")}</a>` : escapar(n.titulo || "notícia")}</td>
-            <td>${escapar(n.veiculo || n.autor || "—")}</td>
-            <td>${escapar(_dataCurta(n.data_publicacao || n.data))}</td>
-            <td>${escapar(n.tipo_mencao || n.tipo || "—")}</td>
-            <td>${escapar(n.sentimento || "—")}</td>
+            <td data-label="Matéria">${n.url ? `<a href="${escapar(n.url)}" target="_blank" rel="noopener">${escapar(n.titulo || n.texto_limpo || "notícia")}</a>` : escapar(n.titulo || n.texto_limpo || "notícia")}</td>
+            <td data-label="Veículo">${escapar(n.veiculo || n.autor || "—")}</td>
+            <td data-label="Data">${escapar(_dataCurta(n.data_publicacao || n.data))}</td>
+            <td data-label="Tipo">${escapar(n.tipo_mencao || n.tipo || "—")}</td>
+            <td data-label="Tom">${escapar(n.sentimento || "—")}</td>
           </tr>`
         )
         .join("")
-    : `<tr><td colspan="5">Nenhuma das últimas notícias atende aos filtros selecionados.</td></tr>`;
+    : `<tr><td colspan="5">Nenhuma notícia atende aos filtros selecionados.</td></tr>`;
+
+  renderizarPaginacaoClipping(filtrados.length, totalPaginas);
 
   const nota = document.getElementById("clippingNota");
   if (nota) {
-    nota.textContent = itens.length
-      ? `Mostrando ${filtrados.length} de ${itens.length} notícias recentes do agregado do Governo. A lista completa será carregada pela API de clipping.`
-      : "Ainda não há notícias recentes neste agregado. A coleta diária preenche esta lista.";
+    if (!itens.length) {
+      nota.textContent = "Ainda não há notícias neste agregado. A coleta diária preenche esta lista.";
+    } else if (!filtrados.length) {
+      nota.textContent = `Nenhuma das ${itens.length} notícias do agregado atende aos filtros.`;
+    } else {
+      nota.textContent = `Mostrando ${inicio + 1}–${inicio + visiveis.length} de ${filtrados.length} notícias filtradas (${itens.length} no agregado).`;
+    }
   }
 }
 
+function renderizarPaginacaoClipping(total, totalPaginas) {
+  const alvo = document.getElementById("paginacaoClipping");
+  if (!alvo) return;
+  if (!total || totalPaginas <= 1) {
+    alvo.innerHTML = "";
+    return;
+  }
+  const paginas = [];
+  const inicial = Math.max(1, paginaClipping - 2);
+  const final = Math.min(totalPaginas, inicial + 4);
+  for (let p = inicial; p <= final; p++) paginas.push(p);
+
+  alvo.innerHTML = `
+    <span class="pagina-info">página ${paginaClipping} de ${totalPaginas}</span>
+    <button type="button" data-pagina="${paginaClipping - 1}" ${paginaClipping === 1 ? "disabled" : ""} aria-label="Página anterior">‹</button>
+    ${paginas
+      .map(
+        (p) =>
+          `<button type="button" data-pagina="${p}" ${p === paginaClipping ? 'aria-current="page"' : ""}>${p}</button>`
+      )
+      .join("")}
+    <button type="button" data-pagina="${paginaClipping + 1}" ${paginaClipping === totalPaginas ? "disabled" : ""} aria-label="Próxima página">›</button>`;
+  alvo.querySelectorAll("[data-pagina]").forEach((botao) => {
+    botao.addEventListener("click", () => {
+      const destino = Number(botao.dataset.pagina);
+      if (!Number.isFinite(destino) || destino < 1 || destino > totalPaginas) return;
+      paginaClipping = destino;
+      renderizarClipping(dadosDaJanela(estado.dados || {}));
+    });
+  });
+}
 /* ---- V3 / Imagem da Casa ---- */
 function renderizarImagem(dados) {
   cartaoKpi("kpiImagemSaldo", {
@@ -393,7 +525,10 @@ function renderizarImagem(dados) {
 
   const previsao = dados.previsao?.mencoes || {};
   const canvas = document.getElementById("graficoImagemPrevisao");
-  if (canvas) {
+  const temPrevisao = (previsao.historico || []).length > 0 || (previsao.previsao || []).length > 0;
+  const cardPrevisao = canvas?.closest(".card");
+  if (cardPrevisao) cardPrevisao.classList.toggle("oculto", !temPrevisao);
+  if (canvas && temPrevisao) {
     guardar(
       "graficoImagemPrevisao",
       linhaComPrevisao(
@@ -482,6 +617,19 @@ function renderizarOuvidoria(dados) {
 }
 
 /* ---- V6 / Semana da Casa ---- */
+function _rotuloClasse(classe) {
+  const genericas = new Set([
+    "de", "da", "do", "das", "dos", "e", "em", "a", "o", "as", "os", "para",
+    "por", "com", "nbsp", "mt", "mato", "grosso", "no", "na", "nos", "nas",
+  ]);
+  const formas = (classe?.formas || [])
+    .map((f) => String(f.f || "").trim().toLowerCase())
+    .filter((f) => f && !genericas.has(f))
+    .slice(0, 2);
+  if (formas.length) return formas.join(" · ");
+  return `Classe ${classe?.id ?? "?"}`;
+}
+
 function renderizarSemana(dados) {
   const rel = estado.relatorio || dados.relatorio_semanal || {};
   const disc = estado.discurso || {};
@@ -498,44 +646,44 @@ function renderizarSemana(dados) {
   cartaoKpi("kpiSemanaVariedade", {
     codigo: "K-40",
     valor: variedade !== null ? variedade.toFixed(2) : "—",
-    sufixo: variedade !== null ? "diversidade dos assuntos" : "não calculada nesta semana",
+    sufixo: variedade !== null
+      ? `diversidade dos assuntos (0 a 1) · ${variedade < 0.35 ? "baixa" : variedade < 0.6 ? "média" : "alta"}`
+      : "não calculada nesta semana",
   });
-  cartaoKpi("kpiSemanaSintonia", {
-    codigo: "K-41",
-    valor:
-      rel.alinhamento !== undefined && rel.alinhamento !== null
-        ? Number(rel.alinhamento).toFixed(2)
-        : "—",
-    sufixo:
-      rel.alinhamento === undefined || rel.alinhamento === null
-        ? "sem base na semana"
-        : "",
-  });
+  const temSintonia = rel.alinhamento !== undefined && rel.alinhamento !== null;
+  document.getElementById("kpiSemanaSintonia")?.classList.toggle("oculto", !temSintonia);
+  if (temSintonia) {
+    cartaoKpi("kpiSemanaSintonia", {
+      codigo: "K-41",
+      valor: Number(rel.alinhamento).toFixed(2),
+    });
+  }
   const imagens = dados.imagens?.kpis;
-  cartaoKpi("kpiSemanaImagens", {
-    codigo: "K-70",
-    valor: imagens ? String(imagens.k70_postos_com_imagem ?? 0) : "—",
-    sufixo: imagens ? "" : "sem análise de imagem",
-  });
-  cartaoKpi("kpiSemanaEquidade", {
-    codigo: "K-43",
-    valor:
-      dados.equidade_visibilidade !== undefined &&
-      dados.equidade_visibilidade !== null
-        ? Number(dados.equidade_visibilidade).toFixed(2)
-        : "—",
-    sufixo:
-      dados.equidade_visibilidade === undefined
-        ? "não calculado nesta semana"
-        : "",
-  });
+  const temImagens = imagens && imagens.k70_postos_com_imagem !== undefined;
+  document.getElementById("kpiSemanaImagens")?.classList.toggle("oculto", !temImagens);
+  if (temImagens) {
+    cartaoKpi("kpiSemanaImagens", {
+      codigo: "K-70",
+      valor: String(Number(imagens.k70_postos_com_imagem)),
+    });
+  }
+  const temEquidade =
+    dados.equidade_visibilidade !== undefined &&
+    dados.equidade_visibilidade !== null;
+  document.getElementById("kpiSemanaEquidade")?.classList.toggle("oculto", !temEquidade);
+  if (temEquidade) {
+    cartaoKpi("kpiSemanaEquidade", {
+      codigo: "K-43",
+      valor: Number(dados.equidade_visibilidade).toFixed(2),
+    });
+  }
 
   const canvas = document.getElementById("graficoSemanaClasses");
   if (canvas) {
     const classesChd = rel.chd?.classes || [];
     if (classesChd.length) {
       const itens = classesChd.slice(0, 8).map((c) => ({
-        rotulo: c.rotulo || c.forma || `Classe ${c.id}`,
+        rotulo: _rotuloClasse(c),
         valor: Math.round(Number(c.pct ?? 0) * (Number(c.pct ?? 0) <= 1 ? 100 : 1)),
       }));
       guardar("graficoSemanaClasses", barrasHorizontais(canvas, itens));
@@ -787,57 +935,339 @@ if (typeof document !== "undefined") {
 /* ---- V7 / Redes da Casa ---- */
 function renderizarRedes(dados) {
   const proprias = dados.redes_proprias || {};
-  cartaoKpi("kpiRedesSeguidores", {
-    codigo: "K-10",
-    valor: new Intl.NumberFormat("pt-BR").format(Number(proprias.seguidores ?? 0)),
-  });
-  cartaoKpi("kpiRedesEngajamento", {
-    codigo: "K-11",
-    valor: `${Number(proprias.engajamento_7d ?? 0).toFixed(2)}%`,
-  });
-  cartaoKpi("kpiRedesComentarios", {
-    codigo: "K-12",
-    valor: String(Number(proprias.comentarios?.total ?? 0)),
-  });
-  cartaoKpi("kpiRedesResposta", {
-    codigo: "K-27",
-    valor: `${Math.round(Number(proprias.taxa_resposta ?? 0))}%`,
-  });
+  const temContas = Array.isArray(proprias.conectadas) && proprias.conectadas.length > 0;
+  const socialBase = dados.redes_sociais || {};
+  const social = { ...socialBase, posts: socialBase.posts || estado.dados?.redes_sociais?.posts || [] };
+  const imagens = dados.imagens?.kpis || {};
+  const postsSociais = Array.isArray(social.posts) ? social.posts : [];
+  const totalRedes = Number(social.total || 0);
+  const comentarios = Number(social.comentarios_total || 0);
+  const ultimoPost = postsSociais[0]?.data || social.recentes?.[0]?.data;
 
-  const container = document.getElementById("redesContas");
-  if (container) {
-    const conectadas = proprias.conectadas || [];
-    container.innerHTML = conectadas.length
-      ? conectadas
-          .map(
-            (rede) => `<div class="card kpi">
-              <div class="kpi-cabecalho"><span class="kpi-rotulo">${escapar(rede)}</span></div>
-              <span class="kpi-valor">${new Intl.NumberFormat("pt-BR").format(
-                Number(proprias[rede]?.seguidores ?? 0)
-              )}</span>
-              <span class="kpi-sufixo">seguidores · ${Number(
-                proprias[rede]?.alcance_7d ?? 0
-              ).toLocaleString("pt-BR")} de alcance</span>
-            </div>`
-          )
-          .join("")
-      : `<p class="grafico-leitura">Nenhuma conta institucional conectada ainda. A Secom pode conectar a Página e o Instagram da Casa na tela de Sistema.</p>`;
+  if (temContas) {
+    cartaoKpi("kpiRedesSeguidores", {
+      codigo: "K-10",
+      nome: "Seguidores",
+      valor: new Intl.NumberFormat("pt-BR").format(Number(proprias.seguidores || 0)),
+      sufixo: "contas oficiais conectadas",
+    });
+    cartaoKpi("kpiRedesEngajamento", {
+      codigo: "K-11",
+      nome: "Engajamento",
+      valor: `${Number(proprias.engajamento_7d || 0).toFixed(2)}%`,
+    });
+    cartaoKpi("kpiRedesComentarios", {
+      codigo: "K-12",
+      nome: "Comentários",
+      valor: String(Number(proprias.comentarios?.total || 0)),
+    });
+    cartaoKpi("kpiRedesResposta", {
+      codigo: "K-27",
+      nome: "Taxa de resposta",
+      valor: `${Math.round(Number(proprias.taxa_resposta || 0))}%`,
+    });
+  } else {
+    cartaoKpi("kpiRedesSeguidores", {
+      codigo: "K-10",
+      nome: "Publicações monitoradas",
+      valor: totalRedes ? String(totalRedes) : "—",
+      sufixo: totalRedes ? "Instagram e redes captadas" : "",
+      ...(totalRedes ? {} : { semBase: true, motivo: "nenhuma publicação captada" }),
+    });
+    cartaoKpi("kpiRedesEngajamento", {
+      codigo: "K-11",
+      nome: "Comentários captados",
+      valor: comentarios ? String(comentarios) : "—",
+      sufixo: comentarios ? "comentários públicos estruturados" : "",
+      ...(comentarios ? {} : { semBase: true, motivo: "nenhum comentário captado" }),
+    });
+    cartaoKpi("kpiRedesComentarios", {
+      codigo: "K-12",
+      nome: "Posts com imagem",
+      valor: imagens.k70_postos_com_imagem !== undefined ? String(Number(imagens.k70_postos_com_imagem)) : "—",
+      sufixo: imagens.k70_postos_com_imagem !== undefined ? "com capa analisada" : "",
+      ...(imagens.k70_postos_com_imagem !== undefined ? {} : { semBase: true, motivo: "análise de imagem pendente" }),
+    });
+    cartaoKpi("kpiRedesResposta", {
+      codigo: "K-27",
+      nome: "Última coleta",
+      valor: ultimoPost ? _dataCurta(ultimoPost) : "—",
+      sufixo: ultimoPost ? "Instagram monitorado" : "sem coleta recente",
+      ...(ultimoPost ? {} : { semBase: true, motivo: "sem data de coleta" }),
+    });
   }
 
+    const container = document.getElementById("redesContas");
+  if (container) {
+    const conectadas = proprias.conectadas || [];
+    if (conectadas.length) {
+      container.innerHTML = conectadas
+        .map(
+          (rede) => `<div class="card kpi">
+            <div class="kpi-cabecalho"><span class="kpi-rotulo">${escapar(rede)}</span></div>
+            <span class="kpi-valor">${new Intl.NumberFormat("pt-BR").format(
+              Number(proprias[rede]?.seguidores ?? 0)
+            )}</span>
+            <span class="kpi-sufixo">seguidores · ${Number(
+              proprias[rede]?.alcance_7d ?? 0
+            ).toLocaleString("pt-BR")} de alcance</span>
+          </div>`
+        )
+        .join("");
+    } else {
+      const porRede = Object.entries(social.por_rede || {});
+      container.innerHTML =
+        `<div class="redes-cta">
+          <p><strong>Contas oficiais ainda não conectadas.</strong> Abaixo, o que foi captado publicamente no período.</p>
+          <a class="btn-texto" href="#/sistema">Conectar em Sistema</a>
+        </div>` +
+        (porRede.length
+          ? porRede
+              .map(
+                ([rede, total]) => `<div class="card kpi">
+                  <div class="kpi-cabecalho"><span class="kpi-rotulo">${escapar(rede)}</span></div>
+                  <span class="kpi-valor">${new Intl.NumberFormat("pt-BR").format(Number(total || 0))}</span>
+                  <span class="kpi-sufixo">publicações monitoradas</span>
+                </div>`
+              )
+              .join("")
+          : `<p class="grafico-leitura">Nenhuma publicação de rede captada ainda.</p>`);
+    }
+  }
+
+  const corpo = document.getElementById("corpoRedes");
+  if (corpo) {
+    const posts = Array.isArray(social.recentes) ? social.recentes : [];
+    corpo.innerHTML = posts.length
+      ? posts
+          .map(
+            (p) => `<tr>
+              <td>${escapar(_dataCurta(p.data))}</td>
+              <td>${escapar(p.rede || "—")}</td>
+              <td>${p.url ? `<a href="${escapar(p.url)}" target="_blank" rel="noopener">${escapar((p.titulo || p.snippet || "publicação").slice(0, 120))}</a>` : escapar((p.titulo || p.snippet || "publicação").slice(0, 120))}</td>
+              <td>${escapar(p.sentimento || "—")}</td>
+              <td>${escapar(p.agente || "")}</td>
+            </tr>`
+          )
+          .join("")
+      : `<tr><td colspan="5">Nenhuma publicação de rede captada no período.</td></tr>`;
+  }
+
+  renderizarRedesPosts(social, dados);
   renderizarImagensValor(dados);
+}
+
+let postsRedes = [];
+let todosPostsRedes = [];
+let postIndice = 0;
+let imagensPosts = new Map();
+
+function _postImagem(post) {
+  const imagem = imagensPosts.get(String(post.post_shortcode || post.id_externo || ""));
+  return imagem?.thumb
+    ? `<img src="data:image/webp;base64,${escapar(imagem.thumb)}" alt="${escapar(post.titulo || "Post do Instagram")}" loading="lazy" />`
+    : `<div class="post-imagem-vazia">Sem imagem analisada</div>`;
+}
+
+function _topTermos(textos, limite = 6) {
+  const paradas = new Set(["para", "com", "uma", "dos", "das", "por", "que", "não", "nao", "mais", "como", "aqui", "muito", "bem", "vai", "está", "esta", "sobre", "também", "tambem", "esse", "essa", "isso", "pelo", "pela", "nos", "nas", "seu", "sua", "meu", "minha", "todo", "toda", "tem", "foi", "ser", "são", "sao"]);
+  const contagem = {};
+  (textos || []).forEach((texto) => {
+    (String(texto || "").toLowerCase().match(/[a-záàâãéêíóôõúç0-9]{4,}/g) || []).forEach((p) => {
+      if (!paradas.has(p)) contagem[p] = (contagem[p] || 0) + 1;
+    });
+  });
+  return Object.entries(contagem)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limite)
+    .map(([termo]) => termo);
+}
+
+function _renderCardsRedes(posts) {
+  const alvo = document.getElementById("redesPosts");
+  if (!alvo) return;
+  alvo.innerHTML = posts.length
+    ? posts
+        .map(
+          (p, indice) => `<button type="button" class="rede-post-card" data-post-index="${indice}">
+            <span class="rede-post-midia">${_postImagem(p)}</span>
+            <span class="rede-post-corpo">
+              <span class="rede-post-rede">${escapar(p.rede || "Instagram")} · ${escapar(_dataCurta(p.data))}</span>
+              <strong>${escapar((p.titulo || p.texto || "Post").slice(0, 110))}</strong>
+              <span class="rede-post-metricas">${Number(p.curtidas || 0).toLocaleString("pt-BR")} curtidas · ${Number(p.comentarios_coletados || 0).toLocaleString("pt-BR")} comentários</span>
+              <span class="rede-post-tom">${escapar(p.sentimento || "neutro")}</span>
+            </span>
+          </button>`
+        )
+        .join("")
+    : '<p class="grafico-leitura">Nenhum post atende aos filtros selecionados.</p>';
+  alvo.querySelectorAll("[data-post-index]").forEach((card) => {
+    card.addEventListener("click", () => abrirPost(Number(card.dataset.postIndex)));
+  });
+}
+
+function _postsFiltradosRedes() {
+  const agente = document.getElementById("filtroRedesAgente")?.value || "";
+  const tom = document.getElementById("filtroRedesTom")?.value || "";
+  const busca = (document.getElementById("filtroRedesBusca")?.value || "").trim().toLowerCase();
+  return todosPostsRedes.filter((p) => {
+    if (agente && p.agente !== agente) return false;
+    if (tom && (p.sentimento || "neutro") !== tom) return false;
+    if (busca) {
+      const texto = `${p.titulo || ""} ${p.texto || ""} ${(p.comentarios || []).map((c) => `${c.autor || ""} ${c.texto || ""}`).join(" ")}`.toLowerCase();
+      if (!texto.includes(busca)) return false;
+    }
+    return true;
+  });
+}
+
+function preencherFiltrosRedes(posts) {
+  const seletor = document.getElementById("filtroRedesAgente");
+  if (!seletor) return;
+  const atual = seletor.value;
+  const agentes = [...new Set(posts.map((p) => p.agente).filter(Boolean))].sort();
+  seletor.innerHTML = '<option value="">Todos os agentes</option>' + agentes.map((a) => `<option value="${escapar(a)}">${escapar(a)}</option>`).join("");
+  seletor.value = agentes.includes(atual) ? atual : "";
+}
+
+function aplicarFiltrosRedes() {
+  postsRedes = _postsFiltradosRedes();
+  _renderCardsRedes(postsRedes);
+  const resumo = document.getElementById("redesPostsResumo");
+  if (resumo) {
+    resumo.textContent = `${postsRedes.length} posts exibidos de ${todosPostsRedes.length} captados · clique para ver imagem, comentários e análise`;
+  }
+}
+
+function renderizarRedesPosts(social, dados) {
+  const alvo = document.getElementById("redesPosts");
+  if (!alvo) return;
+  const posts = Array.isArray(social?.posts) ? social.posts : [];
+  const galeria = dados?.imagens?.galeria || [];
+  imagensPosts = new Map(
+    galeria.map((g) => [String(g.post_shortcode || g.id_externo || ""), g])
+  );
+  todosPostsRedes = posts;
+  preencherFiltrosRedes(posts);
+  aplicarFiltrosRedes();
+  if (!posts.length) {
+    alvo.innerHTML = '<p class="grafico-leitura">Os posts aparecem aqui quando a coleta do Instagram estiver disponível.</p>';
+  }
+}
+
+
+function fecharPost() {
+  const modal = document.getElementById("modalPost");
+  if (!modal) return;
+  modal.classList.add("oculto");
+  modal.setAttribute("aria-hidden", "true");
+}
+
+function atualizarPost() {
+  if (!postsRedes.length) return;
+  const post = postsRedes[postIndice];
+  const imagem = document.getElementById("postImagem");
+  const titulo = document.getElementById("postTitulo");
+  const texto = document.getElementById("postTexto");
+  const conta = document.getElementById("postConta");
+  const metricas = document.getElementById("postMetricas");
+  const resumo = document.getElementById("postResumo");
+  const comentariosEl = document.getElementById("postComentarios");
+  if (imagem) imagem.innerHTML = _postImagem(post);
+  if (titulo) titulo.textContent = post.titulo || "Post do Instagram";
+  if (texto) texto.textContent = post.texto || "";
+  if (conta) conta.innerHTML = `${escapar(post.rede || "Instagram")} · ${escapar(post.agente || "")}${post.url ? ` · <a href="${escapar(post.url)}" target="_blank" rel="noopener">abrir no Instagram</a>` : ""}`;
+  if (metricas) {
+    metricas.innerHTML = `
+      <span><strong>${Number(post.curtidas || 0).toLocaleString("pt-BR")}</strong> curtidas</span>
+      <span><strong>${Number(post.comentarios_coletados || 0).toLocaleString("pt-BR")}</strong> de ${Number(post.comentarios_total || 0).toLocaleString("pt-BR")} comentários</span>
+      <span>Tom: <strong>${escapar(post.sentimento || "neutro")}</strong></span>`;
+  }
+  const comentarios = Array.isArray(post.comentarios) ? post.comentarios : [];
+  if (resumo) {
+    const sent = { positivo: 0, neutro: 0, negativo: 0 };
+    comentarios.forEach((c) => {
+      const chave = c.sentimento || "neutro";
+      if (sent[chave] !== undefined) sent[chave] += 1;
+    });
+    const total = comentarios.length || 1;
+    const termos = _topTermos(comentarios.map((c) => c.texto));
+    resumo.innerHTML = `
+      <p><strong>O que importa:</strong> ${comentarios.length} comentários coletados; leitura de tom ${Math.round(sent.positivo * 100 / total)}% positivo, ${Math.round(sent.neutro * 100 / total)}% neutro e ${Math.round(sent.negativo * 100 / total)}% negativo.</p>
+      ${termos.length ? `<p><strong>Termos recorrentes:</strong> ${termos.map((t) => escapar(t)).join(" · ")}</p>` : ""}`;
+  }
+  if (comentariosEl) {
+    comentariosEl.innerHTML = comentarios.length
+      ? comentarios
+          .map(
+            (c) => `<article class="post-comentario">
+              <header><strong>@${escapar(c.autor || "anônimo")}</strong><span>${escapar(c.sentimento || "neutro")}</span></header>
+              <p>${escapar(c.texto || "")}</p>
+            </article>`
+          )
+          .join("")
+      : '<p class="grafico-leitura">Nenhum comentário estruturado para este post.</p>';
+  }
+  const posicao = document.getElementById("postPosicao");
+  if (posicao) posicao.textContent = `${postIndice + 1} de ${postsRedes.length}`;
+  const anterior = document.getElementById("postAnterior");
+  const proximo = document.getElementById("postProximo");
+  if (anterior) anterior.disabled = postIndice === 0;
+  if (proximo) proximo.disabled = postIndice >= postsRedes.length - 1;
+}
+
+function abrirPost(indice) {
+  postIndice = Math.max(0, Math.min(indice, postsRedes.length - 1));
+  document.querySelectorAll(".modal-overlay").forEach((m) => {
+    m.classList.add("oculto");
+    m.setAttribute("aria-hidden", "true");
+  });
+  const modal = document.getElementById("modalPost");
+  if (!modal) return;
+  modal.classList.remove("oculto");
+  modal.setAttribute("aria-hidden", "false");
+  atualizarPost();
+}
+
+if (typeof document !== "undefined") {
+  ["filtroRedesAgente", "filtroRedesTom"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("change", aplicarFiltrosRedes);
+  });
+  document.getElementById("filtroRedesBusca")?.addEventListener("input", () => {
+    clearTimeout(window.__timerRedes);
+    window.__timerRedes = setTimeout(aplicarFiltrosRedes, 150);
+  });
+  document.getElementById("fecharPost")?.addEventListener("click", fecharPost);
+  document.getElementById("postAnterior")?.addEventListener("click", () => {
+    if (postIndice > 0) { postIndice -= 1; atualizarPost(); }
+  });
+  document.getElementById("postProximo")?.addEventListener("click", () => {
+    if (postIndice < postsRedes.length - 1) { postIndice += 1; atualizarPost(); }
+  });
+  document.addEventListener("keydown", (evento) => {
+    if (document.getElementById("modalPost")?.classList.contains("oculto")) return;
+    if (evento.key === "Escape") fecharPost();
+    if (evento.key === "ArrowLeft" && postIndice > 0) { postIndice -= 1; atualizarPost(); }
+    if (evento.key === "ArrowRight" && postIndice < postsRedes.length - 1) { postIndice += 1; atualizarPost(); }
+  });
 }
 
 /* ---- Imagens (também no Valor) ---- */
 function renderizarImagensValor(dados) {
   const imagens = dados.imagens || {};
   const kpis = imagens.kpis || {};
+  const temBase = !!dados.imagens && Object.keys(kpis).length > 0;
+  const numero = (valor, formatar = (v) => String(v)) =>
+    temBase && valor !== undefined && valor !== null ? formatar(Number(valor)) : "—";
+  const classe = temBase ? "card kpi" : "card kpi kpi-sem-base";
+  const sufixo = temBase ? "" : '<span class="kpi-sufixo">aguardando análise de imagem</span>';
   const container = document.getElementById("imagensKpis");
   if (container) {
     container.innerHTML = `
-      <div class="card kpi"><div class="kpi-cabecalho"><span class="kpi-rotulo">Posts com imagem analisada</span></div><span class="kpi-valor">${Number(kpis.k70_postos_com_imagem ?? 0)}</span></div>
-      <div class="card kpi"><div class="kpi-cabecalho"><span class="kpi-rotulo">Cards com texto</span></div><span class="kpi-valor">${Math.round(Number(kpis.k72_cards_com_texto ?? 0) * 100)}%</span></div>
-      <div class="card kpi"><div class="kpi-cabecalho"><span class="kpi-rotulo">Peças com promoção pessoal</span></div><span class="kpi-valor">${Number(kpis.k75_alertas_vindos_de_imagem ?? 0)}</span></div>
-      <div class="card kpi"><div class="kpi-cabecalho"><span class="kpi-rotulo">Imagens recicladas</span></div><span class="kpi-valor">${Number(kpis.k74_imagens_recicladas ?? 0)}</span></div>
+      <div class="${classe}"><div class="kpi-cabecalho"><span class="kpi-rotulo">Posts com imagem analisada</span></div><span class="kpi-valor">${numero(kpis.k70_postos_com_imagem)}</span>${sufixo}</div>
+      <div class="${classe}"><div class="kpi-cabecalho"><span class="kpi-rotulo">Cards com texto</span></div><span class="kpi-valor">${numero(kpis.k72_cards_com_texto, (v) => `${Math.round(v * 100)}%`)}</span>${sufixo}</div>
+      <div class="${classe}"><div class="kpi-cabecalho"><span class="kpi-rotulo">Peças com promoção pessoal</span></div><span class="kpi-valor">${numero(kpis.k75_alertas_vindos_de_imagem)}</span>${sufixo}</div>
+      <div class="${classe}"><div class="kpi-cabecalho"><span class="kpi-rotulo">Imagens recicladas</span></div><span class="kpi-valor">${numero(kpis.k74_imagens_recicladas)}</span>${sufixo}</div>
     `;
   }
 
@@ -868,46 +1298,81 @@ function renderizarImagensValor(dados) {
 
 /* ---- V8 / Conformidade ---- */
 function renderizarConformidade(dados) {
+  const tem = (v) => v !== undefined && v !== null;
+  const semCompliance = !tem(dados.compliance?.total);
+  const semImagens = !tem(dados.imagens?.kpis?.k75_alertas_vindos_de_imagem);
+  const semAnuncios = !tem(dados.anuncios_politicos?.anuncios_ativos);
   cartaoKpi("kpiConfRiscos", {
     codigo: "K-21",
-    valor: String(Number(dados.compliance?.total ?? 0)),
+    valor: tem(dados.compliance?.total) ? String(Number(dados.compliance.total)) : "—",
+    ...(semCompliance ? { semBase: true, motivo: "análise de conformidade não iniciada" } : {}),
   });
   cartaoKpi("kpiConfPromocao", {
     codigo: "K-45",
-    valor: String(Number(dados.imagens?.kpis?.k75_alertas_vindos_de_imagem ?? 0)),
+    valor: tem(dados.imagens?.kpis?.k75_alertas_vindos_de_imagem)
+      ? String(Number(dados.imagens.kpis.k75_alertas_vindos_de_imagem))
+      : "—",
+    ...(semImagens ? { semBase: true, motivo: "sem análise de imagem" } : {}),
   });
   cartaoKpi("kpiConfAnuncios", {
     codigo: "K-22",
-    valor: String(Number(dados.anuncios_politicos?.anuncios_ativos ?? 0)),
+    valor: tem(dados.anuncios_politicos?.anuncios_ativos)
+      ? String(Number(dados.anuncios_politicos.anuncios_ativos))
+      : "—",
+    ...(semAnuncios ? { semBase: true, motivo: "Ad Library não coletada" } : {}),
   });
   cartaoKpi("kpiConfVedacoes", {
     codigo: "K-46",
-    valor: dados.dias_ate_vedacoes !== undefined ? String(dados.dias_ate_vedacoes) : "–",
+    valor: tem(dados.dias_ate_vedacoes) ? String(dados.dias_ate_vedacoes) : "—",
+    ...(tem(dados.dias_ate_vedacoes) ? {} : { semBase: true, motivo: "calendário eleitoral não configurado" }),
   });
 }
 
 /* ---- V9 / Tendências ---- */
 function renderizarTendencias(dados) {
   const tend = dados.tendencias || {};
+  const tem = (v) => v !== undefined && v !== null;
+  const fonte = document.getElementById("tendenciasFonte");
+  if (fonte) {
+    const quando = tend.atualizado_em ? new Date(tend.atualizado_em) : null;
+    const data = quando && !isNaN(quando) ? quando.toLocaleString("pt-BR") : "";
+    fonte.textContent = data
+      ? `Fonte: Google Trends · atualizado em ${data}`
+      : "Fonte: Google Trends";
+  }
+  const termosEmAlta = (tend.em_alta_mt || []).length + (tend.em_alta_br || []).length;
   cartaoKpi("kpiTendInteresse", {
     codigo: "K-30",
-    valor: String(Number(tend.interesse_busca?.media ?? 0).toFixed(0)),
+    nome: tem(tend.interesse_busca?.media) ? undefined : "Termos em alta",
+    valor: tem(tend.interesse_busca?.media)
+      ? String(Number(tend.interesse_busca.media).toFixed(0))
+      : (termosEmAlta ? String(termosEmAlta) : "—"),
+    sufixo: tem(tend.interesse_busca?.media)
+      ? "índice de interesse"
+      : (termosEmAlta ? "termos MT + BR no Google Trends" : "sem série de buscas"),
+    ...(tem(tend.interesse_busca?.media) || termosEmAlta ? {} : { semBase: true, motivo: "sem série de buscas" }),
   });
-  cartaoKpi("kpiTendPico", {
-    codigo: "K-32",
-    valor: tend.pico?.ativo ? "Sim" : "Não",
-    sufixo: tend.pico?.fator ? `${Number(tend.pico.fator).toFixed(1)}× a média` : "",
-  });
+  const temPico = tem(tend.pico);
+  document.getElementById("kpiTendPico")?.classList.toggle("oculto", !temPico);
+  if (temPico) {
+    cartaoKpi("kpiTendPico", {
+      codigo: "K-32",
+      valor: tend.pico.ativo ? "Sim" : "Não",
+      sufixo: tem(tend.pico?.fator) ? `${Number(tend.pico.fator).toFixed(1)}× a média` : "",
+    });
+  }
   cartaoKpi("kpiTendProjecao", {
     codigo: "K-33",
     valor: dados.previsao?.mencoes?.previsao?.length
       ? String(dados.previsao.mencoes.previsao.length)
-      : "–",
+      : "—",
+    ...(dados.previsao?.mencoes?.previsao?.length ? {} : { semBase: true, motivo: "sem projeção nesta semana" }),
   });
   cartaoKpi("kpiTendCrise", {
     codigo: "K-28",
-    valor: dados.crise?.ativo ? "Alerta" : "Normal",
+    valor: tem(dados.crise) ? (dados.crise.ativo ? "Alerta" : "Normal") : "—",
     sufixo: dados.crise?.mensagem || "",
+    ...(tem(dados.crise) ? {} : { semBase: true, motivo: "índice de crise não calculado" }),
   });
 
   const lista = document.getElementById("listaTendencias");
@@ -934,7 +1399,10 @@ function renderizarTendencias(dados) {
 
   const previsao = dados.previsao?.mencoes || {};
   const canvas = document.getElementById("graficoPrevisao");
-  if (canvas) {
+  const temPrevisao = (previsao.historico || []).length > 0 || (previsao.previsao || []).length > 0;
+  const cardPrevisao = canvas?.closest(".card");
+  if (cardPrevisao) cardPrevisao.classList.toggle("oculto", !temPrevisao);
+  if (canvas && temPrevisao) {
     guardar(
       "graficoPrevisao",
       linhaComPrevisao(
@@ -1008,8 +1476,20 @@ function contagemPor(lista, campo) {
 if (typeof document !== "undefined") {
   ["filtroClipVeiculo", "filtroClipTier", "filtroClipTipo"].forEach((id) => {
     document.getElementById(id)?.addEventListener("change", () => {
-      renderizarClipping(estado.dados);
+      paginaClipping = 1;
+      renderizarClipping(dadosDaJanela(estado.dados || {}));
     });
+  });
+  let buscaClippingTimer = null;
+  document.getElementById("filtroClipBusca")?.addEventListener("input", () => {
+    clearTimeout(buscaClippingTimer);
+    buscaClippingTimer = setTimeout(() => {
+      paginaClipping = 1;
+      renderizarClipping(dadosDaJanela(estado.dados || {}));
+    }, 180);
+  });
+  document.querySelectorAll("select[data-semana]").forEach((select) => {
+    select.addEventListener("change", () => definirSemana(select.value));
   });
 }
 
@@ -1066,6 +1546,27 @@ function renderizarInterinoDiscurso() {
     });
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
