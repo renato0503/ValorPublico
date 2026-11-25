@@ -1,141 +1,218 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>E-mails — ValorPúblico</title>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>E-mails — ValorPúblico</title>
 <style>
 :root{--bg:#f2ecdf;--card:#fffdf7;--ink:#1d3557;--muted:#55606f;--accent:#a8792f;--border:#e2dac9}
-*{box-sizing:border-box}body{margin:0;padding:24px;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
-main{max-width:980px;margin:0 auto}header{margin-bottom:20px}h1{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px}p{color:var(--muted)}
+*{box-sizing:border-box}
+body{margin:0;padding:24px;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif}
+main{max-width:980px;margin:0 auto}
+header{margin-bottom:20px}
+h1{margin:0;font-family:Georgia,'Times New Roman',serif;font-size:28px}
+p{color:var(--muted);line-height:1.6}
 .cartao{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin:18px 0}
 .cab{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--border)}
-.cab span{font-family:'Courier New',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)} .cab h2{margin:3px 0 0;font-size:18px}
-.cab code{font-family:'Courier New',monospace;font-size:11px;color:var(--muted);text-align:right;max-width:46%}
-.preview{background:#eef1f5}iframe{width:100%;height:620px;border:0;display:block}
-.acoes{display:flex;align-items:center;gap:10px;padding:10px 18px;border-top:1px solid var(--border)}
-button{border:0;border-radius:6px;background:var(--ink);color:#fff;padding:8px 12px;font-weight:600;cursor:pointer}
-textarea{width:100%;height:220px;border:0;padding:14px 18px;font-family:'Courier New',monospace;font-size:11px;line-height:1.5;resize:vertical;background:#0f172a;color:#e6edf8}
+.cab span{font-family:'Courier New',Consolas,monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.cab h2{margin:3px 0 0;font-size:18px}
+.cab code{font-family:'Courier New',Consolas,monospace;font-size:11px;color:var(--muted);text-align:right;max-width:46%}
+.preview{background:#eef1f5}
+iframe{width:100%;height:720px;border:0;display:block}
+.acoes{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)}
+button{border:0;border-radius:6px;background:var(--ink);color:#fff;padding:8px 12px;font-weight:700;cursor:pointer}
+a{color:var(--accent);font-size:12px;font-weight:700}
+textarea{width:100%;height:220px;border:0;padding:14px 18px;font-family:'Courier New',Consolas,monospace;font-size:11px;line-height:1.5;resize:vertical;background:#0f172a;color:#e6edf8}
 .status{font-size:11px;color:var(--accent)}
-</style></head><body><main><header><h1>ValorPúblico — e-mails de acesso</h1><p>Prévia e HTML prontos para colar em Firebase Console → Authentication → Templates. Use o assunto de cada cartão.</p></header>
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ValorPúblico — e-mails de acesso</h1>
+    <p>Painel institucional de mídia. Confira a prévia, copie o HTML ou use <code>aplicar_templates.py</code> para publicar no Firebase.</p>
+  </header>
         <section class="cartao">
-          <div class="cab"><div><span>verify-email</span><h2>Confirme seu e-mail</h2></div><code>Ative seu acesso · ValorPúblico</code></div>
-          <div class="preview"><iframe src="verify-email.html" title="Prévia verify-email"></iframe></div>
-          <div class="acoes"><button data-copia="verify-email">Copiar HTML</button><span class="status" id="st-verify-email"></span></div>
-          <textarea id="src-verify-email" readonly>&lt;!--
-  Template do e-mail &quot;verify-email&quot; — ValorPúblico.
-  Onde colar: Firebase Console → Authentication → Templates.
-  A API Admin não permite editar templates (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED).
---&gt;
-&lt;div style=&quot;display:none;max-height:0;overflow:hidden&quot;&gt;Confirme seu e-mail para ativar o acesso ao ValorPúblico.&lt;/div&gt;
-&lt;div style=&quot;margin:0;background:#f2ecdf;padding:24px 12px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif&quot;&gt;
-  &lt;div style=&quot;max-width:560px;margin:0 auto;background:#fffdf7;border:1px solid #e2dac9;border-radius:6px;overflow:hidden&quot;&gt;
-    &lt;div style=&quot;padding:22px 28px 14px;border-bottom:1px solid #e2dac9&quot;&gt;
-      &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1d3557&quot;&gt;ValorPúblico&lt;/div&gt;
-      &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a8792f;margin-top:5px&quot;&gt;Painel institucional de mídia&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;height:3px;background:#1d3557&quot;&gt;&lt;/div&gt;
-    &lt;div style=&quot;padding:30px 28px 26px&quot;&gt;
-      &lt;h1 style=&quot;font-size:26px;line-height:1.2;color:#1d3557;margin:0 0 14px&quot;&gt;Confirme seu e-mail&lt;/h1&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#55606f;margin:0 0 20px&quot;&gt;
-        Recebemos seu cadastro no ValorPúblico. Confirme o endereço &lt;strong&gt;%EMAIL%&lt;/strong&gt; para ativar o acesso ao painel.
-      &lt;/p&gt;
-      &lt;p style=&quot;margin:0 0 24px&quot;&gt;
-        &lt;a href=&quot;%LINK%&quot; style=&quot;display:inline-block;background:#1d3557;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;padding:13px 24px;border-radius:4px&quot;&gt;Confirmar e-mail&lt;/a&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.7;color:#8b8578;margin:0 0 20px&quot;&gt;
-        Se o botão não abrir, copie este endereço:&lt;br&gt;
-        &lt;span style=&quot;color:#2b5b8a;word-break:break-all&quot;&gt;%LINK%&lt;/span&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;margin:0&quot;&gt;O link vale por 24 horas. Se você não criou esta conta, ignore este e-mail.&lt;/p&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;padding:14px 28px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.6;color:#8b8578&quot;&gt;
-      ValorPúblico · acesso restrito · mensagem automática
-    &lt;/div&gt;
-  &lt;/div&gt;
-  &lt;p style=&quot;max-width:560px;margin:14px auto 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8b8578;text-align:center&quot;&gt;
-    Você recebeu este e-mail porque este endereço está cadastrado no painel ValorPúblico.
-  &lt;/p&gt;
-&lt;/div&gt;</textarea>
+          <div class="cab"><div><span>Verificação de e-mail</span><h2>Confirme seu e-mail</h2></div><code>Ative seu acesso · ValorPúblico</code></div>
+          <div class="preview"><iframe src="verify-email.html" title="Prévia Verificação de e-mail"></iframe></div>
+          <div class="acoes"><button type="button" data-copia="verify-email.html">Copiar HTML</button><a href="verify-email.html" target="_blank">Abrir HTML</a><span class="status" id="st-verify-email.html"></span></div>
+          <textarea id="src-verify-email.html" readonly>&lt;div style=&quot;display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all&quot;&gt;Confirme seu e-mail para ativar o acesso ao ValorPúblico.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2ecdf&quot; style=&quot;margin:0;padding:0;background:#f2ecdf;&quot;&gt;
+  &lt;tr&gt;
+    &lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fffdf7&quot; style=&quot;width:100%;max-width:600px;background:#fffdf7;border:1px solid #e2dac9;border-radius:8px;overflow:hidden;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:24px 32px 18px;border-bottom:1px solid #e2dac9;&quot;&gt;
+            &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;ValorPúblico&lt;/div&gt;
+            &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.4;letter-spacing:2px;text-transform:uppercase;color:#a8792f;padding-top:6px;&quot;&gt;Painel institucional de mídia&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;&lt;td bgcolor=&quot;#1d3557&quot; style=&quot;height:4px;line-height:4px;font-size:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:32px 32px 30px;&quot;&gt;
+            &lt;h1 style=&quot;margin:0 0 16px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif;font-size:28px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;Ative seu acesso&lt;/h1&gt;
+            &lt;p style=&quot;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#55606f;&quot;&gt;Olá. Recebemos seu cadastro no ValorPúblico. Confirme o endereço &lt;strong&gt;%EMAIL%&lt;/strong&gt; para liberar o painel.&lt;/p&gt;
+            &lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:0 0 26px;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td bgcolor=&quot;#1d3557&quot; style=&quot;border-radius:6px;&quot;&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;display:inline-block;padding:14px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.2;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;&quot;&gt;Confirmar e-mail&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f7f2e6&quot; style=&quot;margin:0 0 24px;background:#f7f2e6;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td style=&quot;padding:14px 16px;border-left:3px solid #a8792f;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:11px;line-height:1.7;color:#55606f;word-break:break-all;&quot;&gt;
+                  Se o botão não abrir, copie este endereço:&lt;br&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;color:#2b5b8a;text-decoration:underline;&quot;&gt;%LINK%&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style=&quot;margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;&quot;&gt;O link vale por 24 horas. Se você não criou esta conta, ignore esta mensagem.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:16px 32px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.6;color:#55606f;&quot;&gt;
+            ValorPúblico · acesso restrito · mensagem automática
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:100%;max-width:600px;margin:0 auto;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:14px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#55606f;text-align:center;&quot;&gt;
+            Você recebeu este e-mail porque este endereço está cadastrado no ValorPúblico.
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</textarea>
         </section>
         <section class="cartao">
-          <div class="cab"><div><span>reset-password</span><h2>Crie uma nova senha</h2></div><code>Redefinir a senha · ValorPúblico</code></div>
-          <div class="preview"><iframe src="reset-password.html" title="Prévia reset-password"></iframe></div>
-          <div class="acoes"><button data-copia="reset-password">Copiar HTML</button><span class="status" id="st-reset-password"></span></div>
-          <textarea id="src-reset-password" readonly>&lt;!--
-  Template do e-mail &quot;reset-password&quot; — ValorPúblico.
-  Onde colar: Firebase Console → Authentication → Templates.
-  A API Admin não permite editar templates (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED).
---&gt;
-&lt;div style=&quot;display:none;max-height:0;overflow:hidden&quot;&gt;Redefinição de senha do painel ValorPúblico.&lt;/div&gt;
-&lt;div style=&quot;margin:0;background:#f2ecdf;padding:24px 12px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif&quot;&gt;
-  &lt;div style=&quot;max-width:560px;margin:0 auto;background:#fffdf7;border:1px solid #e2dac9;border-radius:6px;overflow:hidden&quot;&gt;
-    &lt;div style=&quot;padding:22px 28px 14px;border-bottom:1px solid #e2dac9&quot;&gt;
-      &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1d3557&quot;&gt;ValorPúblico&lt;/div&gt;
-      &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a8792f;margin-top:5px&quot;&gt;Painel institucional de mídia&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;height:3px;background:#1d3557&quot;&gt;&lt;/div&gt;
-    &lt;div style=&quot;padding:30px 28px 26px&quot;&gt;
-      &lt;h1 style=&quot;font-size:26px;line-height:1.2;color:#1d3557;margin:0 0 14px&quot;&gt;Crie uma nova senha&lt;/h1&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#55606f;margin:0 0 20px&quot;&gt;
-        Recebemos um pedido para redefinir a senha de &lt;strong&gt;%EMAIL%&lt;/strong&gt; no ValorPúblico.
-      &lt;/p&gt;
-      &lt;p style=&quot;margin:0 0 24px&quot;&gt;
-        &lt;a href=&quot;%LINK%&quot; style=&quot;display:inline-block;background:#1d3557;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;padding:13px 24px;border-radius:4px&quot;&gt;Criar nova senha&lt;/a&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.7;color:#8b8578;margin:0 0 20px&quot;&gt;
-        Se o botão não abrir, copie este endereço:&lt;br&gt;
-        &lt;span style=&quot;color:#2b5b8a;word-break:break-all&quot;&gt;%LINK%&lt;/span&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;margin:0&quot;&gt;O link vale por 1 hora e só pode ser usado uma vez. Se não foi você, ignore este e-mail; a senha atual continua válida.&lt;/p&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;padding:14px 28px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.6;color:#8b8578&quot;&gt;
-      ValorPúblico · acesso restrito · mensagem automática
-    &lt;/div&gt;
-  &lt;/div&gt;
-  &lt;p style=&quot;max-width:560px;margin:14px auto 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8b8578;text-align:center&quot;&gt;
-    Você recebeu este e-mail porque este endereço está cadastrado no painel ValorPúblico.
-  &lt;/p&gt;
-&lt;/div&gt;</textarea>
+          <div class="cab"><div><span>Redefinição de senha</span><h2>Crie uma nova senha</h2></div><code>Redefinir a senha · ValorPúblico</code></div>
+          <div class="preview"><iframe src="reset-password.html" title="Prévia Redefinição de senha"></iframe></div>
+          <div class="acoes"><button type="button" data-copia="reset-password.html">Copiar HTML</button><a href="reset-password.html" target="_blank">Abrir HTML</a><span class="status" id="st-reset-password.html"></span></div>
+          <textarea id="src-reset-password.html" readonly>&lt;div style=&quot;display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all&quot;&gt;Redefinição de senha solicitada para o painel ValorPúblico.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2ecdf&quot; style=&quot;margin:0;padding:0;background:#f2ecdf;&quot;&gt;
+  &lt;tr&gt;
+    &lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fffdf7&quot; style=&quot;width:100%;max-width:600px;background:#fffdf7;border:1px solid #e2dac9;border-radius:8px;overflow:hidden;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:24px 32px 18px;border-bottom:1px solid #e2dac9;&quot;&gt;
+            &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;ValorPúblico&lt;/div&gt;
+            &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.4;letter-spacing:2px;text-transform:uppercase;color:#a8792f;padding-top:6px;&quot;&gt;Painel institucional de mídia&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;&lt;td bgcolor=&quot;#1d3557&quot; style=&quot;height:4px;line-height:4px;font-size:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:32px 32px 30px;&quot;&gt;
+            &lt;h1 style=&quot;margin:0 0 16px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif;font-size:28px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;Crie uma nova senha&lt;/h1&gt;
+            &lt;p style=&quot;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#55606f;&quot;&gt;Recebemos um pedido para redefinir a senha de &lt;strong&gt;%EMAIL%&lt;/strong&gt; no ValorPúblico. Use o botão abaixo para criar uma nova senha.&lt;/p&gt;
+            &lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:0 0 26px;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td bgcolor=&quot;#1d3557&quot; style=&quot;border-radius:6px;&quot;&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;display:inline-block;padding:14px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.2;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;&quot;&gt;Criar nova senha&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f7f2e6&quot; style=&quot;margin:0 0 24px;background:#f7f2e6;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td style=&quot;padding:14px 16px;border-left:3px solid #a8792f;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:11px;line-height:1.7;color:#55606f;word-break:break-all;&quot;&gt;
+                  Se o botão não abrir, copie este endereço:&lt;br&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;color:#2b5b8a;text-decoration:underline;&quot;&gt;%LINK%&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style=&quot;margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;&quot;&gt;O link vale por 1 hora e só pode ser usado uma vez. Se não foi você, ignore esta mensagem; a senha atual continua válida.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:16px 32px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.6;color:#55606f;&quot;&gt;
+            ValorPúblico · acesso restrito · mensagem automática
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:100%;max-width:600px;margin:0 auto;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:14px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#55606f;text-align:center;&quot;&gt;
+            Você recebeu este e-mail porque este endereço está cadastrado no ValorPúblico.
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</textarea>
         </section>
         <section class="cartao">
-          <div class="cab"><div><span>change-email</span><h2>Confirme o novo e-mail</h2></div><code>Confirme seu novo e-mail · ValorPúblico</code></div>
-          <div class="preview"><iframe src="change-email.html" title="Prévia change-email"></iframe></div>
-          <div class="acoes"><button data-copia="change-email">Copiar HTML</button><span class="status" id="st-change-email"></span></div>
-          <textarea id="src-change-email" readonly>&lt;!--
-  Template do e-mail &quot;change-email&quot; — ValorPúblico.
-  Onde colar: Firebase Console → Authentication → Templates.
-  A API Admin não permite editar templates (EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED).
---&gt;
-&lt;div style=&quot;display:none;max-height:0;overflow:hidden&quot;&gt;Confirme a alteração de e-mail da sua conta ValorPúblico.&lt;/div&gt;
-&lt;div style=&quot;margin:0;background:#f2ecdf;padding:24px 12px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif&quot;&gt;
-  &lt;div style=&quot;max-width:560px;margin:0 auto;background:#fffdf7;border:1px solid #e2dac9;border-radius:6px;overflow:hidden&quot;&gt;
-    &lt;div style=&quot;padding:22px 28px 14px;border-bottom:1px solid #e2dac9&quot;&gt;
-      &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1d3557&quot;&gt;ValorPúblico&lt;/div&gt;
-      &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#a8792f;margin-top:5px&quot;&gt;Painel institucional de mídia&lt;/div&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;height:3px;background:#1d3557&quot;&gt;&lt;/div&gt;
-    &lt;div style=&quot;padding:30px 28px 26px&quot;&gt;
-      &lt;h1 style=&quot;font-size:26px;line-height:1.2;color:#1d3557;margin:0 0 14px&quot;&gt;Confirme o novo e-mail&lt;/h1&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#55606f;margin:0 0 20px&quot;&gt;
-        Você pediu para alterar o e-mail da conta &lt;strong&gt;%EMAIL%&lt;/strong&gt; para &lt;strong&gt;%NEW_EMAIL%&lt;/strong&gt; no ValorPúblico. Confirme a mudança no botão abaixo.
-      &lt;/p&gt;
-      &lt;p style=&quot;margin:0 0 24px&quot;&gt;
-        &lt;a href=&quot;%LINK%&quot; style=&quot;display:inline-block;background:#1d3557;color:#ffffff;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;padding:13px 24px;border-radius:4px&quot;&gt;Confirmar novo e-mail&lt;/a&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.7;color:#8b8578;margin:0 0 20px&quot;&gt;
-        Se o botão não abrir, copie este endereço:&lt;br&gt;
-        &lt;span style=&quot;color:#2b5b8a;word-break:break-all&quot;&gt;%LINK%&lt;/span&gt;
-      &lt;/p&gt;
-      &lt;p style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;margin:0&quot;&gt;O link vale por 24 horas. Se não foi você, ignore este e-mail e avise o administrador.&lt;/p&gt;
-    &lt;/div&gt;
-    &lt;div style=&quot;padding:14px 28px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,monospace;font-size:11px;line-height:1.6;color:#8b8578&quot;&gt;
-      ValorPúblico · acesso restrito · mensagem automática
-    &lt;/div&gt;
-  &lt;/div&gt;
-  &lt;p style=&quot;max-width:560px;margin:14px auto 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#8b8578;text-align:center&quot;&gt;
-    Você recebeu este e-mail porque este endereço está cadastrado no painel ValorPúblico.
-  &lt;/p&gt;
-&lt;/div&gt;</textarea>
-        </section></main>
+          <div class="cab"><div><span>Alteração de e-mail</span><h2>Desfazer alteração</h2></div><code>Seu e-mail de acesso foi alterado · ValorPúblico</code></div>
+          <div class="preview"><iframe src="change-email.html" title="Prévia Alteração de e-mail"></iframe></div>
+          <div class="acoes"><button type="button" data-copia="change-email.html">Copiar HTML</button><a href="change-email.html" target="_blank">Abrir HTML</a><span class="status" id="st-change-email.html"></span></div>
+          <textarea id="src-change-email.html" readonly>&lt;div style=&quot;display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all&quot;&gt;O e-mail de acesso da sua conta ValorPúblico foi alterado.&lt;/div&gt;
+&lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f2ecdf&quot; style=&quot;margin:0;padding:0;background:#f2ecdf;&quot;&gt;
+  &lt;tr&gt;
+    &lt;td align=&quot;center&quot; style=&quot;padding:28px 12px;&quot;&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#fffdf7&quot; style=&quot;width:100%;max-width:600px;background:#fffdf7;border:1px solid #e2dac9;border-radius:8px;overflow:hidden;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:24px 32px 18px;border-bottom:1px solid #e2dac9;&quot;&gt;
+            &lt;div style=&quot;font-family:Arial,Helvetica,sans-serif;font-size:20px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;ValorPúblico&lt;/div&gt;
+            &lt;div style=&quot;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.4;letter-spacing:2px;text-transform:uppercase;color:#a8792f;padding-top:6px;&quot;&gt;Painel institucional de mídia&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;&lt;td bgcolor=&quot;#1d3557&quot; style=&quot;height:4px;line-height:4px;font-size:0;&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:32px 32px 30px;&quot;&gt;
+            &lt;h1 style=&quot;margin:0 0 16px;font-family:Georgia,&#x27;Times New Roman&#x27;,serif;font-size:28px;line-height:1.2;font-weight:700;color:#1d3557;&quot;&gt;Seu e-mail de acesso foi alterado&lt;/h1&gt;
+            &lt;p style=&quot;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.65;color:#55606f;&quot;&gt;O endereço de acesso da sua conta ValorPúblico foi alterado para &lt;strong&gt;%NEW_EMAIL%&lt;/strong&gt;. Se foi você, não precisa fazer nada.&lt;/p&gt;
+            &lt;table role=&quot;presentation&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;margin:0 0 26px;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td bgcolor=&quot;#1d3557&quot; style=&quot;border-radius:6px;&quot;&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;display:inline-block;padding:14px 26px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.2;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;&quot;&gt;Desfazer alteração&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;table role=&quot;presentation&quot; width=&quot;100%&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; bgcolor=&quot;#f7f2e6&quot; style=&quot;margin:0 0 24px;background:#f7f2e6;&quot;&gt;
+              &lt;tr&gt;
+                &lt;td style=&quot;padding:14px 16px;border-left:3px solid #a8792f;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:11px;line-height:1.7;color:#55606f;word-break:break-all;&quot;&gt;
+                  Se o botão não abrir, copie este endereço:&lt;br&gt;
+                  &lt;a href=&quot;%LINK%&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot; style=&quot;color:#2b5b8a;text-decoration:underline;&quot;&gt;%LINK%&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style=&quot;margin:0;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.65;color:#55606f;&quot;&gt;Se você não reconhece esta alteração, use o botão para desfazer. O link vale por 24 horas. Em caso de dúvida, avise o administrador do painel.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:16px 32px;border-top:1px solid #e2dac9;background:#f7f2e6;font-family:&#x27;Courier New&#x27;,Consolas,monospace;font-size:10px;line-height:1.6;color:#55606f;&quot;&gt;
+            ValorPúblico · acesso restrito · mensagem automática
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+      &lt;table role=&quot;presentation&quot; width=&quot;600&quot; cellpadding=&quot;0&quot; cellspacing=&quot;0&quot; border=&quot;0&quot; style=&quot;width:100%;max-width:600px;margin:0 auto;&quot;&gt;
+        &lt;tr&gt;
+          &lt;td style=&quot;padding:14px 8px 0;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;color:#55606f;text-align:center;&quot;&gt;
+            Você recebeu este e-mail porque este endereço está cadastrado no ValorPúblico.
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;</textarea>
+        </section>
+</main>
 <script>
-document.querySelectorAll('[data-copia]').forEach(b=>b.addEventListener('click',async()=>{
- const k=b.dataset.copia; const el=document.getElementById('src-'+k); const st=document.getElementById('st-'+k);
- try{await navigator.clipboard.writeText(el.value); st.textContent='HTML copiado.';}catch{el.select(); document.execCommand('copy'); st.textContent='HTML copiado.';}
-}));
-</script></body></html>
+document.querySelectorAll("[data-copia]").forEach((botao) => {
+  botao.addEventListener("click", async () => {
+    const arquivo = botao.dataset.copia;
+    const campo = document.getElementById("src-" + arquivo);
+    const status = document.getElementById("st-" + arquivo);
+    try {
+      await navigator.clipboard.writeText(campo.value);
+    } catch {
+      campo.select();
+      document.execCommand("copy");
+    }
+    status.textContent = "HTML copiado.";
+  });
+});
+</script>
+</body>
+</html>

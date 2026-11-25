@@ -1,0 +1,17 @@
+{
+  "verifyEmailTemplate": {
+    "file": "verify-email.html",
+    "subject": "Ative seu acesso · ValorPúblico",
+    "senderDisplayName": "ValorPúblico"
+  },
+  "resetPasswordTemplate": {
+    "file": "reset-password.html",
+    "subject": "Redefinir a senha · ValorPúblico",
+    "senderDisplayName": "ValorPúblico"
+  },
+  "changeEmailTemplate": {
+    "file": "change-email.html",
+    "subject": "Seu e-mail de acesso foi alterado · ValorPúblico",
+    "senderDisplayName": "ValorPúblico"
+  }
+}

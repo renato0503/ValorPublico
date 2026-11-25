@@ -1,4 +1,4 @@
-# ============================================================
+﻿# ============================================================
 # SEGREDOS E CREDENCIAIS — nunca versionar
 # ============================================================
 
@@ -12,6 +12,7 @@
 # Chaves de serviço do Firebase / Google Cloud (qualquer formato/nome)
 *.json
 !backend/data/seeds/*.json
+!docs/emails/templates.json
 !firebase.json
 *credentials*
 *serviceaccount*
@@ -128,3 +129,5 @@ backend/data/governo_mt/*
 # Relatórios semanais gerados localmente (corpus, discurso, PDF)
 backend/data/semanal/*
 cloud/personas-api/data/
+
+
