@@ -103,7 +103,13 @@ export function definirDados(dados) {
 function dadosDaJanela(dados) {
   if (!estado.periodo) return dados;
   const recorte = dados?.por_periodo?.[estado.periodo];
-  return recorte ? { ...dados, ...recorte } : {};
+  if (!recorte) return {};
+  // As notícias ficam fora do recorte para caber no limite de 1 MiB do doc.
+  return {
+    ...dados,
+    ...recorte,
+    noticias_recentes: recorte.noticias_recentes || dados?.noticias_recentes || [],
+  };
 }
 
 function guardar(id, instancia) {
