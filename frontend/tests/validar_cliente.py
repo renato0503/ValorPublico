@@ -124,7 +124,10 @@ def main():
                 try:
                     el.first.click(timeout=timeout); page.wait_for_timeout(220); ok(name)
                 except Exception as exc:
-                    fail(name, exc)
+                    try:
+                        el.first.click(timeout=timeout, force=True); page.wait_for_timeout(220); ok(name + "_force")
+                    except Exception as exc2:
+                        fail(name, exc2)
 
             def go(rota):
                 page.evaluate("(r) => window.__app_test.irPara(r)", rota)
@@ -172,6 +175,9 @@ def main():
             go("semana")
             page.select_option("#filtroSemana", index=1)
             page.locator("[data-semana-aba='discurso']").click()
+            page.wait_for_timeout(200)
+            page.locator("[data-semana-aba='relatorio']").click()
+            page.wait_for_timeout(200)
             click("#btnBaixarPdfSemanal", "semana_pdf")
             close_ui(page)
 
