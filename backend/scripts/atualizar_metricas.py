@@ -604,7 +604,7 @@ def _gravar_agregado_com_merge(ref, dados: dict) -> None:
     dentro de `por_periodo` continuavam no documento. Limpar o mapa antes e
     regravar o valor exato mantem o documento abaixo de 1 MiB.
     """
-    ref.update({"por_periodo": {}})
+    ref.set({"por_periodo": {}}, merge=True)
     ref.set(dados, merge=True)
     ref.update({"por_periodo": dados.get("por_periodo") or {}})
 
