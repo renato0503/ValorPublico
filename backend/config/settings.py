@@ -23,13 +23,20 @@ FIREBASE_SERVICE_ACCOUNT = str(_caminho_credencial)
 FIREBASE_DATABASE_URL = os.getenv("FIREBASE_DATABASE_URL", "")
 # Projeto Firestore esperado. A credencial precisa apontar para ele; caso
 # contrario o cliente aborta (defesa em profundidade contra o achado A1).
-FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "assessorpublico").strip()
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "valorpublico-b1e6d").strip()
 
 INSTAGRAM_USERNAME = os.getenv("INSTAGRAM_USERNAME", "")
 INSTAGRAM_PASSWORD = os.getenv("INSTAGRAM_PASSWORD", "")
 INSTAGRAM_SESSION_FILE = os.getenv("INSTAGRAM_SESSION_FILE", "")
 # instaloader ban por IP em alta cadencia: limite conservador por perfil
 INSTAGRAM_MAX_POSTS_PERFIL = int(os.getenv("INSTAGRAM_MAX_POSTS_PERFIL", "20"))
+# Coletor via navegador real (conta propria do dono): perfil persistente
+# criado uma vez com `python scripts/coletar_instagram.py --login`.
+INSTAGRAM_PERFIL_DIR = os.getenv(
+    "INSTAGRAM_PERFIL_DIR", str(Path.home() / ".cerra_clipping" / "instagram_perfil")
+)
+INSTAGRAM_PAUSA_MIN = float(os.getenv("INSTAGRAM_PAUSA_MIN", "5"))
+INSTAGRAM_PAUSA_MAX = float(os.getenv("INSTAGRAM_PAUSA_MAX", "10"))
 
 FACEBOOK_COOKIES_FILE = os.getenv("FACEBOOK_COOKIES_FILE", "")
 FACEBOOK_USERNAME = os.getenv("FACEBOOK_USERNAME", "")

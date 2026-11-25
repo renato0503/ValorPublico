@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 120
 
     env:
+      FIREBASE_PROJECT_ID: valorpublico-b1e6d
       FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
       FIREBASE_SERVICE_ACCOUNT: ${{ github.workspace }}/backend/serviceAccountKey.json
       HABILITAR_TWITTER: "0"
@@ -178,13 +179,13 @@ jobs:
             const { data: run } = await github.rest.actions.getWorkflowRun({
               owner, repo, run_id: runId
             });
-            const { data: issue } = await github.rest.issues.listForRepo({
+            const { data: issues } = await github.rest.issues.listForRepo({
               owner,
               repo,
               state: "open",
               labels: "bot",
             });
-            const jaExiste = issue.data.some((i) =>
+            const jaExiste = issues.some((i) =>
               i.title.includes(`Ingestão ${run.head_branch || "principal"} falhou`)
             );
             if (jaExiste) {
