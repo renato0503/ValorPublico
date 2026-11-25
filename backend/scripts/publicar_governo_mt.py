@@ -161,6 +161,8 @@ def main() -> int:
 
         argv = sys.argv[:]
         sys.argv = [sys.argv[0]]
+        if args.jsonl:
+            sys.argv += ["--jsonl", str(arquivo)]
         try:
             codigo = atualizar_metricas_governo.main()
         finally:

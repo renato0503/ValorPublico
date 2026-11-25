@@ -15,8 +15,8 @@ Cada item recebe:
 NÃO grava no Firestore: a saída é local (JSONL) para revisão antes de publicar.
 
 Uso (a partir de `backend/`):
-    python scripts/coletar_governo_mt.py --dias 60
-    python scripts/coletar_governo_mt.py --dias 60 --com-texto 200
+    python scripts/coletar_governo_mt.py --dias 150
+    python scripts/coletar_governo_mt.py --dias 150 --com-texto 300
     python scripts/coletar_governo_mt.py --dias 30 --saida data/governo_mt/teste
 """
 
@@ -153,25 +153,33 @@ def contexto_mt(texto: str) -> bool:
 # ----------------------------------------------------------------------
 # Consultas
 # ----------------------------------------------------------------------
-def consultas_do_seed(seed: dict, dias: int) -> list[tuple[str, str]]:
-    """Monta (rotulo, consulta) para o agregador."""
+def _janela(dias: int, depois: str = "", antes: str = "") -> str:
+    if depois and antes:
+        return f"after:{depois} before:{antes}"
+    return f"when:{dias}d"
+
+
+def consultas_do_seed(
+    seed: dict, dias: int, depois: str = "", antes: str = ""
+) -> list[tuple[str, str]]:
+    """Monta (rotulo, consulta) para o agregador, opcionalmente por intervalo."""
     consultas: list[tuple[str, str]] = []
-    janela = f"when:{dias}d"
+    janela = _janela(dias, depois, antes)
 
     for pasta in seed.get("secretarias", []) + seed.get("autarquias", []):
         nome = pasta.get("nome", "")
         sigla = pasta.get("sigla", "")
-        consultas.append((sigla or nome, f'"{nome}" when:{dias}d'))
-        consultas.append((sigla or nome, f'"{sigla}" "mato grosso" when:{dias}d'))
+        consultas.append((sigla or nome, f'"{nome}" {janela}'))
+        consultas.append((sigla or nome, f'"{sigla}" "mato grosso" {janela}'))
         for alias in pasta.get("alias", []) or []:
-            consultas.append((sigla or nome, f'"{alias}" "mato grosso" when:{dias}d'))
+            consultas.append((sigla or nome, f'"{alias}" "mato grosso" {janela}'))
 
     for chave in ("governador", "interino"):
         alvo = seed.get(chave)
         if not alvo:
             continue
         for termo in alvo.get("termos", []):
-            consultas.append((alvo.get("nome", termo), f'"{termo}" when:{dias}d'))
+            consultas.append((alvo.get("nome", termo), f'"{termo}" {janela}'))
 
     for termo in (
         "governo de mato grosso",
@@ -179,7 +187,7 @@ def consultas_do_seed(seed: dict, dias: int) -> list[tuple[str, str]]:
         "governo mt",
         "palacio paiaguas",
     ):
-        consultas.append(("GOVERNO MT", f'"{termo}" when:{dias}d'))
+        consultas.append(("GOVERNO MT", f'"{termo}" {janela}'))
 
     # remove duplicatas preservando a ordem
     vistos = set()
@@ -191,6 +199,32 @@ def consultas_do_seed(seed: dict, dias: int) -> list[tuple[str, str]]:
         vistos.add(chave)
         saida.append((rotulo, consulta))
     return saida
+
+
+def _janelas_historicas(dias: int, recente: int = 3) -> list[tuple[str, str]]:
+    """Blocos mensais entre o limite antigo e a janela recente."""
+    hoje = datetime.now(timezone.utc).date()
+    inicio = hoje - timedelta(days=dias)
+    fim_recente = hoje - timedelta(days=recente)
+    janelas: list[tuple[str, str]] = []
+    cursor = inicio
+    while cursor < fim_recente:
+        fim = min(cursor + timedelta(days=30), fim_recente)
+        if fim > cursor:
+            janelas.append((cursor.isoformat(), fim.isoformat()))
+        cursor = fim
+    return janelas
+
+
+CONSULTAS_RECENTES_EXTRAS = (
+    ("G1 MT", '"governo de mato grosso" site:g1.globo.com'),
+    ("Olhar Direto", '"governo de mato grosso" site:olhardireto.com.br'),
+    ("Folha Max", '"governo de mato grosso" site:folhamax.com'),
+    ("Caldeirão", '"governo de mato grosso" site:caldeiraopolitico.com.br'),
+    ("Estadão MT", '"governo de mato grosso" site:estadao.com.br'),
+    ("Secom MT", '"governo de mato grosso" site:secom.mt.gov.br'),
+    ("ALMT", '"governo de mato grosso" site:al.mt.gov.br'),
+)
 
 
 def buscar_google_news(consulta: str, limite: int = 100) -> list[dict]:
@@ -274,7 +308,25 @@ def coletar(dias: int, com_texto: int = 0, seed: dict | None = None) -> list[dic
     pastas = seed.get("secretarias", []) + seed.get("autarquias", [])
     governor = seed.get("governador")
     interino = seed.get("interino")
-    consultas = consultas_do_seed(seed, dias)
+    consultas = consultas_do_seed(seed, min(dias, 3))
+    if dias > 3:
+        consultas.extend(
+            (rotulo, f"{consulta} when:3d")
+            for rotulo, consulta in CONSULTAS_RECENTES_EXTRAS
+        )
+        janelas = _janelas_historicas(dias)
+        for depois, antes in janelas:
+            consultas.extend(consultas_do_seed(seed, 0, depois, antes))
+        logger.info(
+            "Janelas historicas: %s",
+            ", ".join(f"{d}..{a}" for d, a in janelas),
+        )
+    vistos_consulta: set[str] = set()
+    consultas = [
+        (rotulo, consulta)
+        for rotulo, consulta in consultas
+        if not (consulta.lower() in vistos_consulta or vistos_consulta.add(consulta.lower()))
+    ]
     logger.info("Consultas planejadas: %d", len(consultas))
 
     limite = datetime.now(timezone.utc) - timedelta(days=dias)
