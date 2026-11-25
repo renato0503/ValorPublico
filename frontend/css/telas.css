@@ -1653,6 +1653,7 @@ html[data-tema="escuro"] .sidebar-rodape { border-top-color: #2b3543; }
 }
 .menu-backdrop[hidden] { display: none; }
 @media (max-width: 760px) {
+  body.menu-aberto .masthead { z-index: 70; }
   body.menu-aberto #menuBackdrop { display: block; }
   .nav-mobile-cabecalho {
     display: flex;
