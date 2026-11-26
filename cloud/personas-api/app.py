@@ -17,6 +17,7 @@ import re
 import time
 import unicodedata
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -52,7 +53,11 @@ ALLOWED = [
 ]
 LIMITE_MINUTO = int(os.getenv("LIMITE_MINUTO", "30"))
 LIMITE_DIA = int(os.getenv("LIMITE_DIA", "500"))
+LIMITE_SIMULACAO_HORA = int(os.getenv("LIMITE_SIMULACAO_HORA", "8"))
 TOP_K = int(os.getenv("TOP_K", "6"))
+DISCURSO_MIN_CHARS = int(os.getenv("DISCURSO_MIN_CHARS", "80"))
+DISCURSO_MAX_CHARS = int(os.getenv("DISCURSO_MAX_CHARS", "12000"))
+PARALELISMO = int(os.getenv("PARALELISMO", "6"))
 
 STOPWORDS = {
     "a", "o", "as", "os", "um", "uma", "de", "da", "do", "das", "dos", "em", "no",
@@ -119,6 +124,7 @@ class Estado:
         self.indices: dict[str, BM25] = {}
         self.uso: dict[str, list[float]] = defaultdict(list)
         self.uso_dia: dict[str, list[float]] = defaultdict(list)
+        self.uso_simulacao: dict[str, list[float]] = defaultdict(list)
         self.cache: dict[tuple, tuple[float, dict]] = {}
         self._carregar()
 
@@ -185,6 +191,17 @@ class Estado:
             return False
         self.uso[uid].append(agora)
         self.uso_dia[uid].append(agora)
+        return True
+
+    def permitir_simulacao(self, uid: str) -> bool:
+        """Simular um discurso custa 12 chamadas de IA: limite próprio por hora."""
+        agora = time.time()
+        janela = [t for t in self.uso_simulacao[uid] if agora - t < 3600]
+        if len(janela) >= LIMITE_SIMULACAO_HORA:
+            self.uso_simulacao[uid] = janela
+            return False
+        janela.append(agora)
+        self.uso_simulacao[uid] = janela
         return True
 
 
@@ -268,39 +285,23 @@ def _autenticar(authorization: str | None) -> tuple[str, str]:
     return uid, orgao
 
 
-def _chamar_deepseek(perfil: dict, pergunta: str, trechos: list[dict]) -> str:
+def _deepseek(
+    messages: list[dict],
+    temperatura: float = 0.4,
+    max_tokens: int = 700,
+    json_mode: bool = False,
+) -> str:
+    """Chamada única ao DeepSeek. Levanta HTTPException(503) se a IA falhar."""
     if not DEEPSEEK_KEY:
         raise HTTPException(status_code=503, detail="IA indisponível (chave ausente).")
-    contexto = "\n\n".join(
-        f"[{i+1}] ({t.get('fonte','fonte')}, {t.get('data','')}) {t.get('texto','')[:1200]}"
-        for i, t in enumerate(trechos)
-    )
-    prompt = f"""Você é {perfil.get('rotulo')}, uma persona SINTÉTICA do Governo de Mato Grosso.
-Personalidade: {', '.join(perfil.get('personalidade') or [])}.
-Valores: {', '.join(perfil.get('valores') or [])}.
-Gatilhos negativos: {', '.join(perfil.get('gatilhos_negativos') or [])}.
-Linguagem: {perfil.get('linguagem', '')}.
-Responda em primeira pessoa, em até 180 palavras, usando APENAS o CONTEXTO.
-Cite as fontes como [1], [2]. Se não houver base, diga "não tenho informação suficiente".
-Nunca finja ser pessoa real. Nunca peça voto. Nunca ofenda. Nunca invente números.
-
-CONTEXTO:
-{contexto}
-
-PERGUNTA: {pergunta}
-"""
-    payload = {
+    payload: dict[str, Any] = {
         "model": DEEPSEEK_MODEL,
-        "messages": [
-            {
-                "role": "system",
-                "content": "Você é uma persona sintética. Responda em português, no personagem, com citações.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.4,
-        "max_tokens": 700,
+        "messages": messages,
+        "temperature": temperatura,
+        "max_tokens": max_tokens,
     }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
     headers = {"Authorization": f"Bearer {DEEPSEEK_KEY}", "Content-Type": "application/json"}
     ultima = None
     for _ in range(2):
@@ -326,9 +327,255 @@ PERGUNTA: {pergunta}
     raise HTTPException(status_code=503, detail=f"IA indisponível ({ultima}).")
 
 
+def _chamar_deepseek(perfil: dict, pergunta: str, trechos: list[dict]) -> str:
+    contexto = "\n\n".join(
+        f"[{i+1}] ({t.get('fonte','fonte')}, {t.get('data','')}) {t.get('texto','')[:1200]}"
+        for i, t in enumerate(trechos)
+    )
+    prompt = f"""Você é {perfil.get('rotulo')}, uma persona SINTÉTICA do Governo de Mato Grosso.
+Personalidade: {', '.join(perfil.get('personalidade') or [])}.
+Valores: {', '.join(perfil.get('valores') or [])}.
+Gatilhos negativos: {', '.join(perfil.get('gatilhos_negativos') or [])}.
+Linguagem: {perfil.get('linguagem', '')}.
+Responda em primeira pessoa, em até 180 palavras, usando APENAS o CONTEXTO.
+Cite as fontes como [1], [2]. Se não houver base, diga "não tenho informação suficiente".
+Nunca finja ser pessoa real. Nunca peça voto. Nunca ofenda. Nunca invente números.
+
+CONTEXTO:
+{contexto}
+
+PERGUNTA: {pergunta}
+"""
+    return _deepseek(
+        [
+            {
+                "role": "system",
+                "content": "Você é uma persona sintética. Responda em português, no personagem, com citações.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperatura=0.4,
+        max_tokens=700,
+    )
+
+
+def _extrair_json(texto: str) -> dict | None:
+    """Pega o objeto JSON de uma resposta da IA (aceita cerca de ```json)."""
+    if not texto:
+        return None
+    limpo = texto.strip()
+    if limpo.startswith("```"):
+        limpo = re.sub(r"^```[a-zA-Z]*\n?", "", limpo)
+        limpo = re.sub(r"```\s*$", "", limpo).strip()
+    inicio = limpo.find("{")
+    fim = limpo.rfind("}")
+    if inicio == -1 or fim <= inicio:
+        return None
+    try:
+        dados = json.loads(limpo[inicio : fim + 1])
+    except json.JSONDecodeError:
+        return None
+    return dados if isinstance(dados, dict) else None
+
+
+def _numero(valor: Any, minimo: float, maximo: float, padrao: float) -> float:
+    try:
+        numero = float(str(valor).replace(",", "."))
+    except (TypeError, ValueError):
+        return padrao
+    return max(minimo, min(maximo, numero))
+
+
+def _avaliar_persona(pid: str, discurso: str, trechos: list[dict]) -> dict:
+    """Uma persona ouve o discurso e devolve aderência, risco e sugestões."""
+    perfil = estado.perfis.get(pid, {})
+    rotulo = perfil.get("rotulo") or pid
+    contexto = "\n\n".join(
+        f"[{i+1}] ({t.get('fonte','fonte')}, {t.get('data','')}) {t.get('texto','')[:600]}"
+        for i, t in enumerate(trechos)
+    )
+    prompt = f"""Você é {rotulo}, uma persona SINTÉTICA do Governo de Mato Grosso.
+Personalidade: {', '.join(perfil.get('personalidade') or [])}.
+Valores: {', '.join(perfil.get('valores') or [])}.
+Gatilhos negativos: {', '.join(perfil.get('gatilhos_negativos') or [])}.
+Linguagem: {perfil.get('linguagem', '')}.
+
+Você está ouvindo um discurso institucional e vai dar sua reação honesta, do ponto de vista da sua persona.
+Responda APENAS com JSON, neste formato:
+{{
+  "aderencia": 0.0,
+  "risco": 0.0,
+  "primeira_impressao": "uma frase",
+  "o_que_funciona": "uma frase",
+  "o_que_incomoda": "uma frase",
+  "sugestao": "uma frase",
+  "frase_de_risco": "trecho curto do discurso que soa ruim para você"
+}}
+Regras:
+- aderencia vai de 0 (nada convenceu) a 10 (falei como se fosse para mim).
+- risco vai de 0 (nenhum incômodo) a 1 (pode gerar rejeição).
+- o_que_funciona e o_que_incomoda: veja o que a persona reconhece e o que a incomoda.
+- sugestao: o que você mudaria no texto para falar com a sua realidade (concreto, em uma frase).
+- frase_de_risco: cite o trecho literal do discurso, ou "" se não houver.
+- Sem preâmbulo, sem markdown.
+
+NOTÍCIAS DA SEMANA PARA VOCÊ (use como base factual):
+{contexto}
+
+DISCURSO:
+{discurso[:8000]}
+"""
+    try:
+        bruto = _deepseek(
+            [
+                {
+                    "role": "system",
+                    "content": "Você avalia um discurso no personagem de uma persona sintética e responde só em JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperatura=0.3,
+            max_tokens=600,
+            json_mode=True,
+        )
+    except HTTPException:
+        return {"id": pid, "rotulo": rotulo, "erro": "IA indisponível para esta persona."}
+
+    dados = _extrair_json(bruto) or {}
+    citacoes = []
+    vistos = set()
+    for t in trechos:
+        chave = t.get("url") or t.get("hash")
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        citacoes.append(
+            {
+                "titulo": t.get("fonte") or "Fonte",
+                "url": t.get("url") or "",
+                "data": t.get("data") or "",
+            }
+        )
+    return {
+        "id": pid,
+        "rotulo": rotulo,
+        "stakeholder": perfil.get("stakeholder") or "",
+        "aderencia": round(_numero(dados.get("aderencia"), 0, 10, 5.0), 1),
+        "risco": round(_numero(dados.get("risco"), 0, 1, 0.3), 2),
+        "primeira_impressao": str(dados.get("primeira_impressao") or "").strip(),
+        "o_que_funciona": str(dados.get("o_que_funciona") or "").strip(),
+        "o_que_incomoda": str(dados.get("o_que_incomoda") or "").strip(),
+        "sugestao": str(dados.get("sugestao") or "").strip(),
+        "frase_de_risco": str(dados.get("frase_de_risco") or "").strip(),
+        "citacoes": citacoes[:3],
+    }
+
+
+def _consolidar(respostas: list[dict], discurso: str) -> dict:
+    """Leitura de conjunto: o que funcionou e o que mudar, em ordem de impacto."""
+    if not respostas:
+        return {"veredito": "", "pontos_fortes": [], "melhorias": []}
+    linhas = "\n".join(
+        f"- {r['rotulo']} (aderência {r['aderencia']}/10, risco {r['risco']}): "
+        f"funciona: {r['o_que_funciona']} | incomoda: {r['o_que_incomoda']} | sugestão: {r['sugestao']}"
+        for r in respostas
+    )
+    prompt = f"""Você é o analista de comunicação do Governo de Mato Grosso.
+Você recebeu a reação de {len(respostas)} personas a um discurso institucional.
+Escreva para a equipe de comunicação: o que fazer antes de publicar.
+Responda APENAS com JSON:
+{{
+  "veredito": "uma frase com a leitura geral do texto",
+  "pontos_fortes": ["até 4 pontos curtos que funcionaram"],
+  "melhorias": [
+    {{"titulo": "o que mudar", "como_reescrever": "como reescrever no texto", "personas": ["rótulo da persona que apontou"], "prioridade": "alta|media|baixa"}}
+  ]
+}}
+Regras:
+- 4 a 6 melhorias, ordenadas da mais impactante para a menos.
+- cada melhoria nasce das reações acima: não invente queixa que ninguém teve.
+- titulo: uma ação curta na voz da equipe (ex.: "Trocar promessa genérica por número concreto"), até 12 palavras.
+- como_reescrever é prático: o que trocar no texto.
+- Sem preâmbulo, sem markdown.
+
+REAÇÕES DAS PERSONAS:
+{linhas}
+
+TRECHO DO DISCURSO PARA REFERÊNCIA:
+{discurso[:3000]}
+"""
+    try:
+        bruto = _deepseek(
+            [
+                {
+                    "role": "system",
+                    "content": "Você consolida a leitura de um painel de personas e responde só em JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperatura=0.3,
+            max_tokens=1800,
+            json_mode=True,
+        )
+    except HTTPException:
+        bruto = ""
+    dados = _extrair_json(bruto) or {}
+    if not dados:
+        # sem consolidação: usa as sugestões das personas mais críticas
+        criticas = sorted(respostas, key=lambda r: r["aderencia"])[:5]
+        return {
+            "veredito": "",
+            "pontos_fortes": [
+                r["o_que_funciona"] for r in sorted(respostas, key=lambda r: -r["aderencia"])[:3]
+            ],
+            "melhorias": [
+                {
+                    "titulo": r["sugestao"],
+                    "como_reescrever": r["o_que_incomoda"],
+                    "personas": [r["rotulo"]],
+                    "prioridade": "alta" if r["aderencia"] < 5 else "media",
+                }
+                for r in criticas
+                if r["sugestao"]
+            ],
+        }
+    pontos = [str(p).strip() for p in (dados.get("pontos_fortes") or []) if str(p).strip()]
+    melhorias = []
+    for item in dados.get("melhorias") or []:
+        if not isinstance(item, dict):
+            continue
+        titulo = str(item.get("titulo") or "").strip()
+        if not titulo:
+            continue
+        melhorias.append(
+            {
+                "titulo": titulo,
+                "como_reescrever": str(item.get("como_reescrever") or "").strip(),
+                "personas": [str(p).strip() for p in (item.get("personas") or []) if str(p).strip()],
+                "prioridade": str(item.get("prioridade") or "media").strip().lower(),
+            }
+        )
+    veredito = str(dados.get("veredito") or "").strip()
+    if not veredito and bruto:
+        achado = re.search(r'"veredito"\s*:\s*"([^"]{10,400})"', bruto)
+        if achado:
+            veredito = achado.group(1)
+    return {
+        "veredito": veredito,
+        "pontos_fortes": pontos[:4],
+        "melhorias": melhorias[:6],
+    }
+
+
+
 class Pergunta(BaseModel):
     pergunta: str
     semana: str | None = None
+
+
+class Simulacao(BaseModel):
+    discurso: str
+    personas: list[str] | None = None
 
 
 @app.get("/health")
@@ -339,6 +586,82 @@ def health() -> dict:
         "versao_rag": estado.manifest.get("versao_rag"),
         "modelo": DEEPSEEK_MODEL,
         "tem_chave": bool(DEEPSEEK_KEY),
+        "simulador": True,
+    }
+
+
+@app.post("/v1/discurso/simular")
+def simular(
+    corpo: Simulacao,
+    authorization: str | None = Header(default=None),
+) -> dict:
+    """As personas do Governo reagem a um discurso enviado pelo usuário."""
+    inicio = time.time()
+    uid, _ = _autenticar(authorization)
+    discurso = (corpo.discurso or "").strip()
+    if len(discurso) < DISCURSO_MIN_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cole um discurso com pelo menos {DISCURSO_MIN_CHARS} caracteres.",
+        )
+    if len(discurso) > DISCURSO_MAX_CHARS:
+        discurso = discurso[:DISCURSO_MAX_CHARS]
+    if not estado.permitir_simulacao(uid):
+        raise HTTPException(
+            status_code=429,
+            detail="Limite de simulações por hora atingido. Tente mais tarde.",
+        )
+
+    pedidas = [p for p in (corpo.personas or list(estado.perfis.keys())) if p in estado.perfis]
+    if not pedidas:
+        raise HTTPException(status_code=400, detail="Nenhuma persona válida.")
+
+    respostas: list[dict] = []
+    with ThreadPoolExecutor(max_workers=PARALELISMO) as pool:
+        futures = [
+            pool.submit(_avaliar_persona, pid, discurso, estado.buscar(pid, discurso, k=3))
+            for pid in pedidas
+        ]
+        for futuro in futures:
+            try:
+                respostas.append(futuro.result())
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("falha ao avaliar persona: %s", str(exc)[:120])
+    respostas.sort(key=lambda r: -float(r.get("aderencia") or 0))
+
+    analise = _consolidar(respostas, discurso)
+
+    aderencias = [float(r.get("aderencia") or 0) for r in respostas]
+    riscos = [float(r.get("risco") or 0) for r in respostas]
+    resumo = {
+        "aderencia_media": round(sum(aderencias) / len(aderencias), 1) if aderencias else 0,
+        "aderencia_min": min(aderencias) if aderencias else 0,
+        "aderencia_max": max(aderencias) if aderencias else 0,
+        "risco_medio": round(sum(riscos) / len(riscos), 2) if riscos else 0,
+        "personas_alta": sum(1 for a in aderencias if a >= 7),
+        "personas_baixa": sum(1 for a in aderencias if a < 4),
+        "total_personas": len(respostas),
+    }
+    logger.info(
+        "simulacao uid=%s personas=%d latencia_ms=%d",
+        uid,
+        len(respostas),
+        int((time.time() - inicio) * 1000),
+    )
+    return {
+        "discurso": {
+            "palavras": len(discurso.split()),
+            "caracteres": len(discurso),
+        },
+        "resumo": resumo,
+        "veredito": analise.get("veredito", ""),
+        "pontos_fortes": analise.get("pontos_fortes", []),
+        "melhorias": analise.get("melhorias", []),
+        "personas": respostas,
+        "aviso": "Simulação (hipótese) — as personas são sintéticas. Não é pesquisa de opinião.",
+        "modelo": DEEPSEEK_MODEL,
+        "versao_rag": estado.manifest.get("versao_rag"),
+        "latencia_ms": int((time.time() - inicio) * 1000),
     }
 
 

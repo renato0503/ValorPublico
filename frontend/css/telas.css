@@ -1092,6 +1092,34 @@ body:not([data-orgao="governo-mt"]) .sidebar-link[data-rota="governador"] {
 .disc-fontes { margin-top: 14px; font-size: 0.84rem; color: var(--texto-suave); }
 .disc-fontes ul { margin: 6px 0 0; padding-left: 18px; }
 .disc-fontes li { margin-bottom: 4px; }
+.disc-fontes-box { margin-top: 14px; }
+.disc-fontes > summary {
+  cursor: pointer;
+  color: var(--bronze);
+  font-family: var(--fonte-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.disc-fonte-titulo {
+  display: block;
+  color: var(--texto-mutado);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+.disc-fontes-nota {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  color: var(--texto-mutado);
+}
+.btn-info-explica { vertical-align: middle; }
+.painel-acoes-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .disc-aviso {
   margin-top: 14px;
   font-size: 0.78rem;
@@ -1214,6 +1242,253 @@ html[data-tema="escuro"] .chat-mensagens { background: rgba(255, 255, 255, 0.03)
 .persona-chat #chatPersona { width: 100%; min-width: 0; max-width: 100%; }
 .chat-form { min-width: 0; }
 .chat-form button { max-width: 100%; }
+
+/* ---------- Simulador de discurso próprio ---------- */
+.sim-painel { overflow: hidden; }
+.sim-label {
+  display: block;
+  font-family: var(--fonte-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-mutado);
+  margin-bottom: 6px;
+}
+.sim-area {
+  width: 100%;
+  min-height: 180px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-forte, var(--border));
+  border-radius: 10px;
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+.sim-area:focus {
+  outline: none;
+  border-color: var(--bronze, #7a541a);
+  box-shadow: 0 0 0 3px rgba(122, 84, 26, 0.12);
+}
+.sim-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+.sim-acoes-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.sim-contador {
+  font-family: var(--fonte-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--texto-mutado);
+}
+.sim-contador-curto { color: var(--vermelho, #b3261e); }
+.sim-resultado { margin-top: 18px; }
+.sim-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+.sim-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+.sim-kpi-rotulo {
+  font-family: var(--fonte-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-mutado);
+}
+.sim-kpi-valor {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 1.9rem;
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--navy);
+}
+html[data-tema="escuro"] .sim-kpi-valor { color: #f2ecdf; }
+.sim-kpi-valor small { font-size: 0.9rem; color: var(--texto-mutado); margin-left: 2px; }
+.sim-kpi-nota { font-size: 0.74rem; color: var(--texto-suave); }
+.sim-kpi-fantasma { min-height: 76px; opacity: 0.5; }
+.sim-veredito {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-left: 4px solid var(--bronze, #7a541a);
+  border-radius: 0 10px 10px 0;
+  background: rgba(122, 84, 26, 0.07);
+}
+html[data-tema="escuro"] .sim-veredito { background: rgba(255, 255, 255, 0.05); }
+.sim-rotulo {
+  display: block;
+  font-family: var(--fonte-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bronze, #7a541a);
+  margin-bottom: 4px;
+}
+.sim-veredito p { margin: 0; font-size: 0.98rem; line-height: 1.55; }
+.sim-bloco { margin-top: 20px; }
+.sim-bloco-titulo {
+  margin: 0 0 10px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--navy);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+html[data-tema="escuro"] .sim-bloco-titulo { color: #f2ecdf; }
+.sim-melhorias { margin: 0; padding: 0; list-style: none; counter-reset: mel; }
+.sim-melhoria {
+  position: relative;
+  padding: 12px 14px 12px 44px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  counter-increment: mel;
+}
+.sim-melhoria::before {
+  content: counter(mel);
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-family: var(--fonte-mono);
+  font-size: 0.72rem;
+}
+html[data-tema="escuro"] .sim-melhoria::before {
+  background: var(--bronze);
+  color: #10161f;
+}
+.sim-melhoria-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sim-melhoria-cab strong { font-size: 0.95rem; color: var(--texto); }
+.sim-prio {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--fonte-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.sim-prio-alta { background: rgba(179, 38, 30, 0.12); color: var(--vermelho, #b3261e); }
+.sim-prio-media { background: rgba(245, 158, 11, 0.16); color: var(--ambar, #b45309); }
+.sim-prio-baixa { background: rgba(29, 53, 87, 0.1); color: var(--navy); }
+html[data-tema="escuro"] .sim-prio-baixa { color: #9fb6d6; }
+.sim-melhoria-como { margin: 6px 0 0; font-size: 0.9rem; color: var(--texto-suave); }
+.sim-melhoria-personas {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: var(--texto-mutado);
+}
+.sim-fortes { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.sim-fortes li {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--verde, #2f7a55);
+  border-radius: 0 8px 8px 0;
+  background: var(--card);
+  font-size: 0.9rem;
+}
+.sim-personas-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 10px;
+}
+.sim-persona {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--texto-mutado);
+  border-radius: 10px;
+  background: var(--card);
+}
+.sim-persona.sim-faixa-alta { border-top-color: var(--verde, #2f7a55); }
+.sim-persona.sim-faixa-media { border-top-color: var(--ambar, #b45309); }
+.sim-persona.sim-faixa-baixa { border-top-color: var(--vermelho, #b3261e); }
+.sim-persona-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sim-persona-nome { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
+html[data-tema="escuro"] .sim-persona-nome { color: #f2ecdf; }
+.sim-persona-nota {
+  font-family: "Newsreader", Georgia, serif;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--texto);
+  line-height: 1;
+}
+.sim-barra {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--border);
+  overflow: hidden;
+}
+.sim-barra i { display: block; height: 100%; background: var(--navy); }
+.sim-faixa-alta .sim-barra i { background: var(--verde, #2f7a55); }
+.sim-faixa-media .sim-barra i { background: var(--ambar, #b45309); }
+.sim-faixa-baixa .sim-barra i { background: var(--vermelho, #b3261e); }
+.sim-persona-frase {
+  margin: 4px 0 2px;
+  font-size: 0.86rem;
+  font-style: italic;
+  color: var(--texto-suave);
+}
+.sim-persona-lista { margin: 4px 0 0; display: grid; gap: 6px; }
+.sim-persona-lista dt {
+  font-family: var(--fonte-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--texto-mutado);
+}
+.sim-persona-lista dd { margin: 2px 0 0; font-size: 0.85rem; color: var(--texto-suave); }
+.sim-persona-lista dd.sim-ok { border-left: 3px solid var(--verde, #2f7a55); padding-left: 8px; }
+.sim-persona-lista dd.sim-risco { border-left: 3px solid var(--ambar, #b45309); padding-left: 8px; }
+.sim-persona-fontes { font-size: 0.72rem; color: var(--texto-mutado); }
+.sim-vazio, .sim-aviso-rodape { font-size: 0.88rem; color: var(--texto-suave); }
+.sim-aviso-rodape { margin: 12px 0 0; }
+.sim-erro {
+  padding: 16px;
+  border: 1px solid rgba(179, 38, 30, 0.35);
+  border-radius: 10px;
+  background: rgba(179, 38, 30, 0.06);
+}
+.sim-erro-texto { margin: 0 0 10px; font-size: 0.92rem; color: var(--texto); }
+
+@media (max-width: 760px) {
+  .sim-acoes { flex-direction: column; align-items: stretch; }
+  .sim-acoes-botoes { justify-content: flex-start; }
+  .sim-acoes-botoes .btn-atualizar { width: 100%; }
+  .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sim-kpi-valor { font-size: 1.5rem; }
+}
+
+@media print {
+  body.print-personas .sim-form { display: none; }
+  body.print-personas .sim-painel { break-inside: avoid; }
+}
+
 
 @media print {
   body.print-governador .masthead,

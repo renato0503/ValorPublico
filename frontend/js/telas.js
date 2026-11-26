@@ -728,42 +728,89 @@ function renderizarImagem(dados) {
 }
 
 /* ---- V5 / Ouvidoria ---- */
+function _entradasContagem(objeto) {
+  return Object.entries(objeto || {})
+    .map(([rotulo, valor]) => ({ rotulo, valor: Number(valor) || 0 }))
+    .filter((item) => item.valor > 0)
+    .sort((a, b) => b.valor - a.valor);
+}
+
+/** Dias corridos médios dos pedidos ainda não respondidos. */
+function _mediaDiasEmAberto(demandas) {
+  const agora = Date.now();
+  const dias = (demandas || [])
+    .filter((d) => String(d.status || "nova") !== "respondida")
+    .map((d) => {
+      const quando = Date.parse(d.data_fonte || d.criado_em || "");
+      return Number.isFinite(quando) ? (agora - quando) / 86400000 : null;
+    })
+    .filter((valor) => valor !== null && valor >= 0);
+  if (!dias.length) return null;
+  return dias.reduce((soma, valor) => soma + valor, 0) / dias.length;
+}
+
 /** No Governo a Ouvidoria é por município; nas Câmaras, por bairro. */
-function rotularOuvidoria(porMunicipio) {
+function rotularOuvidoria(porMunicipio, agregado) {
   const termo = porMunicipio ? "município" : "bairro";
   const plural = porMunicipio ? "municípios" : "bairros";
   const titulo = document.querySelector("#graficoOuvBairros")?.closest(".painel")?.querySelector("h2");
-  if (titulo) titulo.textContent = `Mapa por ${termo}`;
+  if (titulo) titulo.textContent = porMunicipio ? "Menções a municípios" : "Mapa por bairro";
   const sub = titulo?.parentElement?.querySelector(".painel-sub");
-  if (sub) sub.textContent = `${plural[0].toUpperCase()}${plural.slice(1)} com mais pedidos`;
+  if (sub) {
+    if (porMunicipio) {
+      const com = Number(agregado?.comentarios_com_municipio || 0);
+      const total = Number(agregado?.comentarios_cidadaos || 0);
+      sub.textContent = com && total
+        ? `${com} de ${total} comentários citam um município (não é a origem do cidadão)`
+        : "Contagem de menções nos comentários (não é a origem do cidadão)";
+    } else {
+      sub.textContent = "Bairros com mais pedidos";
+    }
+  }
   const filtro = document.getElementById("filtroOuvBairro");
   if (filtro) {
     filtro.setAttribute("aria-label", `Filtrar por ${termo}`);
     const primeira = filtro.querySelector('option[value=""]');
     if (primeira) primeira.textContent = `Todos os ${plural}`;
   }
+  const ajuda = document.getElementById("ajudaOuvLocal");
+  if (ajuda) ajuda.hidden = !porMunicipio;
   const th = [...document.querySelectorAll("#tela-ouvidoria thead th")].find((el) =>
     /bairro|município/i.test(el.textContent)
   );
-  if (th) th.textContent = porMunicipio ? "Município" : "Bairro";
+  if (th) th.textContent = porMunicipio ? "Município (se informado)" : "Bairro";
 }
 
 function renderizarOuvidoria(dados) {
+  const governo = estado.orgao?.slug === "governo-mt";
   const demandas = estado.demandas || [];
-  const total = demandas.length;
-  const abertas = demandas.filter((d) => String(d.status || "nova") !== "respondida").length;
-  const encaminhadas = demandas.filter((d) => String(d.status) === "encaminhada").length;
+  const agregado = dados?.demandas || {};
+  const total = Math.max(Number(agregado.novas || 0), demandas.length);
+  const abertas = Number(
+    agregado.abertas ??
+      demandas.filter((d) => String(d.status || "nova") !== "respondida").length
+  );
+  const encaminhadas = Number(
+    agregado.encaminhadas ??
+      demandas.filter((d) => String(d.status) === "encaminhada").length
+  );
+  const media = _mediaDiasEmAberto(demandas);
 
   cartaoKpi("kpiOuvNovas", { codigo: "K-24", valor: String(total) });
   cartaoKpi("kpiOuvAbertas", { codigo: "K-25", valor: String(abertas) });
   cartaoKpi("kpiOuvTempo", {
     codigo: "K-26",
-    valor: "–",
-    sufixo: "preenchido quando houver respostas com data",
+    valor: media === null ? "—" : `${media.toFixed(1)} dias`,
+    sufixo:
+      media === null
+        ? "sem data de entrada"
+        : "idade média na fila (não é tempo de resposta)",
+    ...(media === null ? { semBase: true, motivo: "sem data de entrada" } : {}),
   });
   cartaoKpi("kpiOuvEncaminhadas", {
     codigo: "K-44",
     valor: `${total ? Math.round((encaminhadas / total) * 100) : 0}%`,
+    sufixo: "pasta sugerida na fila",
   });
 
   const corpo = document.getElementById("corpoOuvidoria");
@@ -772,29 +819,56 @@ function renderizarOuvidoria(dados) {
     corpo.innerHTML = demandas.length
       ? demandas
           .slice(0, 40)
-          .map(
-            (d) => `<tr>
-              <td>${escapar((d.resumo || d.texto || "").slice(0, 120))}</td>
+          .map((d) => {
+            const local = d.municipio || d.bairro || (governo ? "não informado" : "—");
+            const tipo = d.tipo_manifestacao || "pedido";
+            return `<tr>
+              <td><span class="ouv-tipo">${escapar(tipo)}</span>${escapar(
+                (d.resumo || d.texto || "").slice(0, 120)
+              )}</td>
               <td>${escapar(d.tema || "outros")}</td>
-              <td>${escapar(d.municipio || d.bairro || "—")}</td>
+              <td>${escapar(local)}</td>
               <td>${escapar(d.urgencia || "baixa")}</td>
               <td>${escapar(d.origem || "comentário")}</td>
               <td>${escapar(d.status || "nova")}</td>
-            </tr>`
-          )
+              <td>${escapar(d.pasta_sugerida || "—")}</td>
+            </tr>`;
+          })
           .join("")
-      : `<tr><td colspan="6">${item ? escapar(item.oQueE) : ""}</td></tr>`;
+      : `<tr><td colspan="7">${item ? escapar(item.oQueE) : ""}</td></tr>`;
   }
 
   const canvas = document.getElementById("graficoOuvTemas");
   if (canvas) {
-    guardar("graficoOuvTemas", treemap(canvas, contagemPor(demandas, "tema")));
+    const temas = _entradasContagem(agregado.por_tema);
+    guardar("graficoOuvTemas", treemap(canvas, temas.length ? temas : contagemPor(demandas, "tema")));
   }
   const canvas2 = document.getElementById("graficoOuvBairros");
   if (canvas2) {
-    const campoLocal = estado.orgao?.slug === "governo-mt" ? "municipio" : "bairro";
-    rotularOuvidoria(campoLocal === "municipio");
-    guardar("graficoOuvBairros", treemap(canvas2, contagemPor(demandas, campoLocal)));
+    rotularOuvidoria(governo, agregado);
+    const anterior = graficos.get("graficoOuvBairros");
+    if (anterior) {
+      try {
+        anterior.dispose();
+      } catch {
+        /* descartado */
+      }
+      graficos.delete("graficoOuvBairros");
+    }
+    const municipios = _entradasContagem(agregado.por_municipio_mencionado);
+    const itens = governo
+      ? (municipios.length ? municipios : contagemMunicipiosMencionados(demandas))
+      : contagemPor(demandas, "bairro");
+    if (!itens.length) {
+      canvas2.innerHTML = `<p class="grafico-leitura">${
+        governo
+          ? "Nenhum município foi citado nos comentários deste período."
+          : "Nenhum bairro identificado nos pedidos deste período."
+      }</p>`;
+    } else {
+      canvas2.innerHTML = "";
+      guardar("graficoOuvBairros", treemap(canvas2, itens));
+    }
   }
 }
 
@@ -935,6 +1009,106 @@ function renderizarSemana(dados) {
 
 let textoDiscursoAtual = "";
 
+/** Índice das notícias do período por veículo (para ligar a fonte à matéria original). */
+function indiceNoticiasPorVeiculo() {
+  const porVeiculo = new Map();
+  const itens = [];
+  const dados = dadosDaJanela(estado.dados || {});
+  const lista = Array.isArray(dados?.noticias_recentes) ? dados.noticias_recentes : [];
+  for (const item of lista) {
+    const veiculo = String(item?.veiculo || "").trim().toLowerCase();
+    const url = String(item?.url || "").trim();
+    if (!url) continue;
+    const registro = {
+      url,
+      veiculo,
+      titulo: String(item?.titulo || "").trim(),
+      data: String(item?.data_publicacao || "").slice(0, 10),
+    };
+    itens.push(registro);
+    if (veiculo && !porVeiculo.has(veiculo)) porVeiculo.set(veiculo, registro);
+  }
+  return { porVeiculo, itens };
+}
+
+/**
+ * Normaliza as fontes citadas no discurso.
+ * O backend publica as fontes como texto ("Veículo, 2026-11-24") ou como objeto.
+ */
+function normalizarFontes(fontes) {
+  const lista = Array.isArray(fontes) ? fontes : [];
+  const { porVeiculo, itens } = indiceNoticiasPorVeiculo();
+  const saida = [];
+  const vistos = new Set();
+  for (const item of lista) {
+    if (!item) continue;
+    let veiculo = "";
+    let data = "";
+    let url = "";
+    let titulo = "";
+    if (typeof item === "string") {
+      const bruto = item.trim();
+      if (!bruto) continue;
+      const partes = bruto.split(", ");
+      const ultima = partes[partes.length - 1];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(ultima)) {
+        data = ultima;
+        veiculo = partes.slice(0, -1).join(", ");
+      } else {
+        veiculo = bruto;
+      }
+    } else if (typeof item === "object") {
+      veiculo = String(item.veiculo || item.fonte || item.nome || "").trim();
+      data = String(item.data || item.data_publicacao || "").slice(0, 10);
+      url = String(item.url || "").trim();
+      titulo = String(item.titulo || item.texto || "").trim();
+    }
+    if (!veiculo && !titulo) continue;
+    const chave = `${veiculo}|${data}|${url}`.toLowerCase();
+    if (vistos.has(chave)) continue;
+    vistos.add(chave);
+    if (!url) {
+      let achado = porVeiculo.get(veiculo.toLowerCase());
+      if (!achado) {
+        // a fonte veio como domínio ("www.cbncuiaba.com.br"): procura no link da matéria
+        const alvo = veiculo.toLowerCase().replace(/\s+/g, "");
+        achado = itens.find((n) => n.url.toLowerCase().includes(alvo));
+      }
+      if (achado) {
+        url = achado.url;
+        if (!titulo) titulo = achado.titulo;
+        if (!data) data = achado.data;
+      }
+    }
+    saida.push({ veiculo: veiculo || titulo, data, url, titulo });
+  }
+  return saida;
+}
+
+/** Botão "Fontes" que abre a lista de matérias citadas no discurso. */
+function blocoFontes(fontes) {
+  const lista = normalizarFontes(fontes);
+  if (!lista.length) return "";
+  const itens = lista
+    .map((f) => {
+      const quando = f.data ? " · " + escapar(f.data.split("-").reverse().join("/")) : "";
+      const abrir = f.url
+        ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>`
+        : "";
+      const manchete = f.titulo
+        ? `<span class="disc-fonte-titulo">${escapar(f.titulo)}</span>`
+        : "";
+      return `<li><strong>${escapar(f.veiculo)}</strong>${quando}${abrir}${manchete}</li>`;
+    })
+    .join("");
+  return (
+    `<details class="disc-fontes"><summary>Fontes (${lista.length})</summary>` +
+    `<ul>${itens}</ul>` +
+    `<p class="disc-fontes-nota">Matérias citadas no texto. Confira a original antes de publicar.</p>` +
+    `</details>`
+  );
+}
+
 function renderizarDiscurso(disc, sim) {
   const alvo = document.getElementById("discursoTexto");
   const btnCopiar = document.getElementById("btnCopiarDiscurso");
@@ -962,15 +1136,7 @@ function renderizarDiscurso(disc, sim) {
   const atual = variantes[idx] || {};
   const texto = atual.tribuna || atual.texto || atual.institucional || "";
   textoDiscursoAtual = texto;
-  const fontes = (atual.fontes || [])
-    .slice(0, 8)
-    .map(
-      (f) =>
-        `<li>${escapar(f.veiculo || f.fonte || "Fonte")}${
-          f.data ? " · " + escapar(String(f.data).slice(0, 10)) : ""
-        }${f.url ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>` : ""}</li>`
-    )
-    .join("");
+  const fontes = blocoFontes(atual.fontes);
   const video = atual.video
     ? `<details class="disc-extra"><summary>Versão para vídeo (60s)</summary><p>${escapar(atual.video)}</p></details>`
     : "";
@@ -992,7 +1158,9 @@ function renderizarDiscurso(disc, sim) {
     `<p>${escapar(texto).replace(/\n/g, "</p><p>")}</p>` +
     video +
     post +
-    (fontes ? `<div class="disc-fontes"><strong>Fontes</strong><ul>${fontes}</ul></div>` : "") +
+    (fontes
+      ? `<div class="disc-fontes-box">${fontes}</div>`
+      : "") +
     simResumo +
     `<p class="disc-aviso">Rascunho gerado por IA — confira as fontes antes de usar.</p>` +
     `</article>`;
@@ -1074,15 +1242,7 @@ function renderizarGovernadorDiscurso() {
         `data-disc-gov="${i}">${escapar(v.angulo || v.id || `Variante ${i + 1}`)}</button>`
     )
     .join("");
-  const fontes = (atual.fontes || [])
-    .slice(0, 10)
-    .map(
-      (f) =>
-        `<li>${escapar(f.veiculo || f.fonte || "Fonte")}${
-          f.data ? " · " + escapar(String(f.data).slice(0, 10)) : ""
-        }${f.url ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>` : ""}</li>`
-    )
-    .join("");
+  const fontes = blocoFontes(atual.fontes);
   alvo.innerHTML =
     `<div class="disc-tabs" role="tablist">${abas}</div>` +
     `<article class="disc-texto-ativo">` +
@@ -1095,9 +1255,7 @@ function renderizarGovernadorDiscurso() {
     (atual.post
       ? `<details class="disc-extra"><summary>Versão para post</summary><p>${escapar(atual.post)}</p></details>`
       : "") +
-    (fontes
-      ? `<div class="disc-fontes"><strong>Fontes</strong><ul>${fontes}</ul></div>`
-      : "") +
+    (fontes ? `<div class="disc-fontes-box">${fontes}</div>` : "") +
     `<p class="disc-aviso">Rascunho gerado por IA — confira as fontes antes de usar.</p>` +
     `</article>`;
   if (btnCopiar) btnCopiar.disabled = false;
@@ -1504,6 +1662,9 @@ if (typeof document !== "undefined") {
     window.__timerRedes = setTimeout(aplicarFiltrosRedes, 150);
   });
   document.getElementById("fecharPost")?.addEventListener("click", fecharPost);
+  document.getElementById("modalPost")?.addEventListener("click", (evento) => {
+    if (evento.target === evento.currentTarget) fecharPost();
+  });
   document.getElementById("postAnterior")?.addEventListener("click", () => {
     if (postIndice > 0) { postIndice -= 1; atualizarPost(); }
   });
@@ -1748,6 +1909,19 @@ function contagemPor(lista, campo) {
     .sort((a, b) => b.valor - a.valor);
 }
 
+/** Conta menções a municípios (array) nos pedidos; não é a origem do cidadão. */
+function contagemMunicipiosMencionados(lista) {
+  const contagem = {};
+  (lista || []).forEach((item) => {
+    (item.municipios_mencionados || []).forEach((municipio) => {
+      contagem[municipio] = (contagem[municipio] || 0) + 1;
+    });
+  });
+  return Object.entries(contagem)
+    .map(([rotulo, valor]) => ({ rotulo, valor }))
+    .sort((a, b) => b.valor - a.valor);
+}
+
 if (typeof document !== "undefined") {
   // link direto para o clipping filtrado (ex.: vindo da tela do Governo)
   document.addEventListener("rota:changed", (evento) => {
@@ -1804,13 +1978,7 @@ function renderizarInterinoDiscurso() {
         `<button class="disc-aba${i === idx ? " ativo" : ""}" type="button" data-disc-interino="${i}">${escapar(v.angulo || v.id || `Variante ${i + 1}`)}</button>`
     )
     .join("");
-  const fontes = (atual.fontes || [])
-    .slice(0, 10)
-    .map(
-      (f) =>
-        `<li>${escapar(f.veiculo || f.fonte || "Fonte")}${f.data ? " · " + escapar(String(f.data).slice(0, 10)) : ""}${f.url ? ` · <a href="${escapar(f.url)}" target="_blank" rel="noopener">abrir</a>` : ""}</li>`
-    )
-    .join("");
+  const fontes = blocoFontes(atual.fontes);
   alvo.innerHTML =
     `<div class="disc-tabs" role="tablist">${abas}</div>` +
     `<article class="disc-texto-ativo">` +
@@ -1818,7 +1986,7 @@ function renderizarInterinoDiscurso() {
     `<p>${escapar(texto).replace(/\n/g, "</p><p>")}</p>` +
     (atual.video ? `<details class="disc-extra"><summary>Versão para vídeo (60s)</summary><p>${escapar(atual.video)}</p></details>` : "") +
     (atual.post ? `<details class="disc-extra"><summary>Versão para post</summary><p>${escapar(atual.post)}</p></details>` : "") +
-    (fontes ? `<div class="disc-fontes"><strong>Fontes</strong><ul>${fontes}</ul></div>` : "") +
+    (fontes ? `<div class="disc-fontes-box">${fontes}</div>` : "") +
     `<p class="disc-aviso">Rascunho gerado por IA — confira as fontes antes de usar.</p>` +
     `</article>`;
   if (btn) btn.disabled = false;

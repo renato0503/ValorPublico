@@ -65,7 +65,7 @@ gcloud run deploy $Service --source $PSScriptRoot --project $Project --region $R
   --service-account $ServiceAccount `
   --set-secrets "DEEPSEEK_API_KEY=deepseek-api-key:latest" `
   --set-env-vars "FIREBASE_PROJECT_ID=$Project,ALLOWED_ORIGINS=https://valorpublico.web.app" `
-  --memory 512Mi --timeout 60 --port 8080
+    --memory 512Mi --timeout 300 --port 8080
 
 $url = gcloud run services describe $Service --project $Project --region $Region --format="value(status.url)"
 Write-Host ""

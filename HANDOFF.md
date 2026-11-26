@@ -269,10 +269,11 @@ de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO
 
 - Recapturados **44 posts** oficiais já existentes (curtidas e comentários). Exemplos: `DgIPl9rj4Xd` 592→**901** curtidas / 42→**61** comentários; `DgILra8kU2i` 690→**1.347** / 91→**128**; `DgF-W1aCuOt` 0→**1.861** / 0→**107**.
 - Adicionados **9 posts novos** do `@govmatogrosso` com dados e imagens: `DgNeDnwuEk_`, `DgNM5usOIMI`, `DgLo4hBjome`, `DgLksAPAO1v`, `DgLVeC0BCl7`, `DgK7a0tCYyx`, `DgKztVEBgv-`, `DgKp-4okxNb` e `DgI8jKgFdV0`.
-- `docs/instagram`: **53 posts únicos**, **1.267 comentários estruturados** e **1.320 registros**; capas, prints e carrosséis em `docs/instagram/<shortcode>/`.
-- Firestore: `governo-mt` recebeu **546** documentos (33 posts + 513 comentários; 176 só de emoji descartados) e `governador-otaviano-pivetta` **433** (20 posts + 413 comentários; 165 descartados).
-- Sentimento dos **1.282** comentários do Instagram reclassificado (léxico + VADER): **85** mudanças.
-- Agregados `metricas_por_casa/governo-mt` e `metricas_por_cidade/governo-de-mato-grosso`: **54 posts**, **1.282 comentários**; `imagens_governo/instagram` com **53 miniaturas** (822 KB).
+- Adicionados também **3 posts novos** do `@otavianopivetta`: `DgNXZBcoJls` (**1.602** curtidas / 165 comentários), `DgLVHO-yLiM` (**3.489** / 420) e `DgK3pkRx9yZ` (**4.344** / 490).
+- `docs/instagram`: **56 posts únicos**, **1.344 comentários estruturados** e **1.400 registros**; capas, prints e carrosséis em `docs/instagram/<shortcode>/`.
+- Firestore: `governo-mt` recebeu **546** documentos (33 posts + 513 comentários; 176 só de emoji descartados) e `governador-otaviano-pivetta` **499** (23 posts + 476 comentários; 179 descartados).
+- Sentimento dos **1.345** comentários do Instagram reclassificado (léxico + VADER): **65** ajustes na última rodada.
+- Agregados `metricas_por_casa/governo-mt` e `metricas_por_cidade/governo-de-mato-grosso`: **57 posts**, **1.345 comentários**; `imagens_governo/instagram` com **56 miniaturas** (856 KB).
 - Sequência: `catalogar_instagram.py` → `carregar_instagram_valorpublico.py --agente …` → `atualizar_metricas_governo.py` → `publicar_miniaturas_instagram.py`.
 - Integridade: **12 OK / 0 falhas**.
 
@@ -282,3 +283,23 @@ de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO
 - No reload, `loginExplicito` volta a `false` (`app.js:2097-2101`); o bootstrap chama `sair()` mesmo com o usuário restaurado e abre o login (`app.js:2216-2222`); o handler `auth:changed` repete o gate (`app.js:1964-1968`).
 - Teste com usuário temporário (removido): antes do botão, `authUser` preenchido e botão “Sair”; depois, `authUser = null`, login visível e botão “Entrar”. Bloqueando o `app.js` no reload, o Firebase restaurou o mesmo usuário — a persistência está OK.
 - **Correção pendente:** no reload, chamar `entrarApp()` quando autenticado e remover o gate `loginExplicito`.
+
+### 3.3 Correção do modal de post (Redes)
+
+- O modal `#modalPost` agora fecha ao clicar no backdrop (fora do conteúdo), mantendo `X` e `Esc`.
+- Alteração em `frontend/js/telas.js` (listener no overlay); **publicada no Hosting em 26/11**.
+- Teste local com dados simulados em 1440×900 e 390×844: abre, fecha fora, **não** fecha clicando dentro e fecha no `X` — todos OK.
+
+### 3.4 Ouvidoria — proposta 1 (26/11/2026)
+
+- `demandas` populada com **32 manifestações** do Governo (14 pedidos, 8 perguntas, 6 reclamações, 4 sugestões); somente comentários de cidadãos. Respostas da própria conta oficial (`@govmatogrosso`/`@otavianopivetta`) foram descartadas.
+- Temas: obras 6, meio ambiente 6, saúde 4, cultura 3, transporte 3, segurança 3, habitação 3, educação 2, serviços 2.
+- **Municípios:** **37 de 633** comentários citam um município (Cuiabá 9, Várzea Grande 7, Juscimeira 3, Barra do Garças 3…; 18 municípios). O mapa usa essa contagem de menções e deixa claro que **não é a origem do cidadão**.
+- **Sem autor no documento:** o resumo remove `@`/links e a fila não expõe cidadão; o texto fica no doc privado por órgão/papel.
+- `tipo_manifestacao` (pedido/pergunta/reclamação/sugestão) e `pasta_sugerida` são gravados; o encaminhamento real continua humano.
+- K-26 mostra a **idade média em aberto (~6,5 dias)**, com aviso de que não é tempo de resposta; para resposta real é preciso status/protocolo.
+- Botão `(?)` (T-17) ao lado do mapa explica a proposta 2: para origem real por município e tempo de resposta é preciso criar um canal estruturado (formulário, WhatsApp ou DM) com campo de município e protocolo.
+- Backend: `backend/scripts/processar_demandas.py` (`--orgao governo-mt --dias 400`).
+- Front: 32 linhas com tag de tipo, coluna “Pasta sugerida”, mapas de temas e municípios populados.
+- **Publicado no Hosting em 26/11** (sw `valorpublico-v54`), agora a partir do **diretório de trabalho** — preserva as melhorias da outra IA (print-only oculto, aba Simulação removida e `?` do discurso). Smoke ao vivo: 32 linhas, K-26 `6.5 dias`, “37 de 633” no mapa, 0 overflow/erro JS.
+- **Menu:** `menu.js` inclui **Ouvidoria** na sidebar do Governo (grupo próprio) e no “Mais”.

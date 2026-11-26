@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/identidade.css" />
   <link rel="stylesheet" href="css/telas.css" />
-    <link rel="stylesheet" href="css/impressao.css" media="print" />
+    <link rel="stylesheet" href="css/impressao.css" />
     <link rel="stylesheet" href="css/documento.css" />
   <link rel="stylesheet" href="css/componentes.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -659,7 +659,7 @@
         </div>
         <div class="tabela-wrapper">
           <table class="tabela">
-            <thead><tr><th>Pedido</th><th>Tema</th><th>Bairro</th><th>Urgência</th><th>Origem</th><th>Status</th></tr></thead>
+            <thead><tr><th>Pedido</th><th>Tema</th><th>Bairro</th><th>Urgência</th><th>Origem</th><th>Status</th><th>Pasta sugerida</th></tr></thead>
             <tbody id="corpoOuvidoria"></tbody>
           </table>
         </div>
@@ -675,6 +675,7 @@
         <div class="painel-cabecalho">
           <h2>Mapa por bairro</h2>
           <span class="painel-sub">Bairros com mais pedidos</span>
+          <button class="btn-info" id="ajudaOuvLocal" type="button" data-explicacao="T-17" aria-label="Como funciona o mapa de municípios?" hidden>ⓘ</button>
         </div>
         <div class="grafico-area" id="graficoOuvBairros"></div>
       </article>
@@ -895,6 +896,31 @@
         </section>
 
         <section class="tela" id="tela-personas" data-tela="personas">
+    <section class="grade-detalhe" aria-label="Simulação do seu discurso">
+      <article class="card painel painel-full sim-painel">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Simular o meu discurso</h2>
+            <span class="painel-sub">Cole o seu texto e as 12 personas do Governo de MT reagem de uma vez: o que convence, o que incomoda e o que reescrever antes de publicar.</span>
+          </div>
+          <button class="btn-info btn-info-explica" type="button" data-explicacao="D-02" aria-label="Como funciona a simulação do meu discurso?">?</button>
+        </div>
+        <div class="sim-form">
+          <label class="sim-label" for="discursoProprio">Seu discurso</label>
+          <textarea id="discursoProprio" class="sim-area" rows="9" placeholder="Cole aqui o discurso — o da tribuna, o da rádio, o do grupo de WhatsApp…" spellcheck="false"></textarea>
+          <div class="sim-acoes">
+            <span class="sim-contador" id="discursoContador">0 palavras · 0 caracteres</span>
+            <span class="sim-acoes-botoes">
+              <button class="btn-texto" id="btnDiscursoCopiar" type="button" disabled>Copiar resumo</button>
+              <button class="btn-texto" id="btnDiscursoLimpar" type="button">Limpar</button>
+              <button class="btn-atualizar" id="btnDiscursoAvaliar" type="button">Avaliar com as 12 personas</button>
+            </span>
+          </div>
+          <p class="selo-simulacao" id="simDiscursoAviso">As 12 personas são sintéticas. Nenhuma pessoa real é consultada e o seu texto não é publicado.</p>
+        </div>
+        <div id="simDiscursoResultado"></div>
+      </article>
+    </section>
     <section class="grade-detalhe" aria-label="Personas do Governo">
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
@@ -932,7 +958,6 @@
     <nav class="abas-semana" role="tablist" aria-label="Seções da semana">
       <button type="button" class="aba-semana ativo" data-semana-aba="relatorio">Relatório</button>
       <button type="button" class="aba-semana" data-semana-aba="discurso">Discurso</button>
-      <a href="#/simulacao" class="aba-semana">Simulação</a>
     </nav>
     <section class="grade-principal" aria-label="Indicadores da semana">
       <article class="card kpi" id="kpiSemanaVariedade">
@@ -974,7 +999,10 @@
             <h2>Discurso institucional da semana</h2>
             <span class="painel-sub">Pauta da semana, entregas e resposta às demandas mais recorrentes</span>
           </div>
-          <span class="selo-ia">Rascunho gerado por IA — revisar antes de usar</span>
+          <div class="painel-acoes-info">
+            <span class="selo-ia">Rascunho gerado por IA — revisar antes de usar</span>
+            <button class="btn-info btn-info-explica" type="button" data-explicacao="D-01" aria-label="Como o discurso é gerado?">?</button>
+          </div>
         </div>
         <div class="discurso-texto" id="discursoTexto">O discurso institucional aparece aqui quando o relatório semanal for gerado.</div>
         <div class="grafico-acoes">

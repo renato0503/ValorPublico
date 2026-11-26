@@ -1,4 +1,4 @@
-﻿const CACHE_VERSION = "valorpublico-v53";
+﻿const CACHE_VERSION = "valorpublico-v55";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -21,6 +21,7 @@ const APP_SHELL = [
   "./js/governo.js",
   "./js/simulacao.js",
   "./js/personas.js",
+  "./js/simulador.js",
   "./js/documentos.js",
   "./icons/favicon.svg",
   "./icons/icon-192.png",

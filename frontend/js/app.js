@@ -11,6 +11,7 @@ import * as governo from "./governo.js";
 import * as documentos from "./documentos.js";
 import * as simulacao from "./simulacao.js";
 import * as personas from "./personas.js";
+import * as simulador from "./simulador.js";
 import { renderMenu, marcarAtivo } from "./menu.js";
 import { redimensionarGraficos } from "./componentes.js";
 import {
@@ -2149,6 +2150,7 @@ async function bootstrap() {
   registrarBotaoAuth();
   iniciarMotion();
   registrarExplicacoes();
+  simulador.iniciar();
   registrarFiltrosLateral();
   registrarMenuMobile();
   registrarSidebar();

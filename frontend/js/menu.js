@@ -33,12 +33,14 @@ const GRUPOS = {
   "governo-mt": [
     { rotulo: "Painel", itens: ["governo"] },
     { rotulo: "Mídia", itens: ["clipping", "redes", "tendencias", "imagem"] },
+    { rotulo: "Ouvidoria", itens: ["ouvidoria"] },
     { rotulo: "Inteligência", itens: ["semana", "radar", "analise", "conformidade", "relatorios"] },
     { rotulo: "Laboratório", itens: ["simulacao", "personas"] },
   ],
   default: [
     { rotulo: "Painel", itens: ["edicao", "semana"] },
     { rotulo: "Mídia", itens: ["clipping", "imagem", "redes", "tendencias"] },
+    { rotulo: "Ouvidoria", itens: ["ouvidoria"] },
     { rotulo: "Inteligência", itens: ["radar", "analise", "conformidade", "relatorios"] },
     { rotulo: "Laboratório", itens: ["simulacao", "personas"] },
   ],
@@ -47,7 +49,7 @@ const GRUPOS = {
 const MENUS = {
   "governo-mt": {
     principal: ["governo", "semana", "analise", "simulacao", "personas", "relatorios"],
-    mais: ["clipping", "radar", "imagem", "conformidade", "tendencias", "redes", "sistema"],
+    mais: ["clipping", "ouvidoria", "radar", "imagem", "conformidade", "tendencias", "redes", "sistema"],
   },
   default: {
     principal: ["edicao", "clipping", "semana", "analise", "relatorios"],

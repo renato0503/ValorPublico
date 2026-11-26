@@ -89,6 +89,9 @@
   position: absolute;
   z-index: 90;
   width: min(320px, calc(100vw - 24px));
+  max-height: min(72vh, 460px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 16px;
   border: 1px solid var(--borda, rgba(255, 255, 255, 0.16));
   border-radius: 12px;
@@ -105,6 +108,22 @@
 }
 .popup-explicacao-linha { margin: 0 0 6px; }
 .popup-explicacao-linha strong { color: var(--texto, #e6edf7); }
+.popup-explicacao-sub { margin: 10px 0 2px; }
+.popup-explicacao-passos { margin: 0 0 4px; padding-left: 18px; }
+.popup-explicacao-passos li { margin-bottom: 6px; }
+.ouv-tipo {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--borda, rgba(255, 255, 255, 0.16));
+  border-radius: 999px;
+  color: var(--texto-mutado, #64748b);
+  font-family: var(--fonte-mono, monospace);
+  font-size: 0.64rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
 .popup-explicacao-fechar {
   position: absolute;
   top: 6px;

@@ -133,4 +133,16 @@ backend/data/governo_mt/*
 backend/data/semanal/*
 cloud/personas-api/data/
 
+# ============================================================
+# ACERVOS LOCAIS (fora do app: pesados e/ou com dados de terceiros)
+# ============================================================
+# Captura do Instagram: comentarios e telas de posts de cidadaos.
+# Fica na maquina; se precisar versionar, use release/LFS.
+docs/instagram/
+# Midia kit (47 MB de PNG, 59 MB de video, 25 MB de audio)
+docs/midiakit/
+# Miniaturas e logs da coleta do Instagram
+backend/data/imagens/
+backend/*.err
+
 

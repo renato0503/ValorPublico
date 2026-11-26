@@ -186,15 +186,15 @@ const EXPLICACOES = {
     },
   },
   "K-26": {
-    nome: "Tempo de resposta",
-    oQueE: "Quanto tempo, em média, se leva para responder um pedido.",
-    comoLer: "Em horas.",
-    porque: "Resposta rápida gera confiança.",
+    nome: "Tempo em aberto",
+    oQueE: "Há quantos dias, em média, os pedidos ainda sem resposta estão na fila.",
+    comoLer: "Quanto menor, melhor. Não é o tempo de resposta: mede a espera até agora.",
+    porque: "Mostra o acúmulo da fila; para medir resposta real, é preciso registrar o status e a data de resposta.",
     valor: {
-      nome: "Tempo de resposta",
-      oQueE: "Quanto tempo, em média, a Ouvidoria leva para responder um pedido.",
-      comoLer: "Em horas.",
-      porque: "Resposta rápida gera confiança.",
+      nome: "Tempo em aberto",
+      oQueE: "Há quantos dias, em média, os pedidos da Ouvidoria ainda sem resposta estão na fila.",
+      comoLer: "Quanto menor, melhor. Não é o tempo de resposta: mede a espera até agora.",
+      porque: "Mostra o acúmulo da fila; para medir resposta real, é preciso registrar o status e a data de resposta.",
     },
   },
   "K-27": {
@@ -642,6 +642,15 @@ const EXPLICACOES = {
     comoLer: "Cada linha é uma notícia com data, veículo e link.",
     porque: "Mostra como a mídia acompanha a gestão.",
   },
+  "T-17": {
+    nome: "Menções a municípios",
+    oQueE:
+      "Conta quantas vezes o nome de um município de Mato Grosso aparece no texto dos comentários de cidadãos (inclusive os que não viraram pedido).",
+    comoLer:
+      "É uma contagem de menções, não a origem do cidadão. Quem não escreve a cidade fica como “não informado”.",
+    porque:
+      "Para saber a origem real por município e medir tempo de resposta, é preciso um canal estruturado (formulário, WhatsApp ou DM) com campo de município e protocolo de atendimento. Sem esse canal, o mapa mostra apenas o que foi citado no texto.",
+  },
   /* ---------------- Relatórios (plano 17 §9) ---------------- */
   "R-01": {
     nome: "Resumo do dia",
@@ -702,6 +711,37 @@ const EXPLICACOES = {
     oQueE: "Os dados da tela, exatamente com os filtros que estão ativos.",
     comoLer: "CSV ou PDF.",
     porque: "Serve para planilha, prestação de contas ou auditoria.",
+  },
+
+  /* ---------------- discursos (geração automática) ---------------- */
+  "D-01": {
+    nome: "Como o discurso é gerado",
+    oQueE: "Rascunho escrito por inteligência artificial a partir das notícias da semana.",
+    comoLer: "Três ângulos e três formatos por semana; leia, ajuste e só então publique.",
+    porque: "Mostra o caminho entre a notícia coletada e a frase que sai na tribuna.",
+    passos: [
+      "Coleta: a máquina reúne os clippings e posts monitorados na semana.",
+      "Briefing: os fatos viram um resumo com veículo, data e link de cada notícia.",
+      "Redação: o modelo escreve 3 ângulos (propositiva, prestação de contas e resposta) em 3 formatos (tribuna, vídeo de 60 s e post).",
+      "Validação: o sistema confere se cada fato citado e cada link existem no briefing; o que não bate é descartado, e só o texto validado entra no painel, com as fontes ao lado.",
+      "Simulação: 12 personas sintéticas testam a reação ao texto — é hipótese, não pesquisa.",
+      "Revisão humana: a equipe lê, corrige o que for preciso e só então usa o texto.",
+    ],
+  },
+
+  /* ---------------- simulação do discurso do usuário ---------------- */
+  "D-02": {
+    nome: "Como a simulação do seu discurso funciona",
+    oQueE: "As 12 personas do Governo leem o texto que você colou e reagem uma vez cada.",
+    comoLer: "Aderência de 0 a 10 mede o quanto cada persona se convenceu; o risco mostra onde o texto pode gerar rejeição.",
+    porque: "Mostra, antes de publicar, o que o texto convence e o que ainda não diz.",
+    passos: [
+      "Você cola o discurso no campo da tela e clica em avaliar.",
+      "Cada persona recebe o seu texto e as notícias da semana, e responde no próprio perfil: o que funcionou, o que incomodou e o que mudaria.",
+      "As 12 respostas viram uma leitura de conjunto: aderência média, risco e uma lista de melhorias ordenadas por impacto.",
+      "Nada é publicado: o texto serve só para a equipe reescrever antes de sair.",
+      "Limite: 8 simulações por hora por usuário, para não estourar a cota de IA.",
+    ],
   },
 };
 
@@ -775,6 +815,7 @@ export function mostrarExplicacao(codigo, ancora = null) {
     <p class="popup-explicacao-linha"><strong>Como ler:</strong> ${item.comoLer}</p>
     <p class="popup-explicacao-linha"><strong>Por que importa:</strong> ${item.porque}</p>
     ${item.formula ? `<p class="popup-explicacao-linha"><strong>Como calculamos:</strong> ${item.formula}</p>` : ""}
+    ${item.passos && item.passos.length ? `<p class="popup-explicacao-linha popup-explicacao-sub"><strong>Como é feito, passo a passo:</strong></p><ol class="popup-explicacao-passos">${item.passos.map((passo) => `<li>${passo}</li>`).join("")}</ol>` : ""}
     <button class="popup-explicacao-fechar" type="button" aria-label="Fechar">×</button>
   `;
   document.body.appendChild(popup);
