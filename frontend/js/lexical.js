@@ -602,8 +602,22 @@ export function desenharGrafo(elemento, grafo) {
 /* Leitura automática dos resultados + CSV + reset de zoom             */
 /* ================================================================== */
 
+// a explicação fica atrás do botão "?" e lembra se a pessoa deixou aberta
+let ajudaAberta = false;
+
+export function alternarAjuda(botao) {
+  ajudaAberta = !ajudaAberta;
+  const painel = document.getElementById("lexLeitura");
+  if (painel) painel.hidden = !ajudaAberta;
+  if (botao) botao.setAttribute("aria-expanded", String(ajudaAberta));
+}
+
 function _bloco(oQueE, comoLer, interpretacao) {
-  return `<div class="lex-leitura" id="lexLeitura">
+  return `<div class="lex-ajuda">
+    <button type="button" class="lex-ajuda-btn" data-lex-ajuda aria-expanded="${ajudaAberta}" aria-controls="lexLeitura" title="Entenda esta análise">?</button>
+    <span class="lex-ajuda-rotulo">Entenda esta análise</span>
+  </div>
+  <div class="lex-leitura" id="lexLeitura"${ajudaAberta ? "" : " hidden"}>
     <div class="lex-leitura-item"><strong>O que é</strong><p>${oQueE}</p></div>
     <div class="lex-leitura-item"><strong>Como ler</strong><p>${comoLer}</p></div>
     <div class="lex-leitura-item lex-interpreta"><strong>O que os dados dizem</strong>${interpretacao}</div>

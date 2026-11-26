@@ -1308,7 +1308,7 @@ function renderizarRedes(dados) {
   }
 
   renderizarRedesPosts(social, dados);
-  renderizarImagensValor(dados);
+  // "Imagens das peças" saiu da tela (classificação automática pouco útil); as fotos ficam nos posts
 }
 
 let postsRedes = [];

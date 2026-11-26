@@ -1584,6 +1584,11 @@ function fecharSeletorOrgao() {
 /* ---------- graficos lexicais: "ver dados" + resize ---------- */
 
 document.addEventListener("click", (evento) => {
+  const botaoAjuda = evento.target.closest("[data-lex-ajuda]");
+  if (botaoAjuda) {
+    lexical.alternarAjuda(botaoAjuda);
+    return;
+  }
   const botaoDados = evento.target.closest("[data-lex-dados]");
   if (botaoDados) {
     evento.preventDefault();
