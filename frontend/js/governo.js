@@ -632,6 +632,17 @@ export function definirDados(dados) {
   renderizar();
 }
 
+/** O que os documentos em PDF precisam do Governo (recorte de período ativo). */
+export function contextoDocumentos() {
+  return {
+    casa: _janela(estado.casa) || estado.casa,
+    secretarias: (estado.secretarias || []).map((p) => ({ ...p, ...(_janela(p) || {}) })),
+    governador: _janela(estado.governador) || estado.governador,
+    interino: _janela(estado.interino) || estado.interino,
+    pastaSelecionada: estado.pastaSelecionada,
+  };
+}
+
 /** Filtro por pasta (usado nos cliques da grade). */
 export function filtrarPasta(slugPasta) {
   estado.pastaSelecionada = slugPasta || "";
@@ -739,11 +750,6 @@ function exportarGovernador() {
 
 if (typeof document !== "undefined") {
   document.getElementById("btnExportarGoverno")?.addEventListener("click", exportarGoverno);
-  document.getElementById("btnBaixarPdfGoverno")?.addEventListener("click", () => {
-    document.body.classList.add("print-governo");
-    window.print();
-    setTimeout(() => document.body.classList.remove("print-governo"), 300);
-  });
   document.getElementById("btnExportarSecretarias")?.addEventListener("click", exportarSecretarias);
   document.getElementById("btnExportarGovernador")?.addEventListener("click", exportarGovernador);
 }

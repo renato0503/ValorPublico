@@ -412,5 +412,18 @@ export function ativo() {
   return document.body.dataset.orgao === "governo-mt";
 }
 
+/** Recorte atual (filtros + notícias) para o documento em PDF. */
+export function recorteAtual() {
+  return {
+    carregado: !!estado.indice && estado.partes.size > 0,
+    filtros: { ...estado.filtros },
+    periodo: estado.periodo,
+    noticias: estado.indice ? aplicarFiltros(noticiasDoPeriodo()) : [],
+    total_periodo: estado.indice ? noticiasDoPeriodo().length : 0,
+    secretarias: estado.indice?.secretarias || {},
+    tituloLimpo,
+  };
+}
+
 /** Para o teste de ponta a ponta. */
 export const _teste = { estado, aplicarFiltros, tituloLimpo };

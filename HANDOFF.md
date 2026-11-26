@@ -1,6 +1,6 @@
 # HANDOFF — Valor Público
 
-> **Atualização 26/11/2026 (noite):** produção em `valorpublico-v52` (commit `557d351`). Há trabalho **não commitado** de PDFs profissionais (`frontend/js/documentos.js`, `frontend/css/documento.css`, `frontend/tests/validar_pdfs.py`) com os botões de PDF de Semana/Governador/Governo desligados no código local. Ver `../plano/22_SPRINTS_PROMESSAS_APRESENTACAO.md` §8 antes de qualquer deploy.
+> **Atualização 26/11/2026 (noite):** os **PDFs profissionais em A4** foram concluídos e testados (`frontend/js/documentos.js`, `frontend/css/documento.css`, `frontend/tests/validar_pdfs.py`): os 8 botões de PDF (executivo, governo, clipping, redes, semana, governador, tendências, personas) montam documentos próprios com capa, sumário, seções numeradas, KPIs, gráficos, tabelas e "Página X de Y". Regressão: `validar_cliente.py` 18 telas/22 ações/0 falhas/0 overflow e `teste_clipping_governo.mjs` 0 falhas. Ver `../plano/22_SPRINTS_PROMESSAS_APRESENTACAO.md` §8.
 
 
 > Continuidade do app. Documento master do projeto: **`D:\Dev\CerraClipping\STATUS_PROJETO.md`**.

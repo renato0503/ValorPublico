@@ -301,6 +301,24 @@ export async function carregar(db) {
   renderizar();
 }
 
+/** O que os documentos em PDF precisam (o mesmo recorte que a tela mostra). */
+export function contextoDocumentos() {
+  return {
+    orgao: estado.orgao,
+    periodo: estado.periodo,
+    dados: dadosDaJanela(estado.dados || {}),
+    bruto: estado.dados || {},
+    relatorio: estado.relatorio,
+    discurso: estado.discurso,
+    simulacao: estado.simulacao,
+    semana: estado.semana,
+    discursoGovernador: estado.discursoGovernador,
+    simulacaoGovernador: estado.simulacaoGovernador,
+    discursoInterino: estado.discursoInterino,
+    miniaturas: miniaturasInstagram,
+  };
+}
+
 export function renderizar() {
   const dados = dadosDaJanela(estado.dados || {});
   renderizarEdicao(dados);
@@ -1107,11 +1125,6 @@ if (typeof document !== "undefined") {
     if (evento.target.closest("#btnCopiarDiscurso")) {
       copiarDiscursoSemana();
     }
-    if (evento.target.closest("#btnBaixarPdfSemanal")) {
-      document.body.classList.add("print-semana");
-      window.print();
-      setTimeout(() => document.body.classList.remove("print-semana"), 300);
-    }
     if (evento.target.closest("#btnCopiarDiscursoInterino")) {
       if (textoInterinoAtual) {
         navigator.clipboard?.writeText(textoInterinoAtual).catch(() => {});
@@ -1121,11 +1134,6 @@ if (typeof document !== "undefined") {
       if (textoGovernadorAtual) {
         navigator.clipboard?.writeText(textoGovernadorAtual).catch(() => {});
       }
-    }
-    if (evento.target.closest("#btnBaixarPdfGovernador")) {
-      document.body.classList.add("print-governador");
-      window.print();
-      setTimeout(() => document.body.classList.remove("print-governador"), 300);
     }
   });
 }

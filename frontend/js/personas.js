@@ -197,4 +197,8 @@ export function definirDados(personas, publicadas = []) {
   renderizar();
 }
 
+export function contextoDocumentos() {
+  return { personas: estado.personas || [] };
+}
+
 export default { carregar, definirDados };

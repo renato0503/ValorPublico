@@ -8,6 +8,7 @@ import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
 import * as telas from "./telas.js";
 import * as governo from "./governo.js";
+import * as documentos from "./documentos.js";
 import * as simulacao from "./simulacao.js";
 import * as personas from "./personas.js";
 import { renderMenu, marcarAtivo } from "./menu.js";
@@ -1302,11 +1303,9 @@ function abrirRelatorio() {
   gerarRelatorio();
 }
 
-// PDF nativo do relatório: imprime apenas o modal (via CSS @media print).
+// PDF nativo do relatório: monta o documento A4 do relatório executivo.
 function exportarPdf() {
-  document.body.classList.add("print-relatorio");
-  window.print();
-  setTimeout(() => document.body.classList.remove("print-relatorio"), 300);
+  documentos.imprimir("executivo");
 }
 
 function gerarRelatorio() {
@@ -2230,21 +2229,23 @@ async function bootstrap() {
 }
 
 bootstrap();
+/* Documentos em PDF: cada botão monta o documento A4 correspondente. */
 const BOTOES_PDF = {
-  btnBaixarPdfClipping: "print-clipping",
-  btnBaixarPdfRedes: "print-redes",
-  btnBaixarPdfTendencias: "print-tendencias",
-  btnBaixarPdfPersonas: "print-personas",
+  btnBaixarPdfClipping: "clipping",
+  btnBaixarPdfRedes: "redes",
+  btnBaixarPdfTendencias: "tendencias",
+  btnBaixarPdfPersonas: "personas",
+  btnBaixarPdfGoverno: "governo",
+  btnBaixarPdfSemanal: "semana",
+  btnBaixarPdfGovernador: "governador",
 };
-Object.entries(BOTOES_PDF).forEach(([id, classe]) => {
-  $("" + id)?.addEventListener("click", () => {
-    document.body.classList.add(classe);
-    window.print();
-    setTimeout(() => document.body.classList.remove(classe), 500);
-  });
+Object.entries(BOTOES_PDF).forEach(([id, tipo]) => {
+  $(id)?.addEventListener("click", () => documentos.imprimir(tipo));
 });
 let tituloAntesDaImpressao = "";
 function prepararCabecalhoImpressao() {
+  // os documentos A4 têm capa, rodapé e título próprios
+  if (document.body.classList.contains("imprimindo-doc")) return;
   const titulo = document.getElementById("printTitulo");
   const meta = document.getElementById("printMeta");
   if (!titulo || !meta) return;
