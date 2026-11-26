@@ -1343,6 +1343,9 @@ html[data-tema="escuro"] .chat-mensagens { background: rgba(255, 255, 255, 0.03)
 }
 
 
+/* o clipping é paginado (25 por página): sem teto de altura, nada vaza no celular */
+#tela-clipping .tabela-wrapper { max-height: none; }
+
 @media (max-width: 760px) {
   #tela-clipping .tabela thead { display: none; }
   #tela-clipping .tabela-wrapper { overflow: visible; }
