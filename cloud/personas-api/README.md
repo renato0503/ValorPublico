@@ -76,3 +76,66 @@ O script:
 
 Se a conta ativa for `firebase-adminsdk-*`, o script para e pede `gcloud auth login`
 (essa SA não tem permissão de Cloud Run/Service Usage).
+
+## 6. Endpoints
+
+Todos exigem **Firebase ID token** (`Authorization: Bearer <token>`) e usuário com
+`orgao` = `governo-mt` ou `admin`.
+
+| Método | Rota | O que faz |
+|---|---|---|
+| `GET` | `/health` | Estado da API (sem auth): nº de personas, versão da RAG, modelo e se a chave existe. |
+| `GET` | `/v1/personas` | Lista as personas e a versão da RAG. |
+| `POST` | `/v1/personas/{id}/perguntar` | Chat com **uma** persona: `{ pergunta }` → resposta em 1ª pessoa com citações `[1]`, `[2]`. |
+| `POST` | `/v1/discurso/simular` | **Simulador de discurso** (26/11/2026): `{ discurso }` → as 12 personas reagem de uma vez. |
+
+### `POST /v1/discurso/simular`
+
+```jsonc
+// entrada
+{ "discurso": "texto do usuário (80 a 12.000 caracteres)",
+  "personas": ["opcional: ids das personas"] }
+```
+
+```jsonc
+// saída (resumo do contrato)
+{
+  "discurso": { "palavras": 412, "caracteres": 2680 },
+  "resumo": { "aderencia_media": 5.6, "aderencia_min": 2.0, "aderencia_max": 9.0,
+              "risco_medio": 0.42, "personas_alta": 4, "personas_baixa": 3,
+              "total_personas": 12 },
+  "veredito": "leitura geral do texto",
+  "pontos_fortes": ["..."],
+  "melhorias": [ { "titulo": "...", "como_reescrever": "...",
+                   "personas": ["rótulo"], "prioridade": "alta|media|baixa" } ],
+  "personas": [ { "id": "...", "rotulo": "...", "aderencia": 0-10, "risco": 0-1,
+                  "primeira_impressao": "...", "o_que_funciona": "...",
+                  "o_que_incomoda": "...", "sugestao": "...", "frase_de_risco": "...",
+                  "citacoes": [ { "titulo": "...", "url": "...", "data": "..." } ] } ],
+  "aviso": "Simulação (hipótese) — as personas são sintéticas...",
+  "modelo": "deepseek-chat", "versao_rag": "2026-W48-v1", "latencia_ms": 14000
+}
+```
+
+Regras:
+
+- **Custo:** 12 chamadas ao DeepSeek em paralelo (6 workers) + 1 chamada de consolidação.
+  Medido em produção: **~6 s** para as personas + **~6 s** para consolidar (~14 s no total).
+- **Limite:** `LIMITE_SIMULACAO_HORA` (padrão **8** simulações por hora por usuário) e
+  `DISCURSO_MIN_CHARS` (80) / `DISCURSO_MAX_CHARS` (12.000). Excedeu: **429**.
+- **Timeout do Cloud Run:** 300 s (`deploy.ps1`). A tela do front mostra "Avaliando com as
+  12 personas…" enquanto espera.
+- **Sem cache:** o mesmo texto pode ser reavaliado (a cota é do usuário, não do conteúdo).
+- **Segurança:** o prompt e a resposta **não são logados**; o log traz apenas persona,
+  uid, nº de trechos e latência.
+- **Fallback:** se a consolidação falhar ou vier truncada, a API devolve as sugestões das
+  personas mais críticas e um "veredito" extraído por regex do texto bruto.
+
+Variáveis de ambiente relacionadas:
+
+| Variável | Padrão | O que controla |
+|---|---|---|
+| `LIMITE_SIMULACAO_HORA` | `8` | simulações por hora por usuário |
+| `DISCURSO_MIN_CHARS` | `80` | tamanho mínimo do discurso |
+| `DISCURSO_MAX_CHARS` | `12000` | tamanho máximo enviado à IA |
+| `PARALELISMO` | `6` | personas avaliadas ao mesmo tempo |

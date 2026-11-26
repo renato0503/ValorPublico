@@ -109,15 +109,25 @@ Segurança: `firestore.rules` com modo de acesso (`config_acesso/publico`) — n
 restrito cada usuário só lê o próprio escopo. Testes: `backend/tests/teste_camada_dsm.py`
 (23 casos) e `backend/tests/rules.test.js` (33 casos, emulador).
 
-## Estado Atual (23/11/2026)
+## Estado Atual (26/11/2026)
 
-- **Publicado em:** https://valorpublico.web.app, em **modo restrito** (regras publicadas).
+- **Publicado em:** https://valorpublico.web.app, em **modo restrito** (regras publicadas);
+  sw `valorpublico-v55`. API de personas em https://personas-api-t6uevn6ita-rj.a.run.app
+  (Cloud Run, rev `personas-api-00002-mqt`, timeout 300 s).
 - **Frontend próprio:** identidade “Newsroom” (claro, com tema “Edição da noite”), 6 telas por rota
   (`#/painel`, `#/midia`, `#/parlamentares`, `#/inteligencia`, `#/relatorios`, `#/sistema`),
   login em página inteira com capa 3D isométrica e gráficos com valores.
 - **Auth:** E-mail/Senha habilitado; admin `gestor.renatorosa@gmail.com`; `scripts/criar_usuario.py`.
 - **Dados:** cópia do acervo migrado (7.216 clippings + 53 escopos DSM); a coleta automática deste
   repositório segue **desligada de propósito** (o coletor ativo é o do Assessor).
+- **Simulador do próprio discurso (26/11):** na tela `#/personas`, o usuário cola um discurso e
+  as **12 personas sintéticas** do Governo reagem de uma vez — aderência (0–10), risco, o que
+  convenceu, o que incomodou, sugestão e fontes; no conjunto, uma lista de melhorias priorizadas
+  ("o que melhorar antes de publicar") e o que funcionou. Front: `frontend/js/simulador.js`;
+  API: `POST /v1/discurso/simular` (`cloud/personas-api/app.py`), 12 personas em paralelo +
+  consolidação (~14 s), limite de 8 simulações/hora/usuário. Simulação (hipótese), não pesquisa.
+- **Explicações no padrão do app:** o botão `?` da tela de discurso abre “como o discurso é
+  gerado” (D-01) e o do simulador abre “como a simulação funciona” (D-02).
 
 ## Pendências
 
@@ -126,3 +136,7 @@ restrito cada usuário só lê o próprio escopo. Testes: `backend/tests/teste_c
    própria (hoje os dados vêm do acervo migrado).
 3. Se operar: canais de alerta (`ALERTA_WEBHOOK_URL`/SMTP) e revisão dos dados (métricas DSM
    incompletas no projeto — várias vêm zeradas).
+4. 👤 **Teste ponta a ponta do simulador com usuário logado** (não foi possível forjar um
+   Firebase ID token localmente; o caminho foi validado com a chave real do DeepSeek).
+5. Decidir se o resultado da simulação entra no **PDF de Personas** (`frontend/js/documentos.js`).
+6. Botão “Atualizar” ainda derruba a sessão (diagnóstico em 26/11; correção em `frontend/js/app.js`).

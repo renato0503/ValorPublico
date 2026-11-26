@@ -1,5 +1,7 @@
 # HANDOFF — Valor Público
 
+> **Atualização 26/11/2026 (tarde):** três entregas no ar — (1) **vazamento corrigido**: `impressao.css` era carregado com `media="print"`, então o `.print-only` nunca era aplicado na tela e o cabeçalho/rodapé de impressão aparecia em **todas** as telas; (2) **fontes do discurso**: o front esperava objetos e o backend publica texto (`"Veículo, 2026-11-24"`), por isso a lista mostrava “Fonte” repetido — agora é o botão **“Fontes (N)”** com veículo, data e link da matéria; (3) **simulador do próprio discurso** (tela `#/personas`): o usuário cola o texto e as 12 personas reagem de uma vez (aderência, risco, o que funciona, o que incomoda e o que reescrever), com endpoint novo `POST /v1/discurso/simular` no Cloud Run (timeout 300 s). Também: botão `?` explicando a geração do discurso (D-01) e a simulação (D-02), e a aba “Simulação” saiu da barra da tela Semana. Publicação: Hosting `valorpublico-v55`, Cloud Run `personas-api-00002-mqt`. Commit `1604e54` enviado. **Pendência:** teste ponta a ponta do simulador com usuário logado.
+
 > **Atualização 26/11/2026 (noite):** os **PDFs profissionais em A4** foram concluídos e testados (`frontend/js/documentos.js`, `frontend/css/documento.css`, `frontend/tests/validar_pdfs.py`): os 8 botões de PDF (executivo, governo, clipping, redes, semana, governador, tendências, personas) montam documentos próprios com capa, sumário, seções numeradas, KPIs, gráficos, tabelas e "Página X de Y". Regressão: `validar_cliente.py` 18 telas/22 ações/0 falhas/0 overflow e `teste_clipping_governo.mjs` 0 falhas. Ver `../plano/22_SPRINTS_PROMESSAS_APRESENTACAO.md` §8.
 
 
@@ -303,3 +305,68 @@ de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO
 - Front: 32 linhas com tag de tipo, coluna “Pasta sugerida”, mapas de temas e municípios populados.
 - **Publicado no Hosting em 26/11** (sw `valorpublico-v54`), agora a partir do **diretório de trabalho** — preserva as melhorias da outra IA (print-only oculto, aba Simulação removida e `?` do discurso). Smoke ao vivo: 32 linhas, K-26 `6.5 dias`, “37 de 633” no mapa, 0 overflow/erro JS.
 - **Menu:** `menu.js` inclui **Ouvidoria** na sidebar do Governo (grupo próprio) e no “Mais”.
+
+### 3.5 Sessão 26/11/2026 (tarde) — vazamento, fontes do discurso e simulador do próprio discurso
+
+**Vazamento de interface (corrigido em todas as telas)**
+
+- `css/impressao.css` era carregado com `media="print"`, então o `.print-only { display: none; }`
+  **nunca** era aplicado na tela: `#printCabecalho` (“ValorPúblico — Relatório”) e
+  `#printRodape` (“ValorPúblico · documento institucional · gerado automaticamente”)
+  apareciam em todas as telas.
+- Correção: `<link rel="stylesheet" href="css/impressao.css" />` (sem `media`). O `@media print`
+  interno continua valendo só no papel e `#printCabecalho`/`#printRodape` (id) continuam
+  prevalecendo sobre `.print-only` (classe) na impressão.
+
+**Fontes do discurso (tela Semana → Discurso; e governador/interino)**
+
+- Causa do “Fonte” repetido: o backend publica as fontes como **texto**
+  (`"Fatos de Mato Grosso, 2026-11-24"`) e o front esperava objetos (`f.veiculo`).
+- `frontend/js/telas.js`: `normalizarFontes()` (aceita string ou objeto, separa veículo/data,
+  deduplica) e `blocoFontes()` (botão **“Fontes (N)”** com veículo, data, link “abrir” e
+  manchete). O link é resolvido cruzando o veículo com `noticias_recentes`; fonte em formato de
+  domínio (`www.cbncuiaba.com.br`) é procurada dentro da URL da matéria.
+
+**Botão `?` do discurso (D-01) e explicação da simulação (D-02)**
+
+- `?` ao lado do selo “Rascunho gerado por IA”: explica coleta → briefing → redação (3 ângulos
+  × 3 formatos) → validação → simulação → revisão humana.
+- `explicacoes.js` ganhou o campo `passos` (lista numerada) e o popover ganhou altura máxima
+  com rolagem.
+
+**Aba “Simulação” da tela Semana**
+
+- Removida da barra (ficava ao lado de “Discurso”). O relatório completo de simulação continua
+  pelo link “ver relatório completo” dentro do discurso.
+
+**Simulador do próprio discurso (novo, tela `#/personas`)**
+
+- Front: `frontend/js/simulador.js` + painel em `index.html` (campo de texto, contador,
+  “Avaliar com as 12 personas”, “Copiar resumo”, “Limpar”); KPIs (aderência média, personas que
+  aderiram, risco médio, melhorias), “leitura do texto”, **“O que melhorar antes de publicar”**
+  (prioridade, como reescrever, quem apontou), “O que funcionou” e a reação de cada persona.
+- API: `POST /v1/discurso/simular` (`cloud/personas-api/app.py`) — 12 personas em paralelo
+  (6 workers) + 1 consolidação; cada persona responde em JSON (aderência 0–10, risco 0–1,
+  primeira impressão, o que funcionou, o que incomodou, sugestão, frase de risco) com as
+  notícias da semana via RAG/BM25.
+- Limites: `LIMITE_SIMULACAO_HORA=8` por usuário, discurso de 80 a 12.000 caracteres.
+  Sem cache do conteúdo; prompt e resposta **não** são logados.
+- Cloud Run: revisão `personas-api-00002-mqt`, `--timeout` de 60 s → **300 s**.
+- Medido com a chave real do DeepSeek: 12 personas ~6 s + consolidação ~6 s = **~14 s**.
+- Layout: 1440 e 390 px, tema claro e escuro.
+
+**Publicação e estado**
+
+- Hosting `valorpublico-v55` (publicado a partir do diretório de trabalho, preservando o
+  trabalho da outra IA); conferência **produção == árvore de trabalho, arquivo por arquivo**.
+- Commit `1604e54` (`origin/main`): front + API + triagem da ouvidoria.
+- `.gitignore` passa a ignorar `docs/instagram/`, `docs/midiakit/`, `backend/data/imagens/` e
+  `backend/*.err` (acervos locais pesados e/ou com dados de terceiros; repo é público).
+
+**Pendências desta sessão**
+
+1. **Teste ponta a ponta do simulador com usuário logado** — não foi possível forjar um Firebase
+   ID token localmente; o caminho foi validado com a mesma chave do DeepSeek, mas falta rodar na
+   sessão real e ver o resultado na tela.
+2. Decidir se o resultado da simulação entra no **PDF de Personas** (hoje sai sem o painel).
+3. Botão Atualizar continua derrubando a sessão (§3.2).

@@ -1,7 +1,7 @@
 # QA de cliente — ValorPúblico
 
-Última execução: 25/11/2026
-Produção: https://valorpublico.web.app · `valorpublico-v48`
+Última execução: 26/11/2026 (tarde)
+Produção: https://valorpublico.web.app · `valorpublico-v55` · API `personas-api` rev `00002-mqt`
 
 ## Cobertura
 
@@ -58,6 +58,82 @@ O teste de UI também foi executado: **72 capturas**, 0 overflow e 0 erro JS.
 - Smoke ao vivo: 32 linhas, mapa “37 de 633”, `printCabecalho`/`printRodape` em `display:none`, aba “Simulação” ausente e `?` do discurso presente.
 - Menu: link **Ouvidoria** visível na sidebar do Governo; clique abre `#/ouvidoria`.
 
+## Sessão 26/11/2026 (tarde) — discurso da semana e simulador do próprio discurso
+
+### Vazamento de interface corrigido
+
+- **Sintoma:** em todas as telas aparecia "ValorPúblico — Relatório" no topo e
+  "ValorPúblico · documento institucional · gerado automaticamente" no rodapé.
+- **Causa:** `.print-only { display: none; }` estava em `css/impressao.css`, carregado com
+  `media="print"` — ou seja, a folha inteira era ignorada na tela e o cabeçalho/rodapé de
+  impressão renderizava como HTML normal.
+- **Correção:** `<link rel="stylesheet" href="css/impressao.css" />` (sem `media`). O bloco
+  `@media print` interno continua valendo só no papel, e `#printCabecalho`/`#printRodape`
+  (id) continuam prevalecendo sobre `.print-only` (classe) na impressão.
+- **Verificado em produção:** `impressao.css` servido sem `media`; cabeçalho e rodapé de
+  impressão não aparecem mais na tela.
+
+### Fontes do discurso (tela Semana → aba Discurso)
+
+- **Sintoma:** a lista de fontes mostrava "Fonte" repetido 8–12 vezes.
+- **Causa:** o backend publica as fontes como texto (`"Fatos de Mato Grosso, 2026-11-24"`),
+  mas o front esperava objetos (`f.veiculo`) e caía no fallback `"Fonte"`.
+- **Correção:** `normalizarFontes()` + `blocoFontes()` em `frontend/js/telas.js` — aceita
+  string ou objeto, separa veículo/data, deduplica e resolve o link da matéria original
+  cruzando o veículo com `noticias_recentes` (inclusive quando a fonte vem como domínio,
+  ex.: `www.cbncuiaba.com.br`).
+- **Resultado na tela:** botão **“Fontes (12)”** no fim do discurso; ao abrir, mostra
+  veículo, data, link "abrir" e a manchete. O mesmo vale para o discurso do governador e do
+  interino.
+- O PDF (que abre todos os `<details>` antes de imprimir) continua levando as fontes.
+
+### Botão `?` do discurso (D-01)
+
+- Botão redondo ao lado do selo "Rascunho gerado por IA — revisar antes de usar".
+- Abre a explicação **“Como o discurso é gerado”**: coleta → briefing → redação (3 ângulos ×
+  3 formatos) → validação de fatos/links → simulação das 12 personas → revisão humana.
+- O popover de explicação ganhou suporte a lista de passos (`passos`) e altura máxima com
+  rolagem (antes o texto longo passava da tela).
+
+### Aba “Simulação” da tela Semana
+
+- Removida da barra de abas (ficava ao lado de “Discurso”). O acesso ao relatório completo de
+  simulação continua pelo link “ver relatório completo” dentro do próprio discurso.
+
+### Simulador do próprio discurso (novo, tela `#/personas`)
+
+- Painel **“Simular o meu discurso”**: campo de texto, contador de palavras/caracteres,
+  botão “Avaliar com as 12 personas”, “Copiar resumo” e “Limpar”.
+- A API nova (`POST /v1/discurso/simular`, Cloud Run `personas-api` rev `00002-mqt`) faz as
+  **12 personas reagirem de uma vez** e devolve: aderência média (0–10), personas que
+  aderiram, risco médio, “leitura do texto”, **“O que melhorar antes de publicar”** (até 6
+  melhorias priorizadas, com o texto de reescritura e quem apontou), “O que funcionou” e a
+  **reação de cada persona** (primeira impressão, o que convenceu, o que incomodou,
+  sugestão e as fontes consultadas).
+- Botão `?` (D-02) explica o passo a passo da simulação.
+- Layout responsivo (1440 e 390), tema claro e escuro.
+- **Medido com a chave real do DeepSeek:** 12 personas em ~6 s + consolidação ~6 s
+  (**~14 s** no total); veredito e 6 melhorias priorizadas no teste.
+- **Rotas autenticadas:** `/health` responde `{"ok":true, "simulador":true}`;
+  `POST /v1/discurso/simular` devolve **401** sem token (rota registrada e exigindo auth).
+
+### Estado do deploy
+
+- Hosting: `valorpublico-v55` (publicado 26/11 a partir do diretório de trabalho).
+- Cloud Run: `personas-api-00002-mqt`, `--timeout 300` (era 60 s) para caber nas 12 personas.
+- Conferência de integridade: **produção idêntica à árvore de trabalho, arquivo por arquivo**
+  (HTML/JS/CSS) — nada do trabalho da outra IA foi perdido.
+- Commit: `1604e54` (front + API + triagem da ouvidoria) enviado para `origin/main`.
+
+### Pendências desta sessão
+
+- **Teste ponta a ponta com usuário logado ainda não feito**: não foi possível forjar um
+  Firebase ID token localmente. O caminho (12 personas + consolidação + layout) foi validado
+  com a mesma chave do DeepSeek, mas falta rodar na sessão real e conferir o resultado na
+  tela.
+- **Botão Atualizar** continua derrubando a sessão (diagnóstico em 26/11; ver abaixo).
+- **`#btnInvestigar`** segue desabilitado (“Em breve”).
+
 ## Scripts
 
 ```powershell
@@ -74,9 +150,15 @@ O `validar_cliente.py` cria um usuário temporário `qa.cliente.*`, executa as t
 - Templates de e-mail seguem bloqueados pela API do Firebase (`EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`); arquivos prontos em `docs/emails/`.
 - Alertas/e-mails operacionais dependem de SMTP/webhook.
 - Botão Atualizar derruba a sessão (diagnosticado em 26/11; ver seção “Regressão 26/11/2026”).
+- **Simulador de discurso:** falta o teste ponta a ponta com usuário logado (não foi possível
+  forjar ID token localmente) e a decisão sobre incluir o resultado da simulação no PDF de
+  Personas (hoje o PDF sai sem o painel de simulação).
 
 ## Últimos commits relevantes
 
+- `1604e54` — simulador do próprio discurso (front + API), fontes do discurso em botão,
+  correção do vazamento do `impressao.css`, triagem da ouvidoria.
+- `26e1754` — PDFs profissionais em A4 nos 8 relatórios.
 - `afd6082` — desabilitar investigação provisória e criar auditoria de cliente.
 - `330369b` — estabilizar ações e cobrir investigação desabilitada.
 - `f00079a` e `3e917f3` — correções do menu mobile.
