@@ -98,6 +98,15 @@ async function semear() {
   await db.doc("metricas_por_casa/almt").set({ total_clippings: 30, orgao: "almt" });
   await db.doc("metricas_por_casa/governo-mt").set({ total_clippings: 40, orgao: "governo-mt" });
   await db.doc("metricas_por_secretaria/saude").set({ total_clippings: 5, orgao: "governo-mt" });
+  await db.doc("clipping_governo/2026-11-1").set({ mes: "2026-11", noticias: [], orgao: "governo-mt" });
+  await db.doc("usuarios/uid-gov").set({
+    email: "secom@exemplo.com",
+    papel: "secom",
+    agente_id: "",
+    agente_ids: [],
+    chaves: [],
+    orgao: "governo-mt",
+  });
   await db.doc("alertas/agente-agente-a").set({ escopo: { chave: "agente-agente-a" }, orgao: "cuiaba" });
   await db.doc("alertas/agente-agente-b").set({ escopo: { chave: "agente-agente-b" }, orgao: "varzea-grande" });
   await db.doc("alertas/geral").set({ escopo: { chave: "geral" }, orgao: "" });
@@ -254,6 +263,21 @@ async function testarModoRestrito() {
     dbAdm.collection("metricas_por_cidade").doc("governo-de-mato-grosso").get());
   await devePermitir("admin lê metricas_por_secretaria", () =>
     dbAdm.collection("metricas_por_secretaria").doc("saude").get());
+
+  // Plano 22: clipping completo do Governo
+  const dbGov = usuario("uid-gov").firestore();
+  await devePermitir("Governo lê clipping_governo", () =>
+    dbGov.collection("clipping_governo").doc("2026-11-1").get());
+  await deveBloquear("Camara NAO lê clipping_governo", () =>
+    dbCuiaba.collection("clipping_governo").doc("2026-11-1").get());
+  await deveBloquear("anonimo NAO lê clipping_governo", () =>
+    anon().firestore().collection("clipping_governo").doc("2026-11-1").get());
+  await deveBloquear("Governo NAO escreve clipping_governo", () =>
+    dbGov.collection("clipping_governo").doc("x").set({ a: 1 }));
+  await devePermitir("admin lê clipping_governo", () =>
+    dbAdm.collection("clipping_governo").doc("2026-11-1").get());
+  await deveBloquear("Governo NAO lê clippings brutos", () =>
+    dbGov.collection("agentes_publicos").doc("governo-mt").collection("clippings").doc("x").get());
   await devePermitir("admin lê escopo geral", () =>
     dbAdm.collection("alertas").doc("geral").get());
 }

@@ -12,6 +12,7 @@
  */
 
 import { cartaoKpi, cartaoGrafico, escapar } from "./componentes.js";
+import * as clippingGoverno from "./clipping-governo.js";
 import { explicacao, registrarExplicacoes } from "./explicacoes.js";
 import {
   barrasDivergentes,
@@ -55,6 +56,7 @@ export function definirOrgao(info) {
 /** Aplica o recorte de período global às telas institucionais. */
 export function definirPeriodo(periodo) {
   estado.periodo = periodo || "";
+  if (estado.orgao?.slug === "governo-mt") clippingGoverno.definirPeriodo(estado.periodo);
   if (estado.dados) renderizar();
 }
 
@@ -262,6 +264,8 @@ export async function carregar(db) {
   estado.simulacao = semana.simulacao;
   estado.semana = semana.semana;
   if (estado.orgao?.slug === "governo-mt") {
+    clippingGoverno.lerFiltrosDaUrl();
+    clippingGoverno.carregar(db, estado.periodo);
     const gov = await lerDiscursoAgente(
       db,
       "agente-governador-otaviano-pivetta",
@@ -384,9 +388,42 @@ function _dataCurta(valor) {
   return String(valor).slice(0, 10);
 }
 
+const CABECALHO_CLIPPING = {
+  governo: "<tr><th>Matéria</th><th>Veículo</th><th>Data</th><th>Secretaria</th><th>Município</th><th>Tom</th></tr>",
+  casa: "<tr><th>Matéria</th><th>Veículo</th><th>Data</th><th>Tipo</th><th>Sentimento</th></tr>",
+};
+
+/** Ajusta a tela de clipping ao órgão: o Governo tem filtros e colunas próprios. */
+function modoClipping(governo) {
+  const tela = document.getElementById("tela-clipping");
+  if (!tela || tela.dataset.modo === (governo ? "governo" : "casa")) return;
+  tela.dataset.modo = governo ? "governo" : "casa";
+  tela.querySelectorAll(".so-governo").forEach((el) => (el.hidden = !governo));
+  ["filtroClipTier", "filtroClipTipo"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.hidden = governo;
+  });
+  const cab = document.getElementById("cabecalhoClipping");
+  if (cab) cab.innerHTML = governo ? CABECALHO_CLIPPING.governo : CABECALHO_CLIPPING.casa;
+  const titulo = document.getElementById("clippingTitulo");
+  if (titulo) titulo.textContent = governo ? "Clipping do Governo" : "Clipping da Casa";
+  const sub = document.getElementById("clippingSub");
+  if (sub)
+    sub.textContent = governo
+      ? "Todas as notícias sobre o Governo de MT. Filtre por secretaria, município, governador ou interino e exporte o recorte."
+      : "Tudo o que saiu sobre a Casa. Filtre, selecione para o boletim ou exporte.";
+  if (governo) clippingGoverno.ativarControles();
+}
+
 function renderizarClipping(dados) {
   const corpo = document.getElementById("corpoClipping");
   if (!corpo) return;
+  const governo = estado.orgao?.slug === "governo-mt";
+  modoClipping(governo);
+  if (governo) {
+    clippingGoverno.renderizar();
+    return;
+  }
   const itens = Array.isArray(dados?.noticias_recentes) ? dados.noticias_recentes : [];
   const selVeiculo = document.getElementById("filtroClipVeiculo");
   const selTier = document.getElementById("filtroClipTier");
@@ -574,6 +611,26 @@ function renderizarImagem(dados) {
 }
 
 /* ---- V5 / Ouvidoria ---- */
+/** No Governo a Ouvidoria é por município; nas Câmaras, por bairro. */
+function rotularOuvidoria(porMunicipio) {
+  const termo = porMunicipio ? "município" : "bairro";
+  const plural = porMunicipio ? "municípios" : "bairros";
+  const titulo = document.querySelector("#graficoOuvBairros")?.closest(".painel")?.querySelector("h2");
+  if (titulo) titulo.textContent = `Mapa por ${termo}`;
+  const sub = titulo?.parentElement?.querySelector(".painel-sub");
+  if (sub) sub.textContent = `${plural[0].toUpperCase()}${plural.slice(1)} com mais pedidos`;
+  const filtro = document.getElementById("filtroOuvBairro");
+  if (filtro) {
+    filtro.setAttribute("aria-label", `Filtrar por ${termo}`);
+    const primeira = filtro.querySelector('option[value=""]');
+    if (primeira) primeira.textContent = `Todos os ${plural}`;
+  }
+  const th = [...document.querySelectorAll("#tela-ouvidoria thead th")].find((el) =>
+    /bairro|município/i.test(el.textContent)
+  );
+  if (th) th.textContent = porMunicipio ? "Município" : "Bairro";
+}
+
 function renderizarOuvidoria(dados) {
   const demandas = estado.demandas || [];
   const total = demandas.length;
@@ -602,7 +659,7 @@ function renderizarOuvidoria(dados) {
             (d) => `<tr>
               <td>${escapar((d.resumo || d.texto || "").slice(0, 120))}</td>
               <td>${escapar(d.tema || "outros")}</td>
-              <td>${escapar(d.bairro || "—")}</td>
+              <td>${escapar(d.municipio || d.bairro || "—")}</td>
               <td>${escapar(d.urgencia || "baixa")}</td>
               <td>${escapar(d.origem || "comentário")}</td>
               <td>${escapar(d.status || "nova")}</td>
@@ -618,12 +675,19 @@ function renderizarOuvidoria(dados) {
   }
   const canvas2 = document.getElementById("graficoOuvBairros");
   if (canvas2) {
-    guardar("graficoOuvBairros", treemap(canvas2, contagemPor(demandas, "bairro")));
+    const campoLocal = estado.orgao?.slug === "governo-mt" ? "municipio" : "bairro";
+    rotularOuvidoria(campoLocal === "municipio");
+    guardar("graficoOuvBairros", treemap(canvas2, contagemPor(demandas, campoLocal)));
   }
 }
 
 /* ---- V6 / Semana da Casa ---- */
 function _rotuloClasse(classe) {
+  // relatórios novos já trazem o nome do assunto ("Educação: Seduc, inscrições")
+  if (classe?.rotulo && String(classe.rotulo).includes(":")) {
+    const nome = String(classe.rotulo);
+    return nome.length > 44 ? `${nome.slice(0, 42)}…` : nome;
+  }
   const genericas = new Set([
     "de", "da", "do", "das", "dos", "e", "em", "a", "o", "as", "os", "para",
     "por", "com", "nbsp", "mt", "mato", "grosso", "no", "na", "nos", "nas",
@@ -711,13 +775,42 @@ function renderizarSemana(dados) {
       rel.estatisticas?.n_itens ??
       rel.estatisticas?.n ??
       0;
+    const resumo = rel.textos?.resumo;
     const texto = rel.semana
-      ? `Semana ${rel.semana}: ${nItens} textos analisados, ${classes.length} classes temáticas` +
-        (maior ? `. O maior grupo reúne ${maior.pct}% dos segmentos.` : ".") +
-        " Veja o PDF e a aba Análise para a leitura completa."
+      ? resumo && !/compõe \d|"de"|'de'/.test(resumo)
+        ? resumo
+        : `Semana ${rel.semana}: ${nItens} textos analisados, ${classes.length} classes temáticas` +
+          (maior ? `. O maior grupo reúne ${maior.pct}% dos segmentos.` : ".") +
+          " Veja o PDF e a aba Análise para a leitura completa."
       : "O relatório da semana é gerado aos domingos, na máquina da Secom.";
     leitura.innerHTML =
       `<span class="grafico-leitura-rotulo">Leitura do momento</span>${escapar(texto)}`;
+  }
+
+  // assuntos explicados para leigos: nome, peso, explicação e manchetes reais
+  const grupos = document.getElementById("semanaGrupos");
+  if (grupos) {
+    const comNome = [...classes]
+      .filter((c) => c.explicacao)
+      .sort((a, b) => Number(b.pct || 0) - Number(a.pct || 0));
+    grupos.innerHTML = comNome.length
+      ? `<h3 class="semana-grupos-titulo">Os assuntos da semana, um por um</h3>` +
+        comNome
+          .map(
+            (c) => `<details class="semana-grupo"${Number(c.pct) >= 8 ? " open" : ""}>
+              <summary><span class="semana-grupo-nome">${escapar(c.rotulo)}</span><span class="semana-grupo-pct">${escapar(
+                String(c.pct).replace(".", ",")
+              )}%</span></summary>
+              <p>${escapar(c.explicacao)}</p>
+              ${
+                (c.st_tipicos || []).length
+                  ? `<ul>${c.st_tipicos.slice(0, 3).map((t) => `<li>${escapar(t)}</li>`).join("")}</ul>`
+                  : ""
+              }
+            </details>`
+          )
+          .join("")
+      : "";
   }
 
   renderizarDiscurso(disc, sim);
@@ -1480,6 +1573,14 @@ function contagemPor(lista, campo) {
 }
 
 if (typeof document !== "undefined") {
+  // link direto para o clipping filtrado (ex.: vindo da tela do Governo)
+  document.addEventListener("rota:changed", (evento) => {
+    if (evento.detail?.rota !== "clipping" || estado.orgao?.slug !== "governo-mt") return;
+    if (clippingGoverno.lerFiltrosDaUrl()) {
+      clippingGoverno.ativarControles();
+      clippingGoverno.renderizar();
+    }
+  });
   ["filtroClipVeiculo", "filtroClipTier", "filtroClipTipo"].forEach((id) => {
     document.getElementById(id)?.addEventListener("change", () => {
       paginaClipping = 1;

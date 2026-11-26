@@ -13,7 +13,8 @@
 
 import { cartaoKpi, cartaoGrafico, escapar } from "./componentes.js";
 import { explicacao, registrarExplicacoes } from "./explicacoes.js";
-import { barrasEmpilhadas, barrasHorizontais, linhasSentimento } from "./graficos.js";
+import { barrasEmpilhadas, barrasHorizontais, corTema, linhasSentimento } from "./graficos.js";
+import * as clippingGoverno from "./clipping-governo.js";
 
 const estado = {
   db: null,
@@ -285,6 +286,175 @@ function renderizarGoverno() {
   }
 
   renderizarNoticiasPorSecretaria(casa);
+  renderizarMunicipios(casa);
+}
+
+/* ------------------------------------------------------------------ */
+/* Notícias por município (plano 22)                                   */
+/* ------------------------------------------------------------------ */
+
+let mapaRegistrado = null; // Promise do GeoJSON de MT (IBGE)
+
+function _registrarMapa() {
+  if (!mapaRegistrado) {
+    mapaRegistrado = fetch("assets/geo/mt-municipios.json")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((geo) => {
+        if (typeof echarts !== "undefined") echarts.registerMap("mt-municipios", geo);
+        return true;
+      })
+      .catch((erro) => {
+        console.warn("[Governo] mapa de MT indisponivel:", erro?.message || erro);
+        mapaRegistrado = null;
+        return false;
+      });
+  }
+  return mapaRegistrado;
+}
+
+function _siglaSelecionada() {
+  if (!estado.pastaSelecionada) return "";
+  const pasta = estado.secretarias.find((p) => p.id === estado.pastaSelecionada);
+  return pasta?.pasta?.sigla || "";
+}
+
+function _linkClipping(municipio) {
+  const params = new URLSearchParams({ municipio });
+  const sigla = _siglaSelecionada();
+  if (sigla) params.set("secretaria", sigla);
+  return `#/clipping?${params}`;
+}
+
+function _contagemMunicipios(casa) {
+  const sigla = _siglaSelecionada();
+  const doClipping = clippingGoverno.contagemPorMunicipio(sigla);
+  if (doClipping) return doClipping;
+  // reserva: total do agregado (Governo inteiro ou a pasta escolhida)
+  const origem = sigla
+    ? (estado.secretarias.find((p) => p.id === estado.pastaSelecionada) || {}).por_municipio
+    : casa?.por_municipio;
+  return new Map(Object.entries(origem || {}));
+}
+
+async function renderizarMunicipios(casa) {
+  const lista = document.getElementById("govMunicipiosLista");
+  const area = document.getElementById("graficoGovMunicipios");
+  const leitura = document.getElementById("govMunicipiosLeitura");
+  if (!lista || !area) return;
+
+  const mapa = _contagemMunicipios(casa);
+  const itens = [...mapa.entries()]
+    .map(([nome, v]) => ({ nome, ...v }))
+    .sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+  const sigla = _siglaSelecionada();
+
+  if (!itens.length) {
+    lista.innerHTML = "";
+    const existente = typeof echarts !== "undefined" ? echarts.getInstanceByDom(area) : null;
+    if (existente) existente.dispose();
+    area.innerHTML = '<p class="gov-vazio">Nenhum município citado no período escolhido.</p>';
+    if (leitura) leitura.textContent = "";
+    return;
+  }
+
+  const maior = itens[0].total;
+  lista.innerHTML = itens
+    .slice(0, 12)
+    .map((m) => {
+      const pct = (v) => (m.total ? Math.round((v / m.total) * 100) : 0);
+      return `<li>
+        <a href="${_linkClipping(m.nome)}" class="gov-mun-item" title="Abrir o clipping de ${escapar(m.nome)}">
+          <span class="gov-mun-nome">${escapar(m.nome)}</span>
+          <span class="gov-mun-num">${_numero(m.total)}</span>
+          <span class="gov-mun-barra" style="width:${Math.max(6, Math.round((m.total / maior) * 100))}%">
+            <i class="pos" style="width:${pct(m.positivo)}%"></i><i class="neu" style="width:${pct(m.neutro)}%"></i><i class="neg" style="width:${pct(m.negativo)}%"></i>
+          </span>
+        </a>
+      </li>`;
+    })
+    .join("");
+
+  const totais = clippingGoverno.totaisDoPeriodo(sigla);
+  if (leitura) {
+    const topo = itens.slice(0, 3).map((m) => `${m.nome} (${_numero(m.total)})`).join(", ");
+    leitura.textContent =
+      `${_numero(itens.length)} municípios citados${sigla ? ` nas notícias da ${sigla}` : ""}. ` +
+      `Os mais citados: ${topo}.` +
+      (totais
+        ? ` ${_numero(totais.comMunicipio)} de ${_numero(totais.total)} notícias do período citam algum município; as demais falam do Estado como um todo.`
+        : "");
+  }
+
+  if (!(await _registrarMapa()) || typeof echarts === "undefined") {
+    area.innerHTML = '<p class="gov-vazio">Mapa indisponível; veja a lista ao lado.</p>';
+    return;
+  }
+  const existente = echarts.getInstanceByDom(area);
+  if (existente) existente.dispose();
+  area.innerHTML = "";
+  const grafico = echarts.init(area, null, { renderer: "canvas" });
+  const texto = corTema("--texto", "#1a2432");
+  const borda = corTema("--border", "#e2dac9");
+  const vazio = corTema("--bg-deep", "#ece5d6");
+  // do menos ao mais citado; no tema escuro a rampa clareia (mais = mais claro)
+  const escuro = document.documentElement.dataset.tema === "escuro";
+  const rampa = escuro
+    ? ["#1f3a5f", "#2c5689", "#3f74b0", "#6b98cf", "#a3c2e8", "#e3eefb"]
+    : ["#c9d8ec", "#9db9dd", "#6f97c9", "#4677b3", "#24578f", "#0b2a52"];
+  grafico.setOption({
+    backgroundColor: "transparent",
+    tooltip: {
+      trigger: "item",
+      backgroundColor: corTema("--card", "#fff"),
+      borderColor: borda,
+      textStyle: { color: texto, fontSize: 12 },
+      formatter: (p) => {
+        const m = mapa.get(p.name);
+        if (!m) return `<b>${escapar(p.name)}</b><br>sem notícias no período`;
+        return (
+          `<b>${escapar(p.name)}</b><br>${_numero(m.total)} notícias<br>` +
+          `positivas ${_numero(m.positivo)} · neutras ${_numero(m.neutro)} · negativas ${_numero(m.negativo)}`
+        );
+      },
+    },
+    // faixas: a capital concentra o noticiário e esconderia o interior numa escala linear
+    visualMap: {
+      type: "piecewise",
+      left: 0,
+      bottom: 0,
+      itemWidth: 14,
+      itemHeight: 10,
+      textStyle: { color: texto, fontSize: 11 },
+      pieces: [
+        { min: 100, label: "100 ou mais", color: rampa[5] },
+        { min: 25, max: 99, label: "25 a 99", color: rampa[4] },
+        { min: 10, max: 24, label: "10 a 24", color: rampa[3] },
+        { min: 5, max: 9, label: "5 a 9", color: rampa[2] },
+        { min: 2, max: 4, label: "2 a 4", color: rampa[1] },
+        { min: 1, max: 1, label: "1", color: rampa[0] },
+      ],
+      outOfRange: { color: vazio },
+    },
+    series: [
+      {
+        type: "map",
+        map: "mt-municipios",
+        roam: false,
+        selectedMode: false,
+        itemStyle: { areaColor: vazio, borderColor: borda, borderWidth: 0.5 },
+        emphasis: {
+          label: { show: true, color: texto, fontSize: 11 },
+          itemStyle: { areaColor: corTema("--ambar", "#7a5314") },
+        },
+        label: { show: false },
+        data: itens.map((m) => ({ name: m.nome, value: m.total })),
+      },
+    ],
+  });
+  grafico.on("click", (p) => {
+    if (mapa.get(p.name)) window.location.hash = _linkClipping(p.name);
+  });
+  graficos.set("graficoGovMunicipios", grafico);
 }
 
 function _dataNoticia(valor) {
@@ -329,6 +499,7 @@ function renderizarNoticiasPorSecretaria(casa) {
                 .join("")}</ul>`
             : '<p class="gov-vazio">Sem notícias nesta secretaria para o período.</p>'
         }
+        ${total ? `<a class="btn-texto gov-sec-todas" href="#/clipping?secretaria=${encodeURIComponent(sigla)}">Ver todas as ${_numero(total)} notícias da ${escapar(sigla)} no clipping ›</a>` : ""}
       </details>`
     );
   });
@@ -586,5 +757,9 @@ if (typeof document !== "undefined") {
 if (typeof document !== "undefined") {
   document.getElementById("filtroGovSecretaria")?.addEventListener("change", (evento) => {
     filtrarPasta(evento.target.value);
+  });
+  // o clipping completo chegou: o mapa passa a respeitar período e pasta
+  document.addEventListener("clipping-governo:carregado", () => {
+    if (estado.casa) renderizarMunicipios(_janela(estado.casa) || estado.casa);
   });
 }

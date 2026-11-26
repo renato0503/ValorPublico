@@ -17,6 +17,7 @@ from collections import Counter, defaultdict
 import numpy as np
 
 from processing.nuvem import extrair_palavras, _STOPWORDS
+from processing.lexico import exemplos_por_palavras, explicar
 
 __all__ = [
     "frequencia_global",
@@ -203,14 +204,24 @@ def _preparar_chd(clippings, min_segmentos: int = 100) -> dict | None:
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     segmentos: list[str] = []
-    for c in clippings:
-        segmentos.extend(segmentar(c.get("texto_limpo") or ""))
+    origem: list[int] = []  # clipping de onde veio cada segmento
+    for indice, c in enumerate(clippings):
+        partes = segmentar(c.get("texto_limpo") or "")
+        segmentos.extend(partes)
+        origem.extend([indice] * len(partes))
     if len(segmentos) < min_segmentos:
         return None
     vec = TfidfVectorizer(token_pattern=r"[a-z0-9]{3,}", min_df=2)
     X = vec.fit_transform(segmentos)
     Z = linkage(X.toarray(), method="ward")
-    return {"segmentos": segmentos, "X": X, "Z": Z, "vec": vec}
+    return {"segmentos": segmentos, "origem": origem, "X": X, "Z": Z, "vec": vec}
+
+
+def _titulo_do_clipping(c: dict) -> str:
+    titulo = (c.get("titulo") or "").strip()
+    if not titulo:
+        titulo = (c.get("texto_limpo") or "").strip().split("\n")[0]
+    return titulo[:160]
 
 
 def chd(clippings, n_classes: int = 4, min_segmentos: int = 100, preparado: dict | None = None) -> dict:
@@ -261,12 +272,26 @@ def chd(clippings, n_classes: int = 4, min_segmentos: int = 100, preparado: dict
             if chi >= 3.84:
                 palavras_classe.append({"palavra": nome, "chi2": round(chi, 2), "frequencia": int(obs)})
         palavras_classe.sort(key=lambda p: -p["chi2"])
+        pct = round(100 * len(membros) / len(segmentos), 1)
+        # manchetes dos clippings que caíram no grupo, as que mais usam as palavras dele
+        origem = prep.get("origem") or []
+        titulos = []
+        for m in membros:
+            if m < len(origem):
+                titulos.append(_titulo_do_clipping(clippings[origem[m]]))
+        nomes = [p["palavra"] for p in palavras_classe]
+        exemplos = exemplos_por_palavras(nomes, titulos, n=3)
+        descricao = explicar(nomes, pct, exemplos, titulos)
         classes.append(
             {
                 "classe": int(k),
                 "n_segmentos": int(len(membros)),
-                "pct": round(100 * len(membros) / len(segmentos), 1),
+                "pct": pct,
                 "palavras": palavras_classe[:20],
+                "nome": descricao["nome"],
+                "tema": descricao["tema"],
+                "explicacao": descricao["explicacao"],
+                "exemplos": exemplos,
             }
         )
     classes.sort(key=lambda cl: -cl["n_segmentos"])

@@ -911,7 +911,8 @@ html[data-tema="escuro"] .btn-filtros[aria-expanded="true"] { border-color: var(
 /* ---------- Redes sociais (agregado redes_sociais) ---------- */
 .redes-filtros { display: flex; gap: 8px; flex-wrap: wrap; }
 .redes-filtros select,
-.redes-filtros input {
+.redes-filtros input,
+.clip-filtros-gov select {
   border-radius: 10px;
   border: 1px solid var(--border-forte);
   background: var(--card);
@@ -1844,3 +1845,161 @@ html[data-tema="escuro"] .sidebar-rodape { border-top-color: #2b3543; }
   .filtro-secretaria,
   .filtro-secretaria select { width: 100%; min-width: 0; }
 }
+
+/* ------------------------------------------------------------------
+   Clipping do Governo (plano 22): filtros por secretaria e município
+   ------------------------------------------------------------------ */
+.clip-filtros-gov {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 4px 0 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.clip-filtros-gov[hidden] { display: none; }
+.clip-filtros-gov select { min-width: 0; max-width: 100%; flex: 1 1 180px; }
+.clip-filtros-gov .btn-texto { flex: 0 0 auto; }
+.clip-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 1px 2px 1px 0;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  color: var(--texto);
+  background: var(--card);
+}
+.clip-chip.sec { color: var(--azul); background: var(--azul-soft); border-color: transparent; }
+.clip-chip.mun { color: var(--verde); background: var(--verde-soft); border-color: transparent; }
+.clip-chip.pessoa { color: var(--ambar); background: var(--ambar-soft); border-color: transparent; }
+.clip-pessoas { margin-top: 4px; }
+.clip-vazio { color: var(--texto-mutado); }
+.clip-tom { font-weight: 600; font-size: 0.85rem; }
+.clip-tom.positivo { color: var(--verde); }
+.clip-tom.negativo { color: var(--vermelho); }
+.clip-tom.neutro { color: var(--texto-suave); }
+
+/* Notícias por município (tela do Governo) */
+.gov-municipios {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.gov-mapa { height: 420px; min-height: 420px; }
+.gov-mun-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: mun; }
+.gov-mun-lista li { counter-increment: mun; }
+.gov-mun-item {
+  display: grid;
+  grid-template-columns: 1.6em minmax(0, 1fr) auto;
+  grid-template-areas: "pos nome num" ". barra barra";
+  gap: 2px 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: var(--raio);
+  color: var(--texto);
+  text-decoration: none;
+}
+.gov-mun-item::before {
+  content: counter(mun);
+  grid-area: pos;
+  font-family: var(--fonte-mono);
+  font-size: 0.75rem;
+  color: var(--texto-mutado);
+}
+.gov-mun-item:hover, .gov-mun-item:focus-visible { background: var(--card-hover); }
+.gov-mun-nome { grid-area: nome; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gov-mun-num { grid-area: num; font-variant-numeric: tabular-nums; font-weight: 700; }
+.gov-mun-barra { grid-area: barra; display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--border); }
+.gov-mun-barra i { display: block; height: 100%; }
+.gov-mun-barra .pos { background: var(--verde); }
+.gov-mun-barra .neu { background: var(--texto-mutado); opacity: 0.55; }
+.gov-mun-barra .neg { background: var(--vermelho); }
+.gov-sec-todas { display: inline-block; margin: 6px 0 4px; }
+@media (max-width: 900px) {
+  .gov-municipios { grid-template-columns: 1fr; }
+  .gov-mapa { height: 320px; min-height: 320px; }
+}
+
+/* ------------------------------------------------------------------
+   Análises lexicais para leigos (plano 22)
+   ------------------------------------------------------------------ */
+.lex-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--raio);
+  background: var(--bg-deep);
+  font-size: 0.85rem;
+}
+.lex-filtro-padrao { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+.lex-filtro-ajuda { color: var(--texto-mutado); }
+.lex-filtro-ocultar { display: flex; gap: 6px; }
+.lex-filtro-ocultar input {
+  border-radius: 10px;
+  border: 1px solid var(--border-forte);
+  background: var(--card);
+  color: var(--texto);
+  padding: 5px 10px;
+  font-size: 0.82rem;
+  min-width: 0;
+  width: 190px;
+}
+.lex-filtro-ocultas { flex-basis: 100%; color: var(--texto-suave); }
+.lex-oculta {
+  border: 1px solid var(--border-forte);
+  background: var(--card);
+  color: var(--texto);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.lex-leitura { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lex-leitura-item { padding: 10px 12px; border-radius: var(--raio); background: var(--bg-deep); }
+.lex-leitura-item strong { display: block; font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-mutado); margin-bottom: 4px; }
+.lex-leitura-item p { margin: 0 0 6px; line-height: 1.5; }
+.lex-interpreta { border-left: 3px solid var(--azul); }
+.lex-classe-nome { font-weight: 700; font-size: 0.98rem; color: var(--texto); }
+.lex-classe-barra { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; margin: 6px 0 8px; }
+.lex-classe-barra i { display: block; height: 100%; background: var(--lex-cor, var(--azul)); }
+.lex-classe-explica { margin: 0 0 8px; font-size: 0.86rem; line-height: 1.5; color: var(--texto-suave); }
+.lex-chip { display: inline-flex; align-items: center; gap: 2px; }
+.lex-chip-x {
+  border: 0;
+  background: transparent;
+  color: var(--texto-mutado);
+  cursor: pointer;
+  font-size: 0.8em;
+  padding: 0 2px;
+  opacity: 0;
+}
+.lex-chip:hover .lex-chip-x, .lex-chip-x:focus-visible { opacity: 1; }
+.lex-classe-exemplos { margin-top: 8px; font-size: 0.82rem; }
+.lex-classe-exemplos span { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-mutado); }
+.lex-classe-exemplos ul { margin: 4px 0 0; padding-left: 18px; color: var(--texto); }
+.lex-classe-exemplos li { margin-bottom: 3px; line-height: 1.4; }
+.lex-classe.selecionado { outline: 2px solid var(--lex-cor, var(--azul)); }
+@media (max-width: 900px) {
+  .lex-leitura { grid-template-columns: 1fr; }
+  .lex-filtro-ocultar input { width: 100%; }
+  .lex-chip-x { opacity: 1; }
+}
+
+/* Semana: assuntos explicados */
+.semana-grupos { margin-top: 14px; display: grid; gap: 8px; }
+.semana-grupos-titulo { font-size: 1rem; margin: 4px 0; }
+.semana-grupo { border: 1px solid var(--border); border-radius: var(--raio); padding: 8px 12px; background: var(--card); }
+.semana-grupo summary { display: flex; justify-content: space-between; gap: 10px; cursor: pointer; font-weight: 600; }
+.semana-grupo-pct { font-variant-numeric: tabular-nums; color: var(--texto-suave); }
+.semana-grupo p { margin: 8px 0 4px; line-height: 1.5; color: var(--texto-suave); font-size: 0.88rem; }
+.semana-grupo ul { margin: 4px 0 0; padding-left: 18px; font-size: 0.84rem; }

@@ -1,0 +1,716 @@
+{
+ "fonte": "IBGE API localidades v1, estado 51",
+ "obtido_em": "2026-11-26",
+ "municipios": [
+  {
+   "ibge": "5100102",
+   "nome": "Acorizal",
+   "slug": "acorizal"
+  },
+  {
+   "ibge": "5100250",
+   "nome": "Alta Floresta",
+   "slug": "alta-floresta"
+  },
+  {
+   "ibge": "5100300",
+   "nome": "Alto Araguaia",
+   "slug": "alto-araguaia"
+  },
+  {
+   "ibge": "5100359",
+   "nome": "Alto Boa Vista",
+   "slug": "alto-boa-vista"
+  },
+  {
+   "ibge": "5100409",
+   "nome": "Alto Garças",
+   "slug": "alto-garcas"
+  },
+  {
+   "ibge": "5100508",
+   "nome": "Alto Paraguai",
+   "slug": "alto-paraguai"
+  },
+  {
+   "ibge": "5100607",
+   "nome": "Alto Taquari",
+   "slug": "alto-taquari"
+  },
+  {
+   "ibge": "5100805",
+   "nome": "Apiacás",
+   "slug": "apiacas"
+  },
+  {
+   "ibge": "5101001",
+   "nome": "Araguaiana",
+   "slug": "araguaiana"
+  },
+  {
+   "ibge": "5101209",
+   "nome": "Araguainha",
+   "slug": "araguainha"
+  },
+  {
+   "ibge": "5101258",
+   "nome": "Araputanga",
+   "slug": "araputanga"
+  },
+  {
+   "ibge": "5101308",
+   "nome": "Arenápolis",
+   "slug": "arenapolis"
+  },
+  {
+   "ibge": "5101407",
+   "nome": "Aripuanã",
+   "slug": "aripuana"
+  },
+  {
+   "ibge": "5101704",
+   "nome": "Barra do Bugres",
+   "slug": "barra-do-bugres"
+  },
+  {
+   "ibge": "5101803",
+   "nome": "Barra do Garças",
+   "slug": "barra-do-garcas"
+  },
+  {
+   "ibge": "5101605",
+   "nome": "Barão de Melgaço",
+   "slug": "barao-de-melgaco"
+  },
+  {
+   "ibge": "5101837",
+   "nome": "Boa Esperança do Norte",
+   "slug": "boa-esperanca-do-norte"
+  },
+  {
+   "ibge": "5101852",
+   "nome": "Bom Jesus do Araguaia",
+   "slug": "bom-jesus-do-araguaia"
+  },
+  {
+   "ibge": "5101902",
+   "nome": "Brasnorte",
+   "slug": "brasnorte"
+  },
+  {
+   "ibge": "5102603",
+   "nome": "Campinápolis",
+   "slug": "campinapolis"
+  },
+  {
+   "ibge": "5102637",
+   "nome": "Campo Novo do Parecis",
+   "slug": "campo-novo-do-parecis"
+  },
+  {
+   "ibge": "5102678",
+   "nome": "Campo Verde",
+   "slug": "campo-verde"
+  },
+  {
+   "ibge": "5102686",
+   "nome": "Campos de Júlio",
+   "slug": "campos-de-julio"
+  },
+  {
+   "ibge": "5102694",
+   "nome": "Canabrava do Norte",
+   "slug": "canabrava-do-norte"
+  },
+  {
+   "ibge": "5102702",
+   "nome": "Canarana",
+   "slug": "canarana"
+  },
+  {
+   "ibge": "5102793",
+   "nome": "Carlinda",
+   "slug": "carlinda"
+  },
+  {
+   "ibge": "5102850",
+   "nome": "Castanheira",
+   "slug": "castanheira"
+  },
+  {
+   "ibge": "5103007",
+   "nome": "Chapada dos Guimarães",
+   "slug": "chapada-dos-guimaraes"
+  },
+  {
+   "ibge": "5103056",
+   "nome": "Cláudia",
+   "slug": "claudia"
+  },
+  {
+   "ibge": "5103106",
+   "nome": "Cocalinho",
+   "slug": "cocalinho"
+  },
+  {
+   "ibge": "5103254",
+   "nome": "Colniza",
+   "slug": "colniza"
+  },
+  {
+   "ibge": "5103205",
+   "nome": "Colíder",
+   "slug": "colider"
+  },
+  {
+   "ibge": "5103304",
+   "nome": "Comodoro",
+   "slug": "comodoro"
+  },
+  {
+   "ibge": "5103353",
+   "nome": "Confresa",
+   "slug": "confresa"
+  },
+  {
+   "ibge": "5103361",
+   "nome": "Conquista D'Oeste",
+   "slug": "conquista-d-oeste"
+  },
+  {
+   "ibge": "5103379",
+   "nome": "Cotriguaçu",
+   "slug": "cotriguacu"
+  },
+  {
+   "ibge": "5103403",
+   "nome": "Cuiabá",
+   "slug": "cuiaba"
+  },
+  {
+   "ibge": "5103437",
+   "nome": "Curvelândia",
+   "slug": "curvelandia"
+  },
+  {
+   "ibge": "5102504",
+   "nome": "Cáceres",
+   "slug": "caceres"
+  },
+  {
+   "ibge": "5103452",
+   "nome": "Denise",
+   "slug": "denise"
+  },
+  {
+   "ibge": "5103502",
+   "nome": "Diamantino",
+   "slug": "diamantino"
+  },
+  {
+   "ibge": "5103601",
+   "nome": "Dom Aquino",
+   "slug": "dom-aquino"
+  },
+  {
+   "ibge": "5103700",
+   "nome": "Feliz Natal",
+   "slug": "feliz-natal"
+  },
+  {
+   "ibge": "5103809",
+   "nome": "Figueirópolis D'Oeste",
+   "slug": "figueiropolis-d-oeste"
+  },
+  {
+   "ibge": "5103858",
+   "nome": "Gaúcha do Norte",
+   "slug": "gaucha-do-norte"
+  },
+  {
+   "ibge": "5103908",
+   "nome": "General Carneiro",
+   "slug": "general-carneiro"
+  },
+  {
+   "ibge": "5103957",
+   "nome": "Glória D'Oeste",
+   "slug": "gloria-d-oeste"
+  },
+  {
+   "ibge": "5104104",
+   "nome": "Guarantã do Norte",
+   "slug": "guaranta-do-norte"
+  },
+  {
+   "ibge": "5104203",
+   "nome": "Guiratinga",
+   "slug": "guiratinga"
+  },
+  {
+   "ibge": "5104500",
+   "nome": "Indiavaí",
+   "slug": "indiavai"
+  },
+  {
+   "ibge": "5104526",
+   "nome": "Ipiranga do Norte",
+   "slug": "ipiranga-do-norte"
+  },
+  {
+   "ibge": "5104542",
+   "nome": "Itanhangá",
+   "slug": "itanhanga"
+  },
+  {
+   "ibge": "5104559",
+   "nome": "Itaúba",
+   "slug": "itauba"
+  },
+  {
+   "ibge": "5104609",
+   "nome": "Itiquira",
+   "slug": "itiquira"
+  },
+  {
+   "ibge": "5104807",
+   "nome": "Jaciara",
+   "slug": "jaciara"
+  },
+  {
+   "ibge": "5104906",
+   "nome": "Jangada",
+   "slug": "jangada"
+  },
+  {
+   "ibge": "5105002",
+   "nome": "Jauru",
+   "slug": "jauru"
+  },
+  {
+   "ibge": "5105101",
+   "nome": "Juara",
+   "slug": "juara"
+  },
+  {
+   "ibge": "5105176",
+   "nome": "Juruena",
+   "slug": "juruena"
+  },
+  {
+   "ibge": "5105200",
+   "nome": "Juscimeira",
+   "slug": "juscimeira"
+  },
+  {
+   "ibge": "5105150",
+   "nome": "Juína",
+   "slug": "juina"
+  },
+  {
+   "ibge": "5105234",
+   "nome": "Lambari D'Oeste",
+   "slug": "lambari-d-oeste"
+  },
+  {
+   "ibge": "5105259",
+   "nome": "Lucas do Rio Verde",
+   "slug": "lucas-do-rio-verde"
+  },
+  {
+   "ibge": "5105309",
+   "nome": "Luciara",
+   "slug": "luciara"
+  },
+  {
+   "ibge": "5105580",
+   "nome": "Marcelândia",
+   "slug": "marcelandia"
+  },
+  {
+   "ibge": "5105606",
+   "nome": "Matupá",
+   "slug": "matupa"
+  },
+  {
+   "ibge": "5105622",
+   "nome": "Mirassol d'Oeste",
+   "slug": "mirassol-d-oeste"
+  },
+  {
+   "ibge": "5105903",
+   "nome": "Nobres",
+   "slug": "nobres"
+  },
+  {
+   "ibge": "5106000",
+   "nome": "Nortelândia",
+   "slug": "nortelandia"
+  },
+  {
+   "ibge": "5106109",
+   "nome": "Nossa Senhora do Livramento",
+   "slug": "nossa-senhora-do-livramento"
+  },
+  {
+   "ibge": "5106158",
+   "nome": "Nova Bandeirantes",
+   "slug": "nova-bandeirantes"
+  },
+  {
+   "ibge": "5106208",
+   "nome": "Nova Brasilândia",
+   "slug": "nova-brasilandia"
+  },
+  {
+   "ibge": "5106216",
+   "nome": "Nova Canaã do Norte",
+   "slug": "nova-canaa-do-norte"
+  },
+  {
+   "ibge": "5108808",
+   "nome": "Nova Guarita",
+   "slug": "nova-guarita"
+  },
+  {
+   "ibge": "5106182",
+   "nome": "Nova Lacerda",
+   "slug": "nova-lacerda"
+  },
+  {
+   "ibge": "5108857",
+   "nome": "Nova Marilândia",
+   "slug": "nova-marilandia"
+  },
+  {
+   "ibge": "5108907",
+   "nome": "Nova Maringá",
+   "slug": "nova-maringa"
+  },
+  {
+   "ibge": "5108956",
+   "nome": "Nova Monte Verde",
+   "slug": "nova-monte-verde"
+  },
+  {
+   "ibge": "5106224",
+   "nome": "Nova Mutum",
+   "slug": "nova-mutum"
+  },
+  {
+   "ibge": "5106174",
+   "nome": "Nova Nazaré",
+   "slug": "nova-nazare"
+  },
+  {
+   "ibge": "5106232",
+   "nome": "Nova Olímpia",
+   "slug": "nova-olimpia"
+  },
+  {
+   "ibge": "5106190",
+   "nome": "Nova Santa Helena",
+   "slug": "nova-santa-helena"
+  },
+  {
+   "ibge": "5106240",
+   "nome": "Nova Ubiratã",
+   "slug": "nova-ubirata"
+  },
+  {
+   "ibge": "5106257",
+   "nome": "Nova Xavantina",
+   "slug": "nova-xavantina"
+  },
+  {
+   "ibge": "5106273",
+   "nome": "Novo Horizonte do Norte",
+   "slug": "novo-horizonte-do-norte"
+  },
+  {
+   "ibge": "5106265",
+   "nome": "Novo Mundo",
+   "slug": "novo-mundo"
+  },
+  {
+   "ibge": "5106315",
+   "nome": "Novo Santo Antônio",
+   "slug": "novo-santo-antonio"
+  },
+  {
+   "ibge": "5106281",
+   "nome": "Novo São Joaquim",
+   "slug": "novo-sao-joaquim"
+  },
+  {
+   "ibge": "5106307",
+   "nome": "Paranatinga",
+   "slug": "paranatinga"
+  },
+  {
+   "ibge": "5106299",
+   "nome": "Paranaíta",
+   "slug": "paranaita"
+  },
+  {
+   "ibge": "5106372",
+   "nome": "Pedra Preta",
+   "slug": "pedra-preta"
+  },
+  {
+   "ibge": "5106422",
+   "nome": "Peixoto de Azevedo",
+   "slug": "peixoto-de-azevedo"
+  },
+  {
+   "ibge": "5106455",
+   "nome": "Planalto da Serra",
+   "slug": "planalto-da-serra"
+  },
+  {
+   "ibge": "5106505",
+   "nome": "Poconé",
+   "slug": "pocone"
+  },
+  {
+   "ibge": "5106653",
+   "nome": "Pontal do Araguaia",
+   "slug": "pontal-do-araguaia"
+  },
+  {
+   "ibge": "5106703",
+   "nome": "Ponte Branca",
+   "slug": "ponte-branca"
+  },
+  {
+   "ibge": "5106752",
+   "nome": "Pontes e Lacerda",
+   "slug": "pontes-e-lacerda"
+  },
+  {
+   "ibge": "5106778",
+   "nome": "Porto Alegre do Norte",
+   "slug": "porto-alegre-do-norte"
+  },
+  {
+   "ibge": "5106828",
+   "nome": "Porto Esperidião",
+   "slug": "porto-esperidiao"
+  },
+  {
+   "ibge": "5106851",
+   "nome": "Porto Estrela",
+   "slug": "porto-estrela"
+  },
+  {
+   "ibge": "5106802",
+   "nome": "Porto dos Gaúchos",
+   "slug": "porto-dos-gauchos"
+  },
+  {
+   "ibge": "5107008",
+   "nome": "Poxoréu",
+   "slug": "poxoreu"
+  },
+  {
+   "ibge": "5107040",
+   "nome": "Primavera do Leste",
+   "slug": "primavera-do-leste"
+  },
+  {
+   "ibge": "5107065",
+   "nome": "Querência",
+   "slug": "querencia"
+  },
+  {
+   "ibge": "5107156",
+   "nome": "Reserva do Cabaçal",
+   "slug": "reserva-do-cabacal"
+  },
+  {
+   "ibge": "5107180",
+   "nome": "Ribeirão Cascalheira",
+   "slug": "ribeirao-cascalheira"
+  },
+  {
+   "ibge": "5107198",
+   "nome": "Ribeirãozinho",
+   "slug": "ribeiraozinho"
+  },
+  {
+   "ibge": "5107206",
+   "nome": "Rio Branco",
+   "slug": "rio-branco"
+  },
+  {
+   "ibge": "5107578",
+   "nome": "Rondolândia",
+   "slug": "rondolandia"
+  },
+  {
+   "ibge": "5107602",
+   "nome": "Rondonópolis",
+   "slug": "rondonopolis"
+  },
+  {
+   "ibge": "5107701",
+   "nome": "Rosário Oeste",
+   "slug": "rosario-oeste"
+  },
+  {
+   "ibge": "5107750",
+   "nome": "Salto do Céu",
+   "slug": "salto-do-ceu"
+  },
+  {
+   "ibge": "5107248",
+   "nome": "Santa Carmem",
+   "slug": "santa-carmem"
+  },
+  {
+   "ibge": "5107743",
+   "nome": "Santa Cruz do Xingu",
+   "slug": "santa-cruz-do-xingu"
+  },
+  {
+   "ibge": "5107768",
+   "nome": "Santa Rita do Trivelato",
+   "slug": "santa-rita-do-trivelato"
+  },
+  {
+   "ibge": "5107776",
+   "nome": "Santa Terezinha",
+   "slug": "santa-terezinha"
+  },
+  {
+   "ibge": "5107263",
+   "nome": "Santo Afonso",
+   "slug": "santo-afonso"
+  },
+  {
+   "ibge": "5107800",
+   "nome": "Santo Antônio de Leverger",
+   "slug": "santo-antonio-de-leverger"
+  },
+  {
+   "ibge": "5107792",
+   "nome": "Santo Antônio do Leste",
+   "slug": "santo-antonio-do-leste"
+  },
+  {
+   "ibge": "5107875",
+   "nome": "Sapezal",
+   "slug": "sapezal"
+  },
+  {
+   "ibge": "5107883",
+   "nome": "Serra Nova Dourada",
+   "slug": "serra-nova-dourada"
+  },
+  {
+   "ibge": "5107909",
+   "nome": "Sinop",
+   "slug": "sinop"
+  },
+  {
+   "ibge": "5107925",
+   "nome": "Sorriso",
+   "slug": "sorriso"
+  },
+  {
+   "ibge": "5107859",
+   "nome": "São Félix do Araguaia",
+   "slug": "sao-felix-do-araguaia"
+  },
+  {
+   "ibge": "5107297",
+   "nome": "São José do Povo",
+   "slug": "sao-jose-do-povo"
+  },
+  {
+   "ibge": "5107305",
+   "nome": "São José do Rio Claro",
+   "slug": "sao-jose-do-rio-claro"
+  },
+  {
+   "ibge": "5107354",
+   "nome": "São José do Xingu",
+   "slug": "sao-jose-do-xingu"
+  },
+  {
+   "ibge": "5107107",
+   "nome": "São José dos Quatro Marcos",
+   "slug": "sao-jose-dos-quatro-marcos"
+  },
+  {
+   "ibge": "5107404",
+   "nome": "São Pedro da Cipa",
+   "slug": "sao-pedro-da-cipa"
+  },
+  {
+   "ibge": "5107941",
+   "nome": "Tabaporã",
+   "slug": "tabapora"
+  },
+  {
+   "ibge": "5107958",
+   "nome": "Tangará da Serra",
+   "slug": "tangara-da-serra"
+  },
+  {
+   "ibge": "5108006",
+   "nome": "Tapurah",
+   "slug": "tapurah"
+  },
+  {
+   "ibge": "5108055",
+   "nome": "Terra Nova do Norte",
+   "slug": "terra-nova-do-norte"
+  },
+  {
+   "ibge": "5108105",
+   "nome": "Tesouro",
+   "slug": "tesouro"
+  },
+  {
+   "ibge": "5108204",
+   "nome": "Torixoréu",
+   "slug": "torixoreu"
+  },
+  {
+   "ibge": "5108303",
+   "nome": "União do Sul",
+   "slug": "uniao-do-sul"
+  },
+  {
+   "ibge": "5108352",
+   "nome": "Vale de São Domingos",
+   "slug": "vale-de-sao-domingos"
+  },
+  {
+   "ibge": "5108501",
+   "nome": "Vera",
+   "slug": "vera"
+  },
+  {
+   "ibge": "5105507",
+   "nome": "Vila Bela da Santíssima Trindade",
+   "slug": "vila-bela-da-santissima-trindade"
+  },
+  {
+   "ibge": "5108600",
+   "nome": "Vila Rica",
+   "slug": "vila-rica"
+  },
+  {
+   "ibge": "5108402",
+   "nome": "Várzea Grande",
+   "slug": "varzea-grande"
+  },
+  {
+   "ibge": "5100201",
+   "nome": "Água Boa",
+   "slug": "agua-boa"
+  }
+ ]
+}

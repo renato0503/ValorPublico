@@ -19,6 +19,7 @@ sempre com a proveniencia (rede + URL) na variavel `*fonte`.
 
 from __future__ import annotations
 
+import html
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -52,7 +53,10 @@ def _sem_acento(texto: str) -> str:
 
 def limpar_texto(texto: str) -> str:
     """Remove HTML, URLs e mencoes; normaliza espacos."""
-    limpo = RE_HTML.sub(" ", texto or "")
+    # S0 (plano 22): entidades HTML (inclusive escapadas duas vezes) e sobras de "nbsp"
+    limpo = html.unescape(html.unescape(texto or "")).replace(chr(160), " ")
+    limpo = re.sub(r"&?\bnbsp\b;?", " ", limpo, flags=re.IGNORECASE)
+    limpo = RE_HTML.sub(" ", limpo)
     limpo = RE_URL.sub(" ", limpo)
     limpo = RE_MENTION.sub(" ", limpo)
     limpo = re.sub(r"\s+", " ", limpo).strip()
@@ -155,6 +159,35 @@ def cabecalho(item: ItemCorpus) -> str:
     return f"**** {variaveis}" if variaveis else "**** *sem_escopo"
 
 
+def _sem_veiculo(texto: str, veiculo: str) -> str:
+    """Tira o nome do veiculo que o agregador cola no titulo ("... - Fatos de MT")."""
+    veiculo = (veiculo or "").strip()
+    if len(veiculo) < 3:
+        return texto
+    padrao = re.compile(r"(?:\s[-|]\s)?" + re.escape(veiculo), re.IGNORECASE)
+    return re.sub(r"\s+", " ", padrao.sub(" ", texto)).strip()
+
+
+def _sem_repeticao(texto: str) -> str:
+    """Remove o titulo repetido no resumo (o agregador manda titulo + titulo).
+
+    Compara palavras sem pontuacao e aceita a segunda copia truncada.
+    """
+    palavras = [p for p in texto.split() if re.search(r"\w", p)]
+    chave = [re.sub(r"\W+", "", p.lower()) for p in palavras]
+    n = len(chave)
+    for k in range(n // 2, 4, -1):
+        resto = chave[k : 2 * k]
+        if len(resto) >= 5 and chave[: len(resto)] == resto:
+            return " ".join(palavras[:k] + palavras[k + len(resto) :])
+    # copia truncada: o resumo comeca com o titulo e termina antes dele
+    for k in range(n - 5, 4, -1):
+        resto = chave[k:]
+        if len(resto) >= 5 and chave[: len(resto) - 1] == resto[:-1]:
+            return " ".join(palavras[:k])
+    return " ".join(palavras)
+
+
 def montar_corpus(itens: list[dict]) -> list[ItemCorpus]:
     """Converte uma lista de clippings em itens de corpus.
 
@@ -164,6 +197,8 @@ def montar_corpus(itens: list[dict]) -> list[ItemCorpus]:
     corpus: list[ItemCorpus] = []
     for bruto in itens or []:
         texto = limpar_texto(bruto.get("texto_limpo") or bruto.get("texto") or "")
+        texto = _sem_veiculo(texto, str(bruto.get("veiculo") or ""))
+        texto = _sem_repeticao(texto)
         if len(texto.split()) < 5:
             continue
         corpus.append(

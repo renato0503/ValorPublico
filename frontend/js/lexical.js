@@ -228,7 +228,7 @@ export function desenharChd(elementoCards, elementoBarras, chd) {
   }
   const classes = [...chd.classes].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
 
-  // Cards com as palavras características (tamanho ∝ χ²).
+  // Cartões: nome do assunto, explicação para leigos, palavras típicas e manchetes.
   if (elementoCards) {
     elementoCards.innerHTML = `<div class="lex-chd">${classes
       .map((cl, i) => {
@@ -236,19 +236,35 @@ export function desenharChd(elementoCards, elementoBarras, chd) {
         const palavras = cl.palavras || [];
         const maxChi = Math.max(1, ...palavras.map((p) => p.chi2 || 0));
         const chips = palavras
-          .slice(0, 12)
+          .slice(0, 10)
           .map((p) => {
             const t = (p.chi2 || 0) / maxChi;
-            const fs = (12 + t * 8).toFixed(1);
-            return `<span class="lex-chip" style="font-size:${fs}px;color:${corClasse}" title="χ² ${p.chi2} · ${p.frequencia} ocorrências">${escapar(p.palavra)}</span>`;
+            const fs = (12 + t * 6).toFixed(1);
+            return `<span class="lex-chip" style="font-size:${fs}px;color:${corClasse}" title="Aparece ${p.frequencia || 0} vezes; quanto maior, mais típica do grupo">${escapar(
+              p.palavra
+            )}<button type="button" class="lex-chip-x" data-lex-ocultar-palavra="${escapar(p.palavra)}" aria-label="Ocultar ${escapar(
+              p.palavra
+            )} dos gráficos" title="Ocultar esta palavra">×</button></span>`;
           })
           .join("");
-        return `<div class="lex-classe" data-classe="${cl.classe}" tabindex="0" role="button" style="--lex-cor:${corClasse}">
+        const exemplos = (cl.exemplos || []).slice(0, 3);
+        return `<div class="lex-classe" data-classe="${cl.classe}" style="--lex-cor:${corClasse}">
           <div class="lex-classe-cab">
-            <span class="lex-classe-num">Grupo ${cl.classe}</span>
-            <span class="lex-classe-pct">${cl.pct_segmentos}% · ${cl.n_segmentos || 0} segmentos</span>
+            <span class="lex-classe-nome">${escapar(cl.nome || `Grupo ${cl.classe}`)}</span>
+            <span class="lex-classe-pct">${cl.pct_segmentos}% do noticiário</span>
           </div>
-          <div class="lex-classe-palavras">${chips || '<span class="lex-vazio">Sem palavras características.</span>'}</div>
+          <div class="lex-classe-barra" aria-hidden="true"><i style="width:${Math.min(100, cl.pct_segmentos || 0)}%"></i></div>
+          ${cl.explicacao ? `<p class="lex-classe-explica">${escapar(cl.explicacao)}</p>` : ""}
+          <div class="lex-classe-palavras" aria-label="Palavras típicas do grupo">${
+            chips || '<span class="lex-vazio">Sem palavras com assunto neste grupo.</span>'
+          }</div>
+          ${
+            exemplos.length
+              ? `<div class="lex-classe-exemplos"><span>Exemplos de manchetes</span><ul>${exemplos
+                  .map((e) => `<li>${escapar(e)}</li>`)
+                  .join("")}</ul></div>`
+              : ""
+          }
         </div>`;
       })
       .join("")}</div>`;
@@ -264,13 +280,13 @@ export function desenharChd(elementoCards, elementoBarras, chd) {
     elementoBarras,
     textoBase({
       grid: { left: 8, right: 48, top: 8, bottom: 8, containLabel: true },
-      tooltip: { trigger: "item", formatter: (p) => `${p.name}: ${p.value}% dos segmentos` },
+      tooltip: { trigger: "item", formatter: (p) => `${p.name}: ${p.value}% do noticiário do período` },
       xAxis: { type: "value", show: false, max: (v) => Math.min(100, v.max * 1.2) },
       yAxis: {
         type: "category",
         data: [...classes].reverse().map((cl) => {
-          const top = (cl.palavras || [])[0]?.palavra || `Grupo ${cl.classe}`;
-          return `Grupo ${cl.classe} · ${top}`;
+          const nome = cl.nome || `Grupo ${cl.classe}`;
+          return nome.length > 42 ? `${nome.slice(0, 40)}…` : nome;
         }),
         axisLabel: { color: cor("--texto-suave", "#cbd5e1"), fontSize: 12 },
         axisLine: { show: false },
@@ -586,11 +602,16 @@ export function desenharGrafo(elemento, grafo) {
 /* Leitura automática dos resultados + CSV + reset de zoom             */
 /* ================================================================== */
 
-function _topPalavras(classe, n = 4) {
-  return (classe?.palavras || [])
-    .slice(0, n)
-    .map((p) => escapar(p.palavra))
-    .join(", ");
+function _bloco(oQueE, comoLer, interpretacao) {
+  return `<div class="lex-leitura" id="lexLeitura">
+    <div class="lex-leitura-item"><strong>O que é</strong><p>${oQueE}</p></div>
+    <div class="lex-leitura-item"><strong>Como ler</strong><p>${comoLer}</p></div>
+    <div class="lex-leitura-item lex-interpreta"><strong>O que os dados dizem</strong>${interpretacao}</div>
+  </div>`;
+}
+
+function _nome(cl) {
+  return `<b>${escapar(cl?.nome || `Grupo ${cl?.classe}`)}</b>`;
 }
 
 export function leituraLexical(tipo, dados, chd) {
@@ -599,45 +620,55 @@ export function leituraLexical(tipo, dados, chd) {
     if (!palavras.length) return "";
     const eixo1 = [...palavras].sort((a, b) => (b.eixo1 || 0) - (a.eixo1 || 0));
     const eixo2 = [...palavras].sort((a, b) => (b.eixo2 || 0) - (a.eixo2 || 0));
-    const direita = eixo1.slice(0, 3).map((p) => escapar(p.rotulo)).join(", ");
-    const esquerda = eixo1.slice(-3).reverse().map((p) => escapar(p.rotulo)).join(", ");
-    const cima = eixo2.slice(0, 3).map((p) => escapar(p.rotulo)).join(", ");
-    const baixo = eixo2.slice(-3).reverse().map((p) => escapar(p.rotulo)).join(", ");
-    return `<div class="lex-leitura" id="lexLeitura">
-      <strong>O que este mapa mostra</strong>
-      <p>Cada ponto é uma palavra ou período. Quanto mais perto dois pontos estão, mais eles aparecem nos mesmos textos. Os pontos mais afastados da origem são os mais característicos deste escopo.</p>
-      <p><b>À direita:</b> ${direita || "—"}. <b>À esquerda:</b> ${esquerda || "—"}. <b>Acima:</b> ${cima || "—"}. <b>Abaixo:</b> ${baixo || "—"}.</p>
-      <p class="lex-como-ler">Como ler: eixo 1 (horizontal) e eixo 2 (vertical) são eixos de oposição; não são “notas”. Passe o mouse para ver as coordenadas, use a roda para zoom e arraste para navegar. Clique em “Ver dados” para a tabela completa.</p>
-    </div>`;
+    const lista = (l) => l.map((p) => escapar(p.rotulo)).join(", ") || "—";
+    return _bloco(
+      "Um mapa das palavras do noticiário. Palavras que costumam aparecer nas mesmas notícias ficam perto umas das outras; palavras de assuntos diferentes ficam longe.",
+      "Não existe “melhor” ou “pior” lado: os eixos só separam assuntos. Olhe os pontos mais afastados do centro: são os que mais diferenciam um assunto do outro. Passe o mouse para ver cada palavra; use a roda do mouse para aproximar.",
+      `<p>De um lado do mapa ficam <b>${lista(eixo1.slice(0, 3))}</b>; do outro, <b>${lista(
+        eixo1.slice(-3).reverse()
+      )}</b>. São os dois polos de assunto mais distantes no período.</p>
+       <p>No sentido vertical, <b>${lista(eixo2.slice(0, 3))}</b> se opõem a <b>${lista(
+        eixo2.slice(-3).reverse()
+      )}</b>. Use os polos para entender quais pautas a imprensa trata separadas.</p>`
+    );
   }
   if (tipo === "chd") {
-    const classes = [...(dados?.classes || [])].sort(
-      (a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0)
-    );
+    const classes = [...(dados?.classes || [])].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
     if (!classes.length) return "";
     const maior = classes[0];
-    const menor = classes[classes.length - 1];
-    return `<div class="lex-leitura" id="lexLeitura">
-      <strong>O que os grupos mostram</strong>
-      <p>O corpus foi dividido em <b>${classes.length} grupos</b> de textos que usam as mesmas palavras. O maior é o <b>Grupo ${maior.classe}</b> (${maior.pct_segmentos}% dos segmentos), com destaque para <b>${_topPalavras(maior)}</b>. O menor é o <b>Grupo ${menor.classe}</b> (${menor.pct_segmentos}%), com <b>${_topPalavras(menor)}</b>.</p>
-      <p class="lex-como-ler">Como ler: o tamanho da palavra no cartão indica o χ² (quanto mais típica do grupo). Clique em um cartão para ver os detalhes; a barra mostra a participação de cada grupo.</p>
-    </div>`;
+    const relevantes = classes.filter((c) => (c.pct_segmentos || 0) >= 8);
+    const pontuais = classes.filter((c) => (c.pct_segmentos || 0) < 2);
+    const geral = (maior.nome || "").startsWith("Noticiário geral");
+    let interp = `<p>O noticiário do período foi separado em <b>${classes.length} assuntos</b>. `;
+    interp += geral
+      ? `O maior grupo (${maior.pct_segmentos}%) é o ${_nome(maior)}: junta as notícias do dia a dia que não formam um assunto próprio. Por isso, vale olhar os outros grupos para ver as pautas específicas.</p>`
+      : `O que mais aparece é ${_nome(maior)}, com ${maior.pct_segmentos}% do noticiário.</p>`;
+    const destaques = relevantes.filter((c) => c !== maior);
+    if (destaques.length) {
+      interp += `<p>Também pesam: ${destaques.map((c) => `${_nome(c)} (${c.pct_segmentos}%)`).join("; ")}.</p>`;
+    }
+    if (pontuais.length) {
+      interp += `<p>${pontuais.length} ${pontuais.length === 1 ? "assunto é pontual" : "assuntos são pontuais"} (menos de 2% cada), como ${pontuais
+        .slice(0, 2)
+        .map(_nome)
+        .join(" e ")}: notícias que ainda não viraram pauta grande. Podem ser uma oportunidade de comunicação, ou um risco a acompanhar.</p>`;
+    }
+    return _bloco(
+      "O sistema lê os trechos de todas as notícias e junta os que usam as mesmas palavras. Cada grupo é um assunto que a imprensa tratou no período. É o método de Reinert, usado pelo IRaMuTeQ em pesquisas acadêmicas.",
+      "Cada cartão é um assunto: o nome resume o tema, a porcentagem diz quanto do noticiário ele ocupa e as palavras são as que quase só aparecem ali (quanto maior, mais típica). As manchetes de exemplo mostram notícias reais do grupo. Se uma palavra não fizer sentido, clique no × para escondê-la.",
+      interp
+    );
   }
   if (tipo === "dendrograma") {
     const pol = dados?.polilinhas || [];
     if (!pol.length) return "";
-    let maxX = -Infinity;
-    pol.forEach((p) => (p.x || []).forEach((x) => (maxX = Math.max(maxX, x))));
-    const classes = chd?.classes || [];
-    const top = classes
-      .slice(0, 3)
-      .map((c) => `Grupo ${c.classe} (${c.pct_segmentos}%)`)
-      .join(", ");
-    return `<div class="lex-leitura" id="lexLeitura">
-      <strong>O que o dendrograma mostra</strong>
-      <p>Cada linha é um ramo da árvore. Quanto mais à direita acontece a fusão (máximo ${Number(maxX).toFixed(1)}), mais diferentes são os grupos que se juntam. ${top ? `Os grupos principais são ${top}.` : ""}</p>
-      <p class="lex-como-ler">Como ler: comece pelas folhas (grupos) e siga as linhas até a fusão. Use a roda para zoom, arraste para navegar e o controle inferior para percorrer a distância.</p>
-    </div>`;
+    const classes = [...(chd?.classes || [])].sort((a, b) => (b.pct_segmentos || 0) - (a.pct_segmentos || 0));
+    const top = classes.slice(0, 3).map((c) => `${_nome(c)} (${c.pct_segmentos}%)`).join(", ");
+    return _bloco(
+      "Uma árvore genealógica dos assuntos: mostra quais grupos são “parentes” (falam de coisas parecidas) e quais são bem diferentes.",
+      "Comece pelas pontas (os grupos) e siga as linhas. Grupos que se juntam cedo, perto das pontas, são parecidos; os que só se juntam lá no fim são assuntos bem distintos. Use a roda do mouse para aproximar.",
+      top ? `<p>Os principais assuntos são ${top}. Assuntos que se encontram cedo na árvore costumam aparecer juntos no noticiário e podem ser comunicados em conjunto.</p>` : "<p>Sem grupos suficientes para interpretar.</p>"
+    );
   }
   if (tipo === "grafo") {
     const nos = dados?.nos || [];
@@ -651,13 +682,13 @@ export function leituraLexical(tipo, dados, chd) {
     const centrais = [...nos]
       .sort((a, b) => (grau.get(b.id) || 0) - (grau.get(a.id) || 0))
       .slice(0, 5)
-      .map((n) => `${escapar(n.id)} (${grau.get(n.id) || 0})`)
+      .map((n) => `<b>${escapar(n.id)}</b>`)
       .join(", ");
-    return `<div class="lex-leitura" id="lexLeitura">
-      <strong>O que a rede mostra</strong>
-      <p>Cada nó é uma palavra; as linhas ligam palavras que aparecem juntas. As mais centrais são <b>${centrais}</b>. A rede exibe as ${nos.length} palavras e ${arestas.length} conexões mais fortes.</p>
-      <p class="lex-como-ler">Como ler: quanto maior o nó, mais frequente; quanto mais conexões, mais central. Arraste os nós, use a roda para zoom e passe o mouse para destacar as vizinhas.</p>
-    </div>`;
+    return _bloco(
+      "Uma rede de palavras: cada bolinha é uma palavra e as linhas ligam palavras que aparecem juntas nas mesmas notícias.",
+      "Bolinhas maiores aparecem mais. Palavras com muitas linhas são “pontes” entre assuntos. As cores mostram grupos de palavras que andam juntas. Arraste as bolinhas e passe o mouse para destacar as vizinhas.",
+      `<p>As palavras mais conectadas do período são ${centrais}: é em torno delas que o noticiário se organiza. Uma palavra central ligada a temas negativos merece atenção; ligada a entregas e serviços, é um ativo de comunicação.</p>`
+    );
   }
   return "";
 }

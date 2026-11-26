@@ -14,6 +14,9 @@
 !backend/data/seeds/*.json
 !docs/emails/templates.json
 !firebase.json
+# dados publicos do app (mapa do IBGE, vocabulario das analises lexicais)
+!frontend/assets/geo/*.json
+!frontend/assets/dados/*.json
 *credentials*
 *serviceaccount*
 *service-account*

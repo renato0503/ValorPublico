@@ -39,6 +39,8 @@ import requests
 
 from cerra_nucleo.processing.secretarias import classificar, carregar_secretarias
 from config.settings import BASE_DIR
+from processing.governo_filtros import limpar_texto, veiculo_fora_de_mt
+from processing.municipios_mt import detectar as detectar_municipios
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -336,6 +338,11 @@ def coletar(dias: int, com_texto: int = 0, seed: dict | None = None) -> list[dic
     def registrar(item: dict) -> bool:
         if not item.get("titulo") or not item.get("url"):
             return False
+        # S0 (plano 22): veiculo de outro estado (MS) e entidades HTML no titulo
+        if veiculo_fora_de_mt(item.get("veiculo")):
+            return False
+        item["titulo"] = limpar_texto(item["titulo"])
+        item["resumo"] = limpar_texto(item.get("resumo"))
         # descarta materia de outro estado (as consultas do agregador trazem
         # "Goias.GOV", "Agencia Minas"...)
         if not contexto_mt(f"{item['titulo']} {item.get('resumo', '')} {item.get('veiculo', '')}"):
@@ -395,6 +402,7 @@ def coletar(dias: int, com_texto: int = 0, seed: dict | None = None) -> list[dic
         )
         item["secretarias"] = resultado["secretarias"]
         item["siglas"] = resultado["siglas"]
+        item["municipios"] = detectar_municipios(f"{item['titulo']} {item.get('resumo') or ''}")
         item["alvos"] = resultado["alvos"]
         item["escopo"] = resultado["escopo"]
         item["confianca_secretaria"] = resultado["confianca"]

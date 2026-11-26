@@ -96,6 +96,11 @@ def _calcular_chd(clippings: list[dict], n_classes: int, preparado) -> dict:
             "n_segmentos": cl["n_segmentos"],
             "pct_segmentos": cl["pct"],
             "palavras": cl["palavras"],
+            # plano 22: nome do assunto, explicacao para leigos e manchetes de exemplo
+            "nome": cl.get("nome", ""),
+            "tema": cl.get("tema", ""),
+            "explicacao": cl.get("explicacao", ""),
+            "exemplos": cl.get("exemplos", []),
         }
         for cl in res.get("classes", [])
     ]
@@ -234,14 +239,22 @@ def _escopos(clippings: list[dict]) -> dict[str, tuple[dict, list[dict]]]:
 
 
 def carregar_jsonl(caminho: str) -> list[dict]:
-    """Le um JSONL local do Governo sem gastar cota de leitura do Firestore."""
+    """Le a base local do Governo sem gastar cota de leitura do Firestore.
+
+    ``caminho`` pode ser um JSONL ou a pasta ``data/governo_mt`` (uniao de todas
+    as coletas, sem veiculos de fora de MT, plano 22).
+    """
     import json
 
+    from processing.governo_filtros import linhas_da_base, sanear_itens
+
+    alvo = Path(caminho)
+    if alvo.is_dir():
+        brutos, _ = sanear_itens(linhas_da_base(alvo))
+    else:
+        brutos = [json.loads(l) for l in alvo.read_text(encoding="utf-8").splitlines() if l.strip()]
     itens: list[dict] = []
-    for linha in Path(caminho).read_text(encoding="utf-8").splitlines():
-        if not linha.strip():
-            continue
-        item = json.loads(linha)
+    for item in brutos:
         itens.append(
             {
                 "agente_id": "governo-mt",
@@ -256,9 +269,18 @@ def carregar_jsonl(caminho: str) -> list[dict]:
                 "tipo": "Noticia",
                 "sentimento": item.get("sentimento", ""),
                 "url": item.get("url", ""),
+                "alvos": item.get("alvos") or [],
             }
         )
     return itens
+
+
+# Com a base do Governo, o governador e o interino ganham a analise das
+# noticias que os citam (e nao dos comentarios de redes).
+ALVOS_GOVERNO = {
+    "governador": ("governador-otaviano-pivetta", "Otaviano Pivetta (governador)"),
+    "interino": ("interino-max-russi", "Max Russi (governador interino)"),
+}
 
 
 def main() -> None:
@@ -299,6 +321,14 @@ def main() -> None:
     logger.info("Corpus carregado: %d clippings.", len(clippings))
 
     escopos = _escopos(clippings)
+    if args.jsonl:
+        for alvo, (agente_id, nome) in ALVOS_GOVERNO.items():
+            clips = [c for c in clippings if alvo in (c.get("alvos") or [])]
+            if clips:
+                escopos[f"agente-{agente_id}"] = (
+                    {"tipo": "agente", "chave": agente_id, "nome": nome, "orgao": "governo-mt"},
+                    clips,
+                )
     if args.apenas:
         alvos = {x.strip() for x in args.apenas.split(",") if x.strip()}
         escopos = {k: v for k, v in escopos.items() if k in alvos}

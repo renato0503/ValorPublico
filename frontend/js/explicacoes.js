@@ -624,6 +624,12 @@ const EXPLICACOES = {
     comoLer: "Barra mais longa = mais presença na mídia.",
     porque: "Mostra qual pasta está mais exposta no período.",
   },
+  "G-34": {
+    nome: "Notícias por município",
+    oQueE: "Os municípios de Mato Grosso citados nas notícias sobre o Governo, no período e na secretaria escolhidos.",
+    comoLer: "Quanto mais escuro o município no mapa, mais notícias o citam. Na lista, a barra mostra a parte positiva, neutra e negativa.",
+    porque: "Mostra onde a ação do Governo vira notícia e onde ela não chega; clique para abrir o clipping daquele município.",
+  },
   "T-15": {
     nome: "Notícias do Governo",
     oQueE: "As matérias mais recentes coletadas sobre o Executivo estadual.",

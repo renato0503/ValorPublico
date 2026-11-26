@@ -73,6 +73,15 @@ _STOPWORDS = {
     "esporte", "globonews", "cbn", "bandnews", "record", "sbt",
 }
 
+# Plano 22: palavras sem assunto (verbos genericos, cumprimentos de redes,
+# veiculos, meses...) do vocabulario comum app/backend (lexico.json).
+try:
+    from processing.lexico import sem_assunto as _sem_assunto
+
+    _STOPWORDS |= set(_sem_assunto())
+except Exception:  # noqa: BLE001 - sem o arquivo, segue so com a lista base
+    pass
+
 _RUIM_RE = re.compile(r"[^a-z0-9 ]")
 _HEX_RE = re.compile(r"#?[0-9a-f]{6}\b")
 _RSS_ARTEFATOS = (

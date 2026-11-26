@@ -31,6 +31,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from cerra_nucleo.core.logger import get_logger
 from config.settings import BASE_DIR
+from processing.governo_filtros import linhas_da_base, sanear_itens
 
 logger = get_logger(__name__)
 
@@ -39,18 +40,20 @@ PASTA_PADRAO = BASE_DIR / "data" / "governo_mt"
 LOTE = 400
 
 
-def carregar(caminho: Path) -> list[dict]:
+def carregar(caminho: Path | None) -> list[dict]:
+    """Base do Governo (um arquivo ou a uniao de todos), saneada."""
     itens = []
-    for linha in caminho.read_text(encoding="utf-8").splitlines():
-        if linha.strip():
-            item = json.loads(linha)
-            data = item.get("data")
-            if isinstance(data, str):
-                try:
-                    item["data"] = datetime.fromisoformat(data.replace("Z", "+00:00"))
-                except ValueError:
-                    item["data"] = None
-            itens.append(item)
+    for item in linhas_da_base(PASTA_PADRAO, caminho):
+        data = item.get("data")
+        if isinstance(data, str):
+            try:
+                item["data"] = datetime.fromisoformat(data.replace("Z", "+00:00"))
+            except ValueError:
+                item["data"] = None
+        itens.append(item)
+    itens, removidos = sanear_itens(itens)
+    if removidos:
+        logger.info("Ignorados %d itens de veiculos de fora de MT", len(removidos))
     return itens
 
 
@@ -76,6 +79,7 @@ def documento(item: dict, valores: dict | None = None) -> dict:
         "categorias": item.get("temas") or [],
         "secretarias": item.get("secretarias", []),
         "siglas": item.get("siglas", []),
+        "municipios": item.get("municipios", []),
         "alvos": item.get("alvos", []),
         "escopo": item.get("escopo", ""),
         "confianca_secretaria": item.get("confianca_secretaria", 0),
@@ -118,17 +122,11 @@ def main() -> int:
     parser.add_argument("--sem-agregados", action="store_true")
     args = parser.parse_args()
 
-    pasta = PASTA_PADRAO
-    if args.jsonl:
-        arquivo = Path(args.jsonl)
-    else:
-        arquivos = sorted(pasta.glob("noticias-*.jsonl"))
-        if not arquivos:
-            logger.error("Nada coletado. Rode coletar_governo_mt.py.")
-            return 1
-        arquivo = arquivos[-1]
-
+    arquivo = Path(args.jsonl) if args.jsonl else None
     itens = carregar(arquivo)
+    if not itens:
+        logger.error("Nada coletado. Rode coletar_governo_mt.py.")
+        return 1
     logger.info("Publicando %d notícias do Governo de MT...", len(itens))
 
     if args.dry_run:

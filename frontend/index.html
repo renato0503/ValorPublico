@@ -527,8 +527,8 @@
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
-            <h2>Clipping da Casa</h2>
-            <span class="painel-sub">Tudo o que saiu sobre a Casa. Filtre, selecione para o boletim ou exporte.</span>
+            <h2 id="clippingTitulo">Clipping da Casa</h2>
+            <span class="painel-sub" id="clippingSub">Tudo o que saiu sobre a Casa. Filtre, selecione para o boletim ou exporte.</span>
           </div>
           <div class="redes-filtros">
             <input id="filtroClipBusca" type="search" placeholder="Buscar título, veículo ou texto" aria-label="Buscar no clipping" />
@@ -538,9 +538,18 @@
             <button class="btn-texto" id="btnBaixarPdfClipping" type="button">Baixar PDF</button>
           </div>
         </div>
+        <div class="clip-filtros-gov so-governo" hidden>
+          <select id="filtroClipSecretaria" aria-label="Filtrar por secretaria"><option value="">Todas as secretarias</option></select>
+          <select id="filtroClipMunicipio" aria-label="Filtrar por município"><option value="">Todos os municípios</option></select>
+          <select id="filtroClipPessoa" aria-label="Filtrar por pessoa"><option value="">Governo inteiro</option><option value="governador">Cita o governador</option><option value="interino">Cita o interino</option></select>
+          <select id="filtroClipEscopo" aria-label="Filtrar por escopo"><option value="">Todos os escopos</option><option value="governo-estado">Sobre o Executivo</option><option value="geral-mt">Interesse geral de MT</option><option value="instituicoes-mt">Outras instituições</option></select>
+          <select id="filtroClipTom" aria-label="Filtrar por tom"><option value="">Todos os tons</option><option value="positivo">Positivo</option><option value="neutro">Neutro</option><option value="negativo">Negativo</option></select>
+          <button class="btn-texto" id="btnLimparClipping" type="button">Limpar filtros</button>
+          <button class="btn-texto" id="btnCsvClipping" type="button">Exportar CSV</button>
+        </div>
         <div class="tabela-wrapper">
           <table class="tabela">
-            <thead><tr><th>Matéria</th><th>Veículo</th><th>Data</th><th>Tipo</th><th>Sentimento</th></tr></thead>
+            <thead id="cabecalhoClipping"><tr><th>Matéria</th><th>Veículo</th><th>Data</th><th>Tipo</th><th>Sentimento</th></tr></thead>
             <tbody id="corpoClipping"></tbody>
           </table>
         </div>
@@ -747,6 +756,22 @@
         <div id="govNoticiasSecretarias" class="gov-noticias-secretarias"></div>
       </article>
     </section>
+    <section class="grade-detalhe" aria-label="Notícias por município" id="govMunicipios">
+      <article class="card painel painel-full">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Notícias por município</h2>
+            <span class="painel-sub" id="govMunicipiosSub">Onde o Governo aparece no noticiário: municípios de MT citados nas notícias. Clique para abrir o clipping filtrado.</span>
+          </div>
+          <button class="btn-info" type="button" data-explicacao="G-34" aria-label="O que é o mapa por município?">ⓘ</button>
+        </div>
+        <div class="gov-municipios">
+          <div class="grafico-area gov-mapa" id="graficoGovMunicipios" role="img" aria-label="Mapa de Mato Grosso com as notícias por município"></div>
+          <ol class="gov-mun-lista" id="govMunicipiosLista"></ol>
+        </div>
+        <p class="grafico-leitura" id="govMunicipiosLeitura"></p>
+      </article>
+    </section>
         </section>
 
         <section class="tela" id="tela-governador" data-tela="governador">
@@ -936,6 +961,7 @@
         </div>
         <div class="grafico-area" id="graficoSemanaClasses"></div>
         <div class="grafico-leitura" id="semanaLeitura"><span class="grafico-leitura-rotulo">Leitura do momento</span>O relatório da semana é gerado aos domingos, na máquina da Secom. Ele aparece aqui quando a coleta da semana terminar.</div>
+        <div class="semana-grupos" id="semanaGrupos" aria-label="Assuntos da semana explicados"></div>
       </article>
       <article class="card painel painel-full" data-semana-bloco="discurso">
         <div class="painel-cabecalho">

@@ -294,6 +294,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Clipping completo do Governo (plano 22): partes mensais compactas,
+    // geradas pelo backend. So o proprio Governo (e o admin) le; a colecao
+    // bruta agentes_publicos/*/clippings continua fechada.
+    match /clipping_governo/{docId} {
+      allow read: if usuarioEhAdmin() || orgaoDoUsuario() == 'governo-mt';
+      allow write: if false;
+    }
+
     // ------------------------------------------------------------------
     // Controle de acesso
     // ------------------------------------------------------------------

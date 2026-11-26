@@ -2,6 +2,7 @@
 import { montarGrafo } from "./grafo.js";
 import { iniciarRouter } from "./router.js";
 import * as lexical from "./lexical.js";
+import * as lexico from "./lexico.js";
 import { iniciarMotion } from "./motion.js";
 import { registrarExplicacoes } from "./explicacoes.js";
 import { ligarBarraGlobal, aoMudarFiltros } from "./filtros.js";
@@ -266,6 +267,7 @@ function alternarTema() {
   if (estado.ultimosDados) renderizar(estado.ultimosDados);
   renderizarLexical();
   renderizarCamadaDsm();
+  governo.renderizar(); // gráficos e mapa do Governo usam as cores do tema
 }
 
 
@@ -418,6 +420,17 @@ let limparGrafo = null;
 function renderizarLexical() {
   const conteudo = $("lexicalConteudo");
   if (!conteudo) return;
+  // vocabulário (palavras sem assunto + temas) antes do primeiro desenho
+  lexico.carregar().then(() => {
+    lexico.ligarControle(conteudo, () => {
+      renderizarLexical();
+      desenharNuvem();
+    });
+    _renderizarLexical(conteudo);
+  });
+}
+
+function _renderizarLexical(conteudo) {
   const rotulo = $("lexicalEscopo");
   if (rotulo) rotulo.textContent = rotuloEscopoLexical();
   if (limparGrafo) {
@@ -434,8 +447,9 @@ function renderizarLexical() {
 
 function renderizarAfc() {
   const conteudo = $("lexicalConteudo");
-  const dados = estado.lexical?.afc;
+  const dados = lexico.filtrarAfc(estado.lexical?.afc);
   conteudo.innerHTML =
+    lexico.controleHtml() +
     lexical.leituraLexical("afc", dados) +
     `<div class="lex-afc-box" id="canvasAfc" role="img" aria-label="Mapa de proximidade (AFC)"></div>` +
     `<div class="lex-controles">
@@ -449,8 +463,9 @@ function renderizarAfc() {
 
 function renderizarChd() {
   const conteudo = $("lexicalConteudo");
-  const dados = estado.lexical?.chd;
+  const dados = lexico.filtrarChd(estado.lexical?.chd);
   conteudo.innerHTML =
+    lexico.controleHtml() +
     lexical.leituraLexical("chd", dados) +
     `<div id="chdCards"></div>` +
     `<div class="lex-afc-box" id="chdBarras" role="img" aria-label="Participação de cada grupo de assuntos"></div>` +
@@ -465,8 +480,10 @@ function renderizarChd() {
 function renderizarDendrograma() {
   const conteudo = $("lexicalConteudo");
   const dados = estado.lexical?.dendrograma;
+  const chdFiltrado = lexico.filtrarChd(estado.lexical?.chd);
   conteudo.innerHTML =
-    lexical.leituraLexical("dendrograma", dados, estado.lexical?.chd) +
+    lexico.controleHtml() +
+    lexical.leituraLexical("dendrograma", dados, chdFiltrado) +
     `<div class="lex-dendro-box" id="canvasDendro" role="img" aria-label="Dendrograma dos grupos de assuntos"></div>` +
     `<div class="lex-controles">
        <span class="lex-dica-texto">Roda para zoom · arraste para navegar · barra inferior para percorrer</span>
@@ -474,13 +491,14 @@ function renderizarDendrograma() {
        <button class="btn-texto" type="button" data-lex-csv="dendrograma">Baixar CSV</button>
        <button class="btn-texto" type="button" data-lex-reset="canvasDendro">Resetar zoom</button>
      </div>`;
-  lexical.desenharDendrograma($("canvasDendro"), dados, estado.lexical?.chd);
+  lexical.desenharDendrograma($("canvasDendro"), dados, chdFiltrado);
 }
 
 function renderizarGrafo() {
   const conteudo = $("lexicalConteudo");
-  const dados = estado.lexical?.grafo;
+  const dados = lexico.filtrarGrafo(estado.lexical?.grafo);
   conteudo.innerHTML =
+    lexico.controleHtml() +
     lexical.leituraLexical("grafo", dados) +
     `<div class="lex-grafo-box" id="canvasGrafo" role="img" aria-label="Rede de palavras"></div>` +
     `<div class="lex-controles">
@@ -929,14 +947,14 @@ function renderizarNuvem(dados) {
   });
   sel.value = estadoNuvem.meses.includes(atual) ? atual : "";
   estadoNuvem.mes = sel.value;
-  desenharNuvem();
+  lexico.carregar().then(desenharNuvem);
 }
 
 function desenharNuvem() {
   const container = $("nuvemPalavras");
-  const freq = estadoNuvem.mes
-    ? estadoNuvem.porMes[estadoNuvem.mes] || {}
-    : estadoNuvem.geral;
+  const freq = lexico.filtrarFrequencias(
+    estadoNuvem.mes ? estadoNuvem.porMes[estadoNuvem.mes] || {} : estadoNuvem.geral
+  );
   container.innerHTML = "";
 
   const entradas = Object.entries(freq)
@@ -1607,26 +1625,12 @@ document.addEventListener("click", (evento) => {
     return;
   }
 
+  // o cartão já traz nome, explicação e exemplos; o clique só destaca o grupo
   const classe = evento.target.closest(".lex-classe[data-classe]");
-  if (classe) {
-    const numero = Number(classe.dataset.classe);
-    const classes = estado.lexical?.chd?.classes || [];
-    const alvo = classes.find((c) => Number(c.classe) === numero);
-    const leitura = document.getElementById("lexLeitura");
-    if (alvo && leitura) {
-      classe.parentElement
-        ?.querySelectorAll(".lex-classe")
-        .forEach((c) => c.classList.remove("selecionado"));
-      classe.classList.add("selecionado");
-      const palavras = (alvo.palavras || [])
-        .slice(0, 12)
-        .map((p) => `${p.palavra} (χ² ${p.chi2}, ${p.frequencia}×)`)
-        .join(" · ");
-      leitura.innerHTML =
-        `<strong>Grupo ${alvo.classe} — ${alvo.pct_segmentos}% dos segmentos</strong>` +
-        `<p>Este grupo reúne ${alvo.n_segmentos || 0} segmentos. As palavras mais típicas são: ${palavras}.</p>` +
-        `<p class="lex-como-ler">Clique em outro grupo para comparar. O χ² mede o quanto a palavra é característica deste grupo.</p>`;
-    }
+  if (classe && !evento.target.closest("[data-lex-ocultar-palavra]")) {
+    classe.parentElement
+      ?.querySelectorAll(".lex-classe")
+      .forEach((c) => c.classList.toggle("selecionado", c === classe));
   }
 });
 

@@ -28,6 +28,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from cerra_nucleo.core.logger import get_logger
+from processing.governo_filtros import id_da_noticia, linhas_da_base, sanear_itens
 from config.settings import BASE_DIR
 from scripts.atualizar_metricas import agregar, slugify_cidade
 
@@ -37,12 +38,10 @@ SEED = BASE_DIR / "data" / "seeds" / "governo_mt.json"
 PASTA_PADRAO = BASE_DIR / "data" / "governo_mt"
 
 
-def carregar_itens(caminho: Path) -> list[dict]:
+def carregar_itens(caminho: Path | None) -> list[dict]:
+    """Base do Governo (um arquivo ou a uniao de todos os JSONL), saneada."""
     itens = []
-    for linha in caminho.read_text(encoding="utf-8").splitlines():
-        if not linha.strip():
-            continue
-        item = json.loads(linha)
+    for item in linhas_da_base(PASTA_PADRAO, caminho):
         data = item.get("data")
         if isinstance(data, str):
             try:
@@ -51,6 +50,9 @@ def carregar_itens(caminho: Path) -> list[dict]:
                 data = None
         item["data_publicacao"] = data
         itens.append(item)
+    itens, removidos = sanear_itens(itens)
+    if removidos:
+        print(f"ignorados {len(removidos)} itens de veiculos de fora de MT")
     return itens
 
 
@@ -74,12 +76,75 @@ def como_clipping(item: dict) -> dict:
             "veiculo": item.get("veiculo", ""),
             "secretarias": item.get("secretarias", []),
             "siglas": item.get("siglas", []),
+            "municipios": item.get("municipios", []),
             "alvos": item.get("alvos", []),
             "escopo": item.get("escopo", ""),
             "confianca_secretaria": item.get("confianca_secretaria", 0),
             "origem": item.get("origem", ""),
         },
     }
+
+
+def por_municipio(itens: list[dict]) -> dict:
+    """{municipio: {total, positivo, neutro, negativo, ibge}} das noticias."""
+    from processing.municipios_mt import por_nome
+
+    ibge = {nome: m["ibge"] for nome, m in por_nome().items()}
+    saida: dict[str, dict] = {}
+    for item in itens:
+        tom = item.get("sentimento") or "neutro"
+        for nome in item.get("municipios") or []:
+            linha = saida.setdefault(
+                nome,
+                {"total": 0, "positivo": 0, "neutro": 0, "negativo": 0, "ibge": ibge.get(nome, "")},
+            )
+            linha["total"] += 1
+            if tom in ("positivo", "neutro", "negativo"):
+                linha[tom] += 1
+    return dict(sorted(saida.items(), key=lambda kv: -kv[1]["total"]))
+
+
+# Clipping completo para o app: documentos mensais compactos (so os campos da
+# tela), legiveis apenas pelo orgao governo-mt. A colecao bruta continua fechada.
+LIMITE_PARTE_BYTES = 800_000
+
+
+def partes_do_clipping(itens: list[dict], clippings: list[dict]) -> dict[str, dict]:
+    por_mes: dict[str, list[dict]] = defaultdict(list)
+    for item, clip in zip(itens, clippings):
+        data = item.get("data_publicacao")
+        mes = data.strftime("%Y-%m") if data else "sem-data"
+        por_mes[mes].append(
+            {
+                "id": id_da_noticia(item),
+                "titulo": item.get("titulo", ""),
+                "url": item.get("url", ""),
+                "veiculo": item.get("veiculo", ""),
+                "data": data.isoformat() if data else "",
+                "siglas": item.get("siglas") or [],
+                "municipios": item.get("municipios") or [],
+                "alvos": [a for a in (item.get("alvos") or []) if a in ("governador", "interino")],
+                "escopo": item.get("escopo", ""),
+                "sentimento": item.get("sentimento", "neutro"),
+                "valor": round(float(clip.get("valor_estimado") or 0), 2),
+            }
+        )
+    partes: dict[str, dict] = {}
+    for mes, lista in sorted(por_mes.items()):
+        lista.sort(key=lambda n: n["data"], reverse=True)
+        bloco: list[dict] = []
+        tamanho = 0
+        numero = 1
+        for noticia in lista:
+            peso = len(json.dumps(noticia, ensure_ascii=False).encode("utf-8")) + 4
+            if bloco and tamanho + peso > LIMITE_PARTE_BYTES:
+                partes[f"{mes}-{numero}"] = {"mes": mes, "noticias": bloco}
+                bloco, tamanho, numero = [], 0, numero + 1
+            bloco.append(noticia)
+            tamanho += peso
+        if bloco:
+            partes[f"{mes}-{numero}"] = {"mes": mes, "noticias": bloco}
+    return partes
 
 
 def aplicar_valoracao(db, clippings: list[dict]) -> None:
@@ -158,22 +223,15 @@ def _previsao(clippings: list[dict], dias: int = 30, horizonte: int = 7) -> dict
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Agregados do Governo de MT.")
-    parser.add_argument("--jsonl", default="")
+    parser.add_argument("--jsonl", default="", help="um arquivo; sem ele, a uniao de todas as coletas")
     parser.add_argument("--sem-firestore", action="store_true")
     args = parser.parse_args()
 
     seed = json.loads(SEED.read_text(encoding="utf-8"))
-    pasta = PASTA_PADRAO
-    if args.jsonl:
-        arquivo = Path(args.jsonl)
-    else:
-        arquivos = sorted(pasta.glob("noticias-*.jsonl"))
-        if not arquivos:
-            logger.error("Nada coletado ainda. Rode coletar_governo_mt.py.")
-            return 1
-        arquivo = arquivos[-1]
-
-    itens = carregar_itens(arquivo)
+    itens = carregar_itens(Path(args.jsonl) if args.jsonl else None)
+    if not itens:
+        logger.error("Nada coletado ainda. Rode coletar_governo_mt.py.")
+        return 1
     clippings = [como_clipping(i) for i in itens]
     logger.info("Clippings do Governo: %d", len(clippings))
 
@@ -191,8 +249,15 @@ def main() -> int:
             if alvo in ("governador", "interino"):
                 por_alvo[alvo].append(clipping)
 
+    municipios_geral = por_municipio(itens)
+    partes = partes_do_clipping(itens, clippings)
+
     if args.sem_firestore:
         print(f"dry-run: {len(clippings)} clippings | {len(por_pasta)} pastas | {len(por_alvo)} alvos")
+        print(f"  municipios citados: {len(municipios_geral)} | partes do clipping: {len(partes)}")
+        for chave, parte in partes.items():
+            tamanho = len(json.dumps(parte, ensure_ascii=False).encode("utf-8"))
+            print(f"    {chave}: {len(parte['noticias'])} noticias, {tamanho // 1024} KB")
         for sigla, lista in sorted(por_pasta.items(), key=lambda p: -len(p[1])):
             print(f"  {sigla:16s} {len(lista)}")
         return 0
@@ -225,6 +290,7 @@ def main() -> int:
     previsao = _previsao(clippings)
     if previsao:
         agregado["previsao"] = {"mencoes": previsao}
+    agregado["por_municipio"] = municipios_geral
     gravar("metricas_por_cidade", slugify_cidade("Governo de Mato Grosso"), agregado)
     gravar("metricas_por_casa", "governo-mt", agregado)
 
@@ -237,8 +303,14 @@ def main() -> int:
         s["sigla"]: s.get("titular", "")
         for s in seed.get("secretarias", []) + seed.get("autarquias", [])
     }
+    itens_por_pasta: dict[str, list[dict]] = defaultdict(list)
+    for item in itens:
+        for sigla in item.get("siglas") or []:
+            if sigla:
+                itens_por_pasta[sigla].append(item)
     for sigla, lista in por_pasta.items():
         pasta_doc = agregar(lista)
+        pasta_doc["por_municipio"] = por_municipio(itens_por_pasta[sigla])
         pasta_doc["atualizado_em"] = agora
         pasta_doc["orgao"] = "governo-mt"
         pasta_doc["pasta"] = {
@@ -258,6 +330,32 @@ def main() -> int:
         doc["atualizado_em"] = agora
         doc["orgao"] = "governo-mt"
         gravar("metricas_por_agente", slugs_alvo[alvo], doc)
+
+    # 4) clipping completo, por mes (substitui as partes antigas)
+    colecao_clip = db.collection("clipping_governo")
+    antigas = {d.id for d in colecao_clip.list_documents()} - {"_indice"}
+    for chave, parte in partes.items():
+        parte["orgao"] = "governo-mt"
+        parte["atualizado_em"] = agora
+        gravar("clipping_governo", chave, parte)
+    for chave in antigas - set(partes):
+        lote.delete(colecao_clip.document(chave))
+        escritas += 1
+    gravar(
+        "clipping_governo",
+        "_indice",
+        {
+            "orgao": "governo-mt",
+            "atualizado_em": agora,
+            "total": len(itens),
+            "partes": [
+                {"id": chave, "mes": parte["mes"], "total": len(parte["noticias"])}
+                for chave, parte in partes.items()
+            ],
+            "secretarias": {sigla: nomes.get(sigla, sigla) for sigla in sorted(por_pasta)},
+            "municipios": list(municipios_geral),
+        },
+    )
 
     if escritas % 400:
         lote.commit()

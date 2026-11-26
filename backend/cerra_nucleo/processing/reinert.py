@@ -47,6 +47,7 @@ saida <- args[2]
 k <- as.integer(args[3])
 min_segment_size <- as.integer(args[4])
 min_split_members <- as.integer(args[5])
+stop_path <- if (length(args) >= 6) args[6] else ""
 
 suppressWarnings(suppressMessages({
   library(rainette)
@@ -61,6 +62,15 @@ tryCatch({
   corpus <- rainette::split_segments(corpus)
   tok <- quanteda::tokens(corpus, remove_punct = TRUE)
   dtm <- quanteda::dfm(tok, tolower = TRUE)
+  # S0 (plano 22): sem palavras vazias, numeros, formas curtas e sobras de HTML
+  if (nzchar(stop_path) && file.exists(stop_path)) {
+    vazias <- readLines(stop_path, encoding = "UTF-8")
+    dtm <- quanteda::dfm_remove(dtm, pattern = vazias, valuetype = "fixed")
+  }
+  dtm <- quanteda::dfm_remove(dtm, pattern = "^[0-9]+$", valuetype = "regex")
+  dtm <- quanteda::dfm_keep(dtm, min_nchar = 3)
+  # formas presentes em mais da metade dos segmentos definem o corpus, nao o assunto
+  dtm <- quanteda::dfm_trim(dtm, max_docfreq = 0.5, docfreq_type = "prop")
   res <- rainette::rainette(
     dtm,
     k = k,
@@ -90,6 +100,39 @@ tryCatch({
 
 writeLines(jsonlite::toJSON(resultado, auto_unbox = TRUE, digits = 8), saida)
 """
+
+
+# Palavras vazias do portugues (funcionais e discursivas). O corpus chega sem
+# acento e lematizado, entao a lista e aplicada nas duas grafias.
+_STOPWORDS_PT = """
+a à ao aos as às o os um uma uns umas de do dos da das em no nos na nas num numa nuns numas
+e ou que para pra por com sem sobre entre desde até ate pelo pela pelos pelas sob após apos
+contra perante durante mediante conforme segundo como quando onde porque pois porém porem
+mas mais menos muito muita muitos muitas pouco pouca já ja ainda também tambem só so apenas
+não nao sim se seu sua seus suas meu minha nosso nossa nossos nossas dele dela deles delas
+este esta estes estas esse essa esses essas aquele aquela aqueles aquelas isto isso aquilo
+ele ela eles elas eu tu você voce vocês voces nós nos lhe lhes me te mim ti si
+ser é e foi foram era eram será sera serão serao sendo sido são sao estar está esta estão
+estao estava estavam esteve ter tem têm tinha tinham teve tiveram terá tera haver há ha
+havia fazer faz fez feito pode podem poder deve devem vai vão vao vem vêm
+outro outra outros outras todo toda todos todas cada qual quais quem qualquer mesmo mesma
+então entao assim aqui ali lá la agora hoje ontem amanhã amanha após dia dias ano anos
+sobre nesta neste nessa nesse naquele disso desse dessa deste desta nisso
+nbsp amp quot apos lt gt
+mato grosso mt governo estado estadual mil milhão milhao milhões milhoes milhoe bilhão bilhao
+"""
+
+
+def stopwords_pt() -> set[str]:
+    """Lista de palavras vazias, com e sem acento."""
+    base = set(_STOPWORDS_PT.split())
+    try:  # vocabulario comum do app (plano 22): palavras sem assunto
+        from processing.lexico import sem_assunto
+
+        base |= set(sem_assunto())
+    except Exception:  # noqa: BLE001
+        pass
+    return base | {_sem_acento(p) for p in base}
 
 
 def rscript_disponivel() -> bool:
@@ -145,7 +188,9 @@ def executar(
         corpus_path = base / "corpus.txt"
         saida = base / "saida.json"
         script = base / "reinert.R"
+        vazias = base / "stopwords.txt"
         corpus_path.write_text(corpus_txt, encoding="utf-8")
+        vazias.write_text(chr(10).join(sorted(stopwords_pt())), encoding="utf-8")
         script.write_text(SCRIPT_R, encoding="utf-8")
         try:
             proc = subprocess.run(
@@ -157,6 +202,7 @@ def executar(
                     str(k),
                     str(min_segment_size),
                     str(min_split_members),
+                    str(vazias),
                 ],
                 capture_output=True,
                 text=True,
@@ -199,13 +245,19 @@ def _montar_resultado(bruto: dict) -> dict:
     """Calcula %, chi2 e p por classe (o que o IRaMuTeQ mostra)."""
     matriz = bruto.get("matriz", [])
     formas = bruto.get("formas", [])
-    classes = bruto.get("classes", [])
+    # segmento sem classe (NA no R, p.ex. vazio apos a limpeza) vira 0 e fica de fora
+    classes = [int(c) if isinstance(c, (int, float)) else 0 for c in bruto.get("classes", [])]
     n_segmentos = len(matriz)
 
     total_forma = [0] * len(formas)
     for linha in matriz:
         for i, v in enumerate(linha):
             total_forma[i] += int(v)
+    seg_com_forma = [0] * len(formas)
+    for linha in matriz:
+        for i, v in enumerate(linha):
+            if int(v) > 0:
+                seg_com_forma[i] += 1
     total_classe: dict[int, int] = {}
     for i, linha in enumerate(matriz):
         c = classes[i] if i < len(classes) else 1
@@ -213,22 +265,30 @@ def _montar_resultado(bruto: dict) -> dict:
 
     saida_classes = []
     for classe in sorted(total_classe):
+        if classe == 0:
+            continue
         indices = [
             i for i in range(n_segmentos) if (classes[i] if i < len(classes) else 1) == classe
         ]
         pct = round(100.0 * len(indices) / n_segmentos, 2) if n_segmentos else 0.0
 
+        # Como no IRaMuTeQ: presenca da forma por segmento (nao ocorrencias) e
+        # so as formas SUPER-representadas na classe.
+        n_classe = len(indices)
         formas_classe = []
         for j, forma in enumerate(formas):
-            dentro = sum(int(matriz[i][j]) for i in indices)
+            dentro = sum(1 for i in indices if int(matriz[i][j]) > 0)
             if dentro == 0:
                 continue
-            fora = total_forma[j] - dentro
+            fora = seg_com_forma[j] - dentro
+            esperado = seg_com_forma[j] * n_classe / n_segmentos
+            if dentro <= esperado:
+                continue
             chi2, p = _chi2(
                 dentro,
                 fora,
-                total_classe[classe],
-                n_segmentos - total_classe[classe],
+                n_classe - dentro,
+                (n_segmentos - n_classe) - fora,
             )
             formas_classe.append({"f": forma, "chi2": round(chi2, 3), "p": round(p, 6)})
         formas_classe.sort(key=lambda x: -x["chi2"])
@@ -308,9 +368,9 @@ def _chi2_p(chi2: float) -> float:
 
 
 def rotulo_da_classe(item: dict) -> str:
-    """Nome amigavel da classe (a forma mais tipica, em maiusculas)."""
+    """Nome amigavel da classe: as tres formas mais tipicas ("abre · seduc · inscricoe")."""
     formas = item.get("formas") or []
     if formas:
-        return str(formas[0].get("f", "")).upper()
+        return " · ".join(str(f.get("f", "")) for f in formas[:3] if f.get("f"))
     forma = (item.get("forma") or "").strip()
     return forma.upper() if forma else f"Classe {item.get('id', '?')}"
