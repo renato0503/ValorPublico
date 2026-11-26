@@ -1,5 +1,8 @@
 # HANDOFF — Valor Público
 
+> **Atualização 26/11/2026 (noite):** produção em `valorpublico-v52` (commit `557d351`). Há trabalho **não commitado** de PDFs profissionais (`frontend/js/documentos.js`, `frontend/css/documento.css`, `frontend/tests/validar_pdfs.py`) com os botões de PDF de Semana/Governador/Governo desligados no código local. Ver `../plano/22_SPRINTS_PROMESSAS_APRESENTACAO.md` §8 antes de qualquer deploy.
+
+
 > Continuidade do app. Documento master do projeto: **`D:\Dev\CerraClipping\STATUS_PROJETO.md`**.
 > Atualizado em 23/11/2026.
 
@@ -257,3 +260,25 @@ escolhe **uma** frente e o app só mostra os dados dela.
 **Deploy feito:** regras publicadas via Rules API e Hosting `valorpublico` publicado.
 Smoke de produção (Playwright) das 4 frentes: OK, 0 erro de permissão/JS; usuários
 de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO.md`.
+
+---
+
+## 3. Sessão 26/11/2026 — Instagram do Governo e botão Atualizar
+
+### 3.1 Instagram do Governo (dados e imagens)
+
+- Recapturados **44 posts** oficiais já existentes (curtidas e comentários). Exemplos: `DgIPl9rj4Xd` 592→**901** curtidas / 42→**61** comentários; `DgILra8kU2i` 690→**1.347** / 91→**128**; `DgF-W1aCuOt` 0→**1.861** / 0→**107**.
+- Adicionados **9 posts novos** do `@govmatogrosso` com dados e imagens: `DgNeDnwuEk_`, `DgNM5usOIMI`, `DgLo4hBjome`, `DgLksAPAO1v`, `DgLVeC0BCl7`, `DgK7a0tCYyx`, `DgKztVEBgv-`, `DgKp-4okxNb` e `DgI8jKgFdV0`.
+- `docs/instagram`: **53 posts únicos**, **1.267 comentários estruturados** e **1.320 registros**; capas, prints e carrosséis em `docs/instagram/<shortcode>/`.
+- Firestore: `governo-mt` recebeu **546** documentos (33 posts + 513 comentários; 176 só de emoji descartados) e `governador-otaviano-pivetta` **433** (20 posts + 413 comentários; 165 descartados).
+- Sentimento dos **1.282** comentários do Instagram reclassificado (léxico + VADER): **85** mudanças.
+- Agregados `metricas_por_casa/governo-mt` e `metricas_por_cidade/governo-de-mato-grosso`: **54 posts**, **1.282 comentários**; `imagens_governo/instagram` com **53 miniaturas** (822 KB).
+- Sequência: `catalogar_instagram.py` → `carregar_instagram_valorpublico.py --agente …` → `atualizar_metricas_governo.py` → `publicar_miniaturas_instagram.py`.
+- Integridade: **12 OK / 0 falhas**.
+
+### 3.2 Regressão conhecida — botão Atualizar derruba a sessão
+
+- `#btnAtualizar` limpa cache/service worker e chama `location.reload()` (`frontend/js/app.js:2020-2037`).
+- No reload, `loginExplicito` volta a `false` (`app.js:2097-2101`); o bootstrap chama `sair()` mesmo com o usuário restaurado e abre o login (`app.js:2216-2222`); o handler `auth:changed` repete o gate (`app.js:1964-1968`).
+- Teste com usuário temporário (removido): antes do botão, `authUser` preenchido e botão “Sair”; depois, `authUser = null`, login visível e botão “Entrar”. Bloqueando o `app.js` no reload, o Firebase restaurou o mesmo usuário — a persistência está OK.
+- **Correção pendente:** no reload, chamar `entrarApp()` quando autenticado e remover o gate `loginExplicito`.

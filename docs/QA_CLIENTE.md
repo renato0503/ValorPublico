@@ -31,6 +31,14 @@ Produção: https://valorpublico.web.app · `valorpublico-v48`
 
 O teste de UI também foi executado: **72 capturas**, 0 overflow e 0 erro JS.
 
+## Regressão 26/11/2026 — botão Atualizar
+
+- **Sintoma:** clicar em `#btnAtualizar` (não o refresh do navegador) derruba a sessão e volta para a tela de login.
+- **Teste:** usuário temporário no site publicado; antes do clique, `authUser` preenchido e botão “Sair”; depois, `authUser = null`, login visível e botão “Entrar”.
+- **Controle:** repetindo o reload com `app.js` bloqueado, o Firebase restaurou o mesmo usuário. A persistência está OK; o app é que chama `sair()`.
+- **Causa:** o botão limpa cache e faz `location.reload()` (`js/app.js:2020-2037`); no reload `loginExplicito` volta a `false` (`app.js:2097-2101`) e o bootstrap executa `sair()` mesmo com usuário restaurado, abrindo o login (`app.js:2216-2222`; handler em `1964-1968`).
+- **Status:** diagnosticado em 26/11/2026; correção pendente.
+
 ## Scripts
 
 ```powershell
@@ -46,6 +54,7 @@ O `validar_cliente.py` cria um usuário temporário `qa.cliente.*`, executa as t
 - `#btnInvestigar` está desabilitado com “Em breve”; a funcionalidade de checagem ainda não existe.
 - Templates de e-mail seguem bloqueados pela API do Firebase (`EMAIL_TEMPLATE_UPDATE_NOT_ALLOWED`); arquivos prontos em `docs/emails/`.
 - Alertas/e-mails operacionais dependem de SMTP/webhook.
+- Botão Atualizar derruba a sessão (diagnosticado em 26/11; ver seção “Regressão 26/11/2026”).
 
 ## Últimos commits relevantes
 
