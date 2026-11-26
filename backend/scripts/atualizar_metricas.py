@@ -151,6 +151,10 @@ def _redes_sociais(clippings: list[dict], com_posts: bool = False) -> dict:
     return resultado
 
 
+# Documentos gerados so por atualizar_metricas_governo.py (plano 22).
+DOCS_DO_GOVERNO = {"governo-mt", "governo-de-mato-grosso"}
+
+
 def _slug_casa(casa: str) -> str:
     """Slug estavel da casa (orgao) para usar como id do documento."""
     return "-".join(casa.strip().lower().split())
@@ -657,6 +661,10 @@ def main() -> None:
 
 
     for cidade, clips in por_cidade.items():
+        # o Governo de MT tem dono proprio (atualizar_metricas_governo.py, base
+        # de noticias saneada); aqui entrariam tambem os posts de redes
+        if slugify_cidade(cidade) in DOCS_DO_GOVERNO:
+            continue
         agregado_cidade = agregar(clips)
         agregado_cidade["orgao"] = orgao_da_cidade(cidade)
         agentes_da_cidade = {
@@ -670,6 +678,8 @@ def main() -> None:
         )
     # Um documento por CASA (orgao): o front le so o orgao selecionado.
     for casa, clips in por_casa.items():
+        if _slug_casa(casa) in DOCS_DO_GOVERNO:
+            continue
         agregado_casa = agregar(clips)
         agregado_casa["orgao"] = orgao_da_casa(casa)
         _gravar_agregado_com_merge(

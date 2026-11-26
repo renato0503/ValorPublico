@@ -275,6 +275,13 @@ def carregar_jsonl(caminho: str) -> list[dict]:
     return itens
 
 
+ESCOPOS_DO_GOVERNO = {
+    "agente-governo-mt",
+    "cidade-governo-de-mato-grosso",
+    "agente-governador-otaviano-pivetta",
+    "agente-interino-max-russi",
+}
+
 # Com a base do Governo, o governador e o interino ganham a analise das
 # noticias que os citam (e nao dos comentarios de redes).
 ALVOS_GOVERNO = {
@@ -321,6 +328,11 @@ def main() -> None:
     logger.info("Corpus carregado: %d clippings.", len(clippings))
 
     escopos = _escopos(clippings)
+    if not args.jsonl:
+        # As analises do Governo saem da base de noticias saneada (--jsonl
+        # data/governo_mt); no Firestore entram tambem posts e comentarios.
+        for chave in ESCOPOS_DO_GOVERNO:
+            escopos.pop(chave, None)
     if args.jsonl:
         for alvo, (agente_id, nome) in ALVOS_GOVERNO.items():
             clips = [c for c in clippings if alvo in (c.get("alvos") or [])]
