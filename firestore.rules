@@ -302,6 +302,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Miniaturas dos posts do Instagram oficial do Governo (plano 22).
+    match /imagens_governo/{docId} {
+      allow read: if usuarioEhAdmin() || orgaoDoUsuario() == 'governo-mt';
+      allow write: if false;
+    }
+
     // ------------------------------------------------------------------
     // Controle de acesso
     // ------------------------------------------------------------------

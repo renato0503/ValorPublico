@@ -153,7 +153,8 @@ def _processar_item(item: dict, pasta: Path, galeria: dict, vistos: dict, use_vl
 
         return {
             "phash": processado.phash,
-            "thumb": processado.base64_160[:4000],
+            # base64 cortado vira imagem corrompida: ou inteiro, ou nada
+            "thumb": processado.base64_160 if len(processado.base64_160) <= 12000 else "",
             "id_externo": id_externo,
             "post_shortcode": post_shortcode,
             "titulo": str(meta_clip.get("titulo") or (item["clipping"].get("texto_limpo") or "").split("\n", 1)[0][:140]),

@@ -587,6 +587,7 @@
           </div>
         </div>
         <div class="grafico-area" id="graficoImagemPrevisao"></div>
+        <p class="grafico-leitura" id="imagemLeituraPrevisao"></p>
       </article>
       <article class="card painel">
         <div class="painel-cabecalho">
@@ -594,6 +595,7 @@
           <span class="painel-sub">Cada barra é um canal dividido em positivo, neutro e negativo</span>
         </div>
         <div class="grafico-area" id="graficoImagemCanais"></div>
+        <p class="grafico-leitura" id="imagemLeituraCanais"></p>
       </article>
       <article class="card painel">
         <div class="painel-cabecalho">
@@ -601,15 +603,17 @@
           <span class="painel-sub">Palavras que apareceram muito mais ou muito menos do que o normal</span>
         </div>
         <div class="grafico-area" id="graficoImagemMudou"></div>
+        <p class="grafico-leitura" id="imagemLeituraMudou"></p>
       </article>
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
             <h2>Linha do tempo da crise</h2>
-            <span class="painel-sub">Sequência dos fatos e das reações, hora a hora</span>
+            <span class="painel-sub" id="imagemCriseSub">Tom das notícias dia a dia e os dias em que as negativas saíram do normal</span>
           </div>
         </div>
         <div class="grafico-area" id="graficoImagemCrise"></div>
+        <div class="imagem-eventos" id="imagemCriseEventos"></div>
       </article>
     </section>
         </section>
@@ -983,7 +987,7 @@
         <section class="tela" id="tela-redes" data-tela="redes">
     <div class="painel-cabecalho tela-cabecalho">
       <div>
-        <h2>Redes da Casa</h2>
+        <h2 id="redesTitulo">Redes da Casa</h2>
         <span class="painel-sub">Publicações, imagens, comentários e leitura de tom</span>
       </div>
       <button class="btn-texto" id="btnBaixarPdfRedes" type="button">Baixar PDF</button>
@@ -1016,7 +1020,7 @@
           </div>
           <div class="redes-filtros">
             <input id="filtroRedesBusca" type="search" placeholder="Buscar legenda ou comentário" aria-label="Buscar nos posts" />
-            <select id="filtroRedesAgente" aria-label="Filtrar por agente"><option value="">Todos os agentes</option></select>
+            <select id="filtroRedesAgente" aria-label="Filtrar por agente"><option value="">Todas as contas</option></select>
             <select id="filtroRedesTom" aria-label="Filtrar por tom"><option value="">Todos os tons</option><option value="positivo">Positivo</option><option value="neutro">Neutro</option><option value="negativo">Negativo</option></select>
           </div>
         </div>
@@ -1027,8 +1031,8 @@
       <article class="card painel painel-full">
         <div class="painel-cabecalho">
           <div>
-            <h2>Contas oficiais da Casa</h2>
-            <span class="painel-sub">Contas institucionais conectadas: seguidores, alcance e engajamento</span>
+            <h2 id="redesContasTitulo">Contas oficiais da Casa</h2>
+            <span class="painel-sub" id="redesContasSub">Contas institucionais conectadas: seguidores, alcance e engajamento</span>
           </div>
         </div>
         <div class="redes-kpis" id="redesContas"></div>

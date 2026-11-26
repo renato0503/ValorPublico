@@ -45,7 +45,9 @@ def _timestamp_clip(c: dict) -> float:
         return 0.0
 
 
-def _redes_sociais(clippings: list[dict], com_posts: bool = False) -> dict:
+def _redes_sociais(
+    clippings: list[dict], com_posts: bool = False, limite_posts: int = 30, limite_comentarios: int = 6
+) -> dict:
     """Agregado das redes sociais (o front nunca le clippings brutos).
 
     `posts` (quando com_posts=True) traz posts do Instagram com comentários
@@ -113,10 +115,10 @@ def _redes_sociais(clippings: list[dict], com_posts: bool = False) -> dict:
             if shortcode in posts:
                 posts[shortcode]["comentarios"] = sorted(
                     lista, key=lambda item: item.get("curtidas") or 0, reverse=True
-                )[:6]
+                )[:limite_comentarios]
         posts_out = sorted(
             posts.values(), key=_timestamp_clip, reverse=True
-        )[:30]
+        )[:limite_posts]
     else:
         posts_out = []
 

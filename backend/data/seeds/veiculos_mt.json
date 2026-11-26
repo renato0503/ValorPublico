@@ -1,0 +1,27 @@
+{
+  "versao": "2026-11-26",
+  "descricao": "Classificacao inicial dos veiculos que publicam sobre o Governo de MT (plano 22). Tier 1 = maior audiencia estadual; Tier 2 = portais regionais e de nicho; os demais sao Tier 3. Editavel pela Secom. Comparacao sem acento e sem diferenciar maiusculas; 'contem' casa por trecho do nome.",
+  "tier1": [
+    "G1", "MidiaNews", "Olhar Direto", "FOLHAMAX", "Gazeta Digital", "Rdnews", "RepórterMT", "Diario de Cuiabá",
+    "Primeira Página", "HiperNotícias", "Só Notícias", "Estadão MT", "O Livre", "TV Centro América", "Globo",
+    "Agência Brasil", "UOL", "Folha de S.Paulo", "Estadão", "CNN Brasil", "Poder360", "Metrópoles"
+  ],
+  "tier2": [
+    "Fatos de Mato Grosso", "CenárioMT", "VG Notícias", "MT Econômico", "O Bom da Notícia", "Primeira Hora",
+    "LOCAL MT", "SEMANA 7", "MT Esporte", "O Mato Grosso", "Sapicuá", "MOMENTO MT", "Expressão Notícias",
+    "MT HOJE", "Veja Bem MT", "Infoverus", "Cliquef5", "Mato Grosso Mais", "JBNEWS", "PORTAL MATO GROSSO",
+    "A Tribuna MT", "Agua Boa News", "Isso É Notícia", "Única News", "CircuitoMT", "MINUTO MT", "Jornal MT Norte",
+    "Nativa News", "Midia Jur", "Cáceres Notícias", "Folha do Estado", "novidades mt", "Perrengue Mato Grosso",
+    "Agora MT", "Folha Max", "Capital FM", "CBN Cuiabá", "Rádio"
+  ],
+  "sites_do_governo_contem": [
+    "secom", "seduc", "sesp", "sinfra", "detran", "sefaz", "seplag", "setasc", "seciteci", "sejus", "seaf",
+    "secel", "sedec", "mt.gov.br", "governo de mt", "governo de mato grosso", "portal do governo", "casa civil",
+    "intermat", "mt gas", "pge-mt", "cge-mt"
+  ],
+  "outras_instituicoes_contem": [
+    "assembleia legislativa", "prefeitura", "ministerio publico", "poder judiciario", "tribunal", "tce",
+    "camara municipal", "sintep", "defensoria", "policia", "bombeiro", "paranapesquisas", "atlaspublico"
+  ],
+  "redes_contem": ["instagram", "facebook", "youtube", "tiktok", "twitter", "x.com", "threads"]
+}

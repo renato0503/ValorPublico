@@ -262,7 +262,7 @@ export function barrasDivergentes(elemento, mais, menos) {
     yAxis: {
       type: "category",
       data: rotulos,
-      axisLabel: { color: corTema("--texto-suave", "#cbd5e1"), fontSize: 12 },
+      axisLabel: { color: corTema("--texto-suave", "#cbd5e1"), fontSize: 12, interval: 0 },
       axisLine: { show: false },
       axisTick: { show: false },
     },

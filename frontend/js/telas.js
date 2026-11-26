@@ -264,6 +264,11 @@ export async function carregar(db) {
   estado.simulacao = semana.simulacao;
   estado.semana = semana.semana;
   if (estado.orgao?.slug === "governo-mt") {
+    // miniaturas de todos os posts do Instagram oficial (doc próprio, < 1 MB)
+    lerDocSeguro(db, "imagens_governo", "instagram").then((doc) => {
+      miniaturasInstagram = new Map(Object.entries(doc?.miniaturas || {}));
+      if (estado.dados) renderizarRedes(dadosDaJanela(estado.dados));
+    });
     clippingGoverno.lerFiltrosDaUrl();
     clippingGoverno.carregar(db, estado.periodo);
     const gov = await lerDiscursoAgente(
@@ -533,28 +538,30 @@ function renderizarPaginacaoClipping(total, totalPaginas) {
 }
 /* ---- V3 / Imagem da Casa ---- */
 function renderizarImagem(dados) {
+  const saldoGoverno = estado.orgao?.slug === "governo-mt";
+  const saldo = Number(saldoDeOpiniao(dados));
   cartaoKpi("kpiImagemSaldo", {
     codigo: "K-03",
-    valor: Number(saldoDeOpiniao(dados)).toFixed(0),
+    nome: saldoGoverno ? "Saldo de opinião do Governo" : undefined,
+    valor: saldo.toFixed(0),
+    sufixo: saldoGoverno ? `de −100 a +100 · ${saldo > 10 ? "mais notícias positivas que negativas" : saldo < -10 ? "mais negativas que positivas" : "equilibrado"}` : undefined,
   });
+  const governo = estado.orgao?.slug === "governo-mt";
+  const temImagem = dados.imagem_institucional !== undefined && dados.imagem_institucional !== null;
+  const imagem = temImagem ? Number(dados.imagem_institucional) : null;
   cartaoKpi("kpiImagemInstitucional", {
     codigo: "K-42",
-    valor:
-      dados.imagem_institucional !== undefined && dados.imagem_institucional !== null
-        ? Number(dados.imagem_institucional).toFixed(0)
-        : "—",
-    sufixo:
-      dados.imagem_institucional === undefined
-        ? "não calculada nesta base"
-        : "",
+    nome: governo ? "Imagem do Governo" : undefined,
+    valor: temImagem ? imagem.toFixed(0) : "—",
+    sufixo: temImagem
+      ? `de 0 a 100 · 50 = neutro · ${imagem >= 60 ? "favorável" : imagem > 45 ? "equilibrada" : imagem > 35 ? "pressionada" : "crítica"}`
+      : "não calculada nesta base",
   });
+  const temTier = dados.pct_tier1 !== undefined && dados.pct_tier1 !== null;
   cartaoKpi("kpiImagemTier1", {
     codigo: "K-06",
-    valor:
-      dados.pct_tier1 !== undefined && dados.pct_tier1 !== null
-        ? `${Number(dados.pct_tier1).toFixed(0)}%`
-        : "—",
-    sufixo: dados.pct_tier1 === undefined ? "sem tier na base" : "",
+    valor: temTier ? `${Number(dados.pct_tier1).toFixed(0)}%` : "—",
+    sufixo: temTier ? "das notícias saíram em grandes portais e jornais (Tier 1)" : "sem tier na base",
   });
   cartaoKpi("kpiImagemProjecao", {
     codigo: "K-33",
@@ -589,24 +596,116 @@ function renderizarImagem(dados) {
     );
   }
 
-  const canvas2 = document.getElementById("graficoImagemCanais");
-  if (canvas2) {
-    guardar("graficoImagemCanais", barrasEmpilhadas(canvas2, seriePorCanal(dados)));
+  const leituraPrev = document.getElementById("imagemLeituraPrevisao");
+  if (leituraPrev) {
+    const futuro = previsao.previsao || [];
+    const passado = (previsao.historico || []).slice(-7);
+    const mediaPassado = passado.length ? passado.reduce((a, h) => a + Number(h.valor || 0), 0) / passado.length : 0;
+    const mediaFuturo = futuro.length ? futuro.reduce((a, p) => a + Number(p.valor || 0), 0) / futuro.length : 0;
+    leituraPrev.innerHTML = futuro.length
+      ? `<span class="grafico-leitura-rotulo">Como ler</span>A linha cheia é o número de notícias por dia; a parte tracejada é a projeção, com a faixa do que é normal esperar. ` +
+        `Na última semana foram cerca de ${Math.round(mediaPassado)} notícias por dia; a projeção indica cerca de ${Math.round(mediaFuturo)} por dia. ` +
+        "Um dia fora da faixa é sinal de pauta nova: vale olhar o clipping daquele dia."
+      : "";
   }
 
+  const canais = seriePorCanal(dados);
+  const canvas2 = document.getElementById("graficoImagemCanais");
+  if (canvas2) {
+    // o gráfico empilhado trabalha em % de cada canal
+    const emPct = canais
+      .map((c) => {
+        const total = c.positivo + c.neutro + c.negativo;
+        const pct = (v) => (total ? Math.round((100 * v) / total) : 0);
+        return {
+          rotulo: c.rotulo.replace(/Comentários no Instagram \((@[^)]+)\)/, "Público $1"),
+          positivo: pct(c.positivo),
+          neutro: pct(c.neutro),
+          negativo: pct(c.negativo),
+          total,
+        };
+      })
+      .filter((c) => c.total > 0);
+    guardar("graficoImagemCanais", barrasEmpilhadas(canvas2, emPct));
+  }
+  const leituraCanais = document.getElementById("imagemLeituraCanais");
+  if (leituraCanais) {
+    const comTotal = canais
+      .map((c) => ({ ...c, total: c.positivo + c.neutro + c.negativo }))
+      .filter((c) => c.total >= 10);
+    const pct = (c, campo) => Math.round((100 * c[campo]) / c.total);
+    const favoravel = [...comTotal].sort((a, b) => pct(b, "positivo") - pct(a, "positivo"))[0];
+    const critico = [...comTotal].sort((a, b) => pct(b, "negativo") - pct(a, "negativo"))[0];
+    leituraCanais.innerHTML = comTotal.length
+      ? `<span class="grafico-leitura-rotulo">O que os dados dizem</span>` +
+        `O canal mais favorável é <b>${escapar(favoravel.rotulo)}</b> (${pct(favoravel, "positivo")}% positivas). ` +
+        `O mais crítico é <b>${escapar(critico.rotulo)}</b> (${pct(critico, "negativo")}% negativas). ` +
+        (() => {
+          const negMedio = (lista) => {
+            const tot = lista.reduce((a, c) => a + c.total, 0);
+            return tot ? Math.round((100 * lista.reduce((a, c) => a + c.negativo, 0)) / tot) : null;
+          };
+          const publico = negMedio(comTotal.filter((c) => /Instagram/.test(c.rotulo)));
+          const imprensa = negMedio(comTotal.filter((c) => /portais|jornais|sites e blogs/i.test(c.rotulo)));
+          if (publico === null || imprensa === null) return "";
+          return publico > imprensa
+            ? `Nos comentários do Instagram o público é mais crítico (${publico}% negativos) que a imprensa (${imprensa}%). `
+            : `Nos comentários do Instagram o público é menos crítico (${publico}% negativos) que a imprensa (${imprensa}%); a maioria das reações é neutra. `;
+        })() +
+        '<span class="leitura-nota">O tom é classificado automaticamente pelo texto de cada notícia ou comentário.</span>'
+      : "";
+  }
+
+  const mudou = dados.especificidades?.semana_vs_base || {};
   const canvas3 = document.getElementById("graficoImagemMudou");
   if (canvas3) {
-    const mais = dados.especificidades?.semana_vs_base?.mais || [];
-    const menos = dados.especificidades?.semana_vs_base?.menos || [];
-    guardar("graficoImagemMudou", barrasDivergentes(canvas3, mais, menos));
+    guardar("graficoImagemMudou", barrasDivergentes(canvas3, mudou.mais || [], mudou.menos || []));
+  }
+  const leituraMudou = document.getElementById("imagemLeituraMudou");
+  if (leituraMudou) {
+    const mais = (mudou.mais || []).slice(0, 4);
+    const menos = (mudou.menos || []).slice(0, 3);
+    leituraMudou.innerHTML = mais.length
+      ? `<span class="grafico-leitura-rotulo">O que os dados dizem</span>` +
+        `Nos últimos 7 dias ganharam espaço: ${mais
+          .map((m) => `<b>${escapar(m.palavra)}</b> (${m.semana} notícias; antes ${m.antes})`)
+          .join(", ")}. ` +
+        (menos.length ? `Perderam espaço: ${menos.map((m) => `<b>${escapar(m.palavra)}</b>`).join(", ")}. ` : "") +
+        "Barras para a direita = assunto que cresceu; para a esquerda = assunto que esfriou."
+      : "";
   }
 
   const canvas4 = document.getElementById("graficoImagemCrise");
   if (canvas4) {
     guardar(
       "graficoImagemCrise",
-      linhasSentimento(canvas4, serieSentimento(dados), {})
+      linhasSentimento(canvas4, serieSentimento(dados, 60), {})
     );
+  }
+  const eventos = document.getElementById("imagemCriseEventos");
+  if (eventos) {
+    const lista = dados.crise_eventos || [];
+    eventos.innerHTML = lista.length
+      ? `<p class="grafico-leitura"><span class="grafico-leitura-rotulo">Dias de atenção</span>` +
+        `Em média, ${lista[0].pct_normal}% das notícias do dia são negativas. Nestes dias a proporção saiu do normal; ` +
+        "veja as manchetes que puxaram o tom e se houve resposta do Governo.</p>" +
+        lista
+          .map(
+            (e) => `<details class="imagem-evento">
+              <summary><time>${escapar(String(e.data).split("-").reverse().join("/"))}</time>
+                <span><b>${e.pct_negativas}%</b> de notícias negativas (${e.negativos} de ${e.total})</span></summary>
+              <ul>${(e.manchetes || [])
+                .map(
+                  (m) =>
+                    `<li>${m.url ? `<a href="${escapar(m.url)}" target="_blank" rel="noopener">${escapar(m.titulo)}</a>` : escapar(m.titulo)} <span class="imagem-evento-veiculo">· ${escapar(m.veiculo || "")}</span></li>`
+                )
+                .join("")}</ul>
+            </details>`
+          )
+          .join("")
+      : governo
+        ? '<p class="grafico-leitura">Nenhum dia fora do normal nos últimos 60 dias.</p>'
+        : "";
   }
 }
 
@@ -1032,7 +1131,51 @@ if (typeof document !== "undefined") {
 }
 
 /* ---- V7 / Redes da Casa ---- */
+/** Cartões das contas oficiais monitoradas (coleta pública, sem conexão à API). */
+function contasMonitoradasHtml(contas) {
+  return `<div class="redes-contas">${contas
+    .map((c) => {
+      const tons = c.tom_publico || {};
+      const total = (tons.positivo || 0) + (tons.neutro || 0) + (tons.negativo || 0);
+      const pct = (v) => (total ? Math.round((100 * (v || 0)) / total) : 0);
+      const saldo = c.saldo_publico;
+      return `<article class="redes-conta">
+        <header><strong>${escapar(c.conta)}</strong><span>${escapar(c.rede || "Instagram")}</span></header>
+        <div class="redes-conta-numeros">
+          <div><b>${Number(c.posts || 0).toLocaleString("pt-BR")}</b><span>posts captados</span></div>
+          <div><b>${Number(c.comentarios || 0).toLocaleString("pt-BR")}</b><span>comentários do público</span></div>
+          <div><b>${Number(c.media_curtidas || 0).toLocaleString("pt-BR")}</b><span>curtidas por post</span></div>
+          <div><b class="${saldo > 0 ? "positivo" : saldo < 0 ? "negativo" : ""}">${saldo === null || saldo === undefined ? "—" : (saldo > 0 ? "+" : "") + saldo}</b><span>saldo do público (−100 a +100)</span></div>
+        </div>
+        <div class="redes-conta-tom" aria-label="Tom dos comentários">
+          <i class="pos" style="width:${pct(tons.positivo)}%"></i><i class="neu" style="width:${pct(tons.neutro)}%"></i><i class="neg" style="width:${pct(tons.negativo)}%"></i>
+        </div>
+        <p class="redes-conta-leg">Comentários: ${pct(tons.positivo)}% positivos · ${pct(tons.neutro)}% neutros · ${pct(tons.negativo)}% negativos${
+          c.ultimo_post ? ` · último post em ${escapar(_dataCurta(c.ultimo_post))}` : ""
+        }</p>
+        ${
+          c.destaque
+            ? `<p class="redes-conta-destaque">Post com mais curtidas (${Number(c.destaque.curtidas || 0).toLocaleString("pt-BR")}): ${
+                c.destaque.url
+                  ? `<a href="${escapar(c.destaque.url)}" target="_blank" rel="noopener">${escapar(c.destaque.texto || "abrir")}</a>`
+                  : escapar(c.destaque.texto || "")
+              }</p>`
+            : ""
+        }
+      </article>`;
+    })
+    .join("")}</div>`;
+}
+
 function renderizarRedes(dados) {
+  const governoRedes = estado.orgao?.slug === "governo-mt";
+  const tituloRedes = document.getElementById("redesTitulo");
+  if (tituloRedes) tituloRedes.textContent = governoRedes ? "Redes do Governo" : "Redes da Casa";
+  const tituloContas = document.getElementById("redesContasTitulo");
+  if (tituloContas) tituloContas.textContent = governoRedes ? "Contas oficiais monitoradas" : "Contas oficiais da Casa";
+  const subContas = document.getElementById("redesContasSub");
+  if (subContas && governoRedes)
+    subContas.textContent = "Instagram do Governo e do governador: o que publicam e como o público reage nos comentários";
   const proprias = dados.redes_proprias || {};
   const temContas = Array.isArray(proprias.conectadas) && proprias.conectadas.length > 0;
   const socialBase = dados.redes_sociais || {};
@@ -1065,6 +1208,14 @@ function renderizarRedes(dados) {
       nome: "Taxa de resposta",
       valor: `${Math.round(Number(proprias.taxa_resposta || 0))}%`,
     });
+  } else if (governoRedes && postsSociais.length) {
+    const contas = Array.isArray(social.contas) ? social.contas : [];
+    cartaoKpi("kpiRedesSeguidores", {
+      codigo: "K-10",
+      nome: "Posts monitorados",
+      valor: String(postsSociais.length),
+      sufixo: contas.length ? contas.map((c) => `${c.conta}: ${c.posts}`).join(" · ") : "Instagram oficial",
+    });
   } else {
     cartaoKpi("kpiRedesSeguidores", {
       codigo: "K-10",
@@ -1073,6 +1224,8 @@ function renderizarRedes(dados) {
       sufixo: totalRedes ? "Instagram e redes captadas" : "",
       ...(totalRedes ? {} : { semBase: true, motivo: "nenhuma publicação captada" }),
     });
+  }
+  if (!temContas) {
     cartaoKpi("kpiRedesEngajamento", {
       codigo: "K-11",
       nome: "Comentários captados",
@@ -1097,7 +1250,9 @@ function renderizarRedes(dados) {
   }
 
     const container = document.getElementById("redesContas");
-  if (container) {
+  if (container && !temContas && Array.isArray(social.contas) && social.contas.length) {
+    container.innerHTML = contasMonitoradasHtml(social.contas);
+  } else if (container) {
     const conectadas = proprias.conectadas || [];
     if (conectadas.length) {
       container.innerHTML = conectadas
@@ -1160,11 +1315,14 @@ let postsRedes = [];
 let todosPostsRedes = [];
 let postIndice = 0;
 let imagensPosts = new Map();
+let miniaturasInstagram = new Map();
 
 function _postImagem(post) {
-  const imagem = imagensPosts.get(String(post.post_shortcode || post.id_externo || ""));
+  const chave = String(post.post_shortcode || post.id_externo || "");
+  // miniatura completa primeiro; a galeria da análise de imagem vem depois
+  const imagem = miniaturasInstagram.get(chave) || imagensPosts.get(chave);
   return imagem?.thumb
-    ? `<img src="data:image/webp;base64,${escapar(imagem.thumb)}" alt="${escapar(post.titulo || "Post do Instagram")}" loading="lazy" />`
+    ? `<img src="data:image/webp;base64,${escapar(imagem.thumb)}" alt="${escapar(post.titulo || "Post do Instagram")}" decoding="async" />`
     : `<div class="post-imagem-vazia">Sem imagem analisada</div>`;
 }
 
@@ -1225,7 +1383,8 @@ function preencherFiltrosRedes(posts) {
   if (!seletor) return;
   const atual = seletor.value;
   const agentes = [...new Set(posts.map((p) => p.agente).filter(Boolean))].sort();
-  seletor.innerHTML = '<option value="">Todos os agentes</option>' + agentes.map((a) => `<option value="${escapar(a)}">${escapar(a)}</option>`).join("");
+  const todos = estado.orgao?.slug === "governo-mt" ? "Todas as contas" : "Todos os agentes";
+  seletor.innerHTML = `<option value="">${todos}</option>` + agentes.map((a) => `<option value="${escapar(a)}">${escapar(a)}</option>`).join("");
   seletor.value = agentes.includes(atual) ? atual : "";
 }
 
@@ -1378,7 +1537,13 @@ function renderizarImagensValor(dados) {
           .slice(0, 24)
           .map(
             (g) => `<figure class="galeria-item" tabindex="0">
-              ${g.thumb ? `<img class="galeria-thumb" src="data:image/webp;base64,${escapar(g.thumb)}" alt="${escapar(g.resumo || "Imagem analisada")}" loading="lazy" />` : '<div class="galeria-thumb"></div>'}
+              ${(() => {
+                const completa = miniaturasInstagram.get(String(g.post_shortcode || g.id_externo || ""))?.thumb;
+                const thumb = completa || g.thumb;
+                return thumb
+                  ? `<img class="galeria-thumb" src="data:image/webp;base64,${escapar(thumb)}" alt="${escapar(g.resumo || "Imagem analisada")}" decoding="async" />`
+                  : '<div class="galeria-thumb"></div>';
+              })()}
               <figcaption class="galeria-info">
                 <p class="galeria-tipo">${escapar(g.tipo_rotulo || g.tipo || "Imagem")}</p>
                 <p class="galeria-meta">${escapar(g.rede || "")} · ${escapar(g.data || "")}</p>
@@ -1521,10 +1686,11 @@ function renderizarTendencias(dados) {
 }
 
 /* ---- auxiliares ---- */
-function serieSentimento(dados) {
+function serieSentimento(dados, ultimosDias = 0) {
   const fonte =
     dados.serie_sentimento || dados.por_dia || dados.dias || {};
-  const dias = Object.keys(fonte).sort();
+  let dias = Object.keys(fonte).sort();
+  if (ultimosDias) dias = dias.slice(-ultimosDias);
   const item = (dia) =>
     fonte[dia] && typeof fonte[dia] === "object" ? fonte[dia] : {};
   return [
@@ -1553,12 +1719,14 @@ function seriePorCanal(dados) {
       negativo: Number(c.negativo ?? 0),
     }));
   }
-  return Object.entries(canais).map(([canal, item]) => ({
-    rotulo: canal,
-    positivo: Number(item?.positivo ?? 0),
-    neutro: Number(item?.neutro ?? 0),
-    negativo: Number(item?.negativo ?? 0),
-  }));
+  return Object.entries(canais)
+    .map(([canal, item]) => ({
+      rotulo: canal,
+      positivo: Number(item?.positivo ?? 0),
+      neutro: Number(item?.neutro ?? 0),
+      negativo: Number(item?.negativo ?? 0),
+    }))
+    .sort((a, b) => b.positivo + b.neutro + b.negativo - (a.positivo + a.neutro + a.negativo));
 }
 
 function contagemPor(lista, campo) {

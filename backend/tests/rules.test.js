@@ -99,6 +99,7 @@ async function semear() {
   await db.doc("metricas_por_casa/governo-mt").set({ total_clippings: 40, orgao: "governo-mt" });
   await db.doc("metricas_por_secretaria/saude").set({ total_clippings: 5, orgao: "governo-mt" });
   await db.doc("clipping_governo/2026-11-1").set({ mes: "2026-11", noticias: [], orgao: "governo-mt" });
+  await db.doc("imagens_governo/instagram").set({ miniaturas: {}, orgao: "governo-mt" });
   await db.doc("usuarios/uid-gov").set({
     email: "secom@exemplo.com",
     papel: "secom",
@@ -276,6 +277,10 @@ async function testarModoRestrito() {
     dbGov.collection("clipping_governo").doc("x").set({ a: 1 }));
   await devePermitir("admin lê clipping_governo", () =>
     dbAdm.collection("clipping_governo").doc("2026-11-1").get());
+  await devePermitir("Governo lê imagens_governo", () =>
+    dbGov.collection("imagens_governo").doc("instagram").get());
+  await deveBloquear("Camara NAO lê imagens_governo", () =>
+    dbCuiaba.collection("imagens_governo").doc("instagram").get());
   await deveBloquear("Governo NAO lê clippings brutos", () =>
     dbGov.collection("agentes_publicos").doc("governo-mt").collection("clippings").doc("x").get());
   await devePermitir("admin lê escopo geral", () =>

@@ -29,6 +29,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from cerra_nucleo.core.logger import get_logger
 from processing.governo_filtros import id_da_noticia, linhas_da_base, sanear_itens
+from processing import governo_imagem
+from processing.veiculos_mt import classificar as classificar_veiculo
 from config.settings import BASE_DIR
 from scripts.atualizar_metricas import agregar, slugify_cidade
 
@@ -81,6 +83,7 @@ def como_clipping(item: dict) -> dict:
             "escopo": item.get("escopo", ""),
             "confianca_secretaria": item.get("confianca_secretaria", 0),
             "origem": item.get("origem", ""),
+            "tier": classificar_veiculo(item.get("veiculo", "")).get("tier", ""),
         },
     }
 
@@ -127,6 +130,7 @@ def partes_do_clipping(itens: list[dict], clippings: list[dict]) -> dict[str, di
                 "escopo": item.get("escopo", ""),
                 "sentimento": item.get("sentimento", "neutro"),
                 "valor": round(float(clip.get("valor_estimado") or 0), 2),
+                "tier": classificar_veiculo(item.get("veiculo", "")).get("tier", ""),
             }
         )
     partes: dict[str, dict] = {}
@@ -221,6 +225,71 @@ def _previsao(clippings: list[dict], dias: int = 30, horizonte: int = 7) -> dict
     }
 
 
+# Contas oficiais no Instagram (coleta pública em docs/instagram, já no Firestore)
+CONTAS_INSTAGRAM = {
+    "governo-mt": "@govmatogrosso",
+    "governador-otaviano-pivetta": "@otavianopivetta",
+}
+
+
+def ler_instagram(db) -> list[dict]:
+    """Posts e comentários do Instagram das contas oficiais do Governo."""
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    saida = []
+    for agente_id, conta in CONTAS_INSTAGRAM.items():
+        colecao = db.collection("agentes_publicos").document(agente_id).collection("clippings")
+        for doc in colecao.where(filter=FieldFilter("plataforma", "==", "Instagram")).stream():
+            dados = doc.to_dict() or {}
+            # só o que foi coletado das próprias contas (a busca social traz
+            # perfis e páginas de terceiros, ex.: @governoms)
+            if (dados.get("metadados") or {}).get("origem_coleta") not in ("navegador", "manual"):
+                continue
+            dados["agente_id"] = agente_id
+            dados["nome_agente"] = conta
+            dados["conta"] = conta
+            saida.append(dados)
+    return saida
+
+
+def resumo_contas(instagram: list[dict]) -> list[dict]:
+    """Uma linha por conta: posts, comentários, tom do público e post de maior alcance."""
+    contas = []
+    for agente_id, conta in CONTAS_INSTAGRAM.items():
+        itens = [c for c in instagram if c.get("agente_id") == agente_id]
+        posts = [c for c in itens if c.get("tipo") == "Postagem"]
+        comentarios = [c for c in itens if c.get("tipo") == "Comentario"]
+        tons = {t: sum(1 for c in comentarios if (c.get("sentimento") or "neutro") == t) for t in ("positivo", "neutro", "negativo")}
+        curtidas = sum(int((p.get("metadados") or {}).get("curtidas") or 0) for p in posts)
+        datas = sorted(
+            (p.get("data_publicacao") for p in posts if p.get("data_publicacao")), reverse=True
+        )
+        destaque = max(posts, key=lambda p: int((p.get("metadados") or {}).get("curtidas") or 0), default=None)
+        total_tom = sum(tons.values())
+        contas.append(
+            {
+                "conta": conta,
+                "agente_id": agente_id,
+                "rede": "Instagram",
+                "posts": len(posts),
+                "comentarios": len(comentarios),
+                "curtidas": curtidas,
+                "media_curtidas": round(curtidas / len(posts)) if posts else 0,
+                "tom_publico": tons,
+                "saldo_publico": round(100 * (tons["positivo"] - tons["negativo"]) / total_tom) if total_tom else None,
+                "ultimo_post": datas[0] if datas else None,
+                "destaque": {
+                    "texto": (destaque.get("texto_limpo") or "")[:160],
+                    "url": destaque.get("url") or "",
+                    "curtidas": int((destaque.get("metadados") or {}).get("curtidas") or 0),
+                }
+                if destaque
+                else None,
+            }
+        )
+    return contas
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Agregados do Governo de MT.")
     parser.add_argument("--jsonl", default="", help="um arquivo; sem ele, a uniao de todas as coletas")
@@ -281,6 +350,27 @@ def main() -> int:
 
     # 1) o Governo do Estado como um todo (cidade) + a Casa
     agregado = agregar(clippings)
+    # Tela "Imagem": índice, Tier 1, canais, o que mudou e picos negativos (plano 22)
+    from scripts.atualizar_metricas import _redes_sociais
+
+    instagram = ler_instagram(db)
+    comentarios_ig = [c for c in instagram if c.get("tipo") == "Comentario"]
+    agregado.update(governo_imagem.imagem_e_canais(itens, comentarios_ig))
+    agregado["especificidades"] = {"semana_vs_base": governo_imagem.semana_vs_base(itens)}
+    agregado["crise_eventos"] = governo_imagem.eventos_crise(itens)
+    agregado["negativos_media_dia"] = governo_imagem.media_negativos(itens)
+    # Tela "Redes": Instagram oficial do Governo e do governador
+    redes = _redes_sociais(instagram, com_posts=True, limite_posts=80, limite_comentarios=8)
+    redes["contas"] = resumo_contas(instagram)
+    redes["fonte"] = "Instagram público de @govmatogrosso e @otavianopivetta (posts e comentários)"
+    agregado["redes_sociais"] = redes
+    logger.info(
+        "Imagem %s | Tier 1 %s%% | Instagram: %d posts, %d comentários",
+        agregado.get("imagem_institucional"),
+        agregado.get("pct_tier1"),
+        sum(1 for c in instagram if c.get("tipo") == "Postagem"),
+        len(comentarios_ig),
+    )
     agregado["atualizado_em"] = agora
     agregado["escopo"] = "governo-estado"
     agregado["orgao"] = "governo-mt"
@@ -359,6 +449,14 @@ def main() -> int:
 
     if escritas % 400:
         lote.commit()
+
+    # `set(merge=True)` junta mapas e deixava chaves velhas (ex.: canais de
+    # gravações antigas). `update` substitui cada campo do Governo por inteiro.
+    for colecao, doc_id in (
+        ("metricas_por_casa", "governo-mt"),
+        ("metricas_por_cidade", slugify_cidade("Governo de Mato Grosso")),
+    ):
+        db.collection(colecao).document(doc_id).update(dict(agregado))
 
     logger.info("Documentos gravados: %d", escritas)
     logger.info(
