@@ -370,9 +370,15 @@ de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO
    sessão real e ver o resultado na tela.
 2. Decidir se o resultado da simulação entra no **PDF de Personas** (hoje sai sem o painel).
 3. Botão Atualizar continua derrubando a sessão (§3.2).
-4. **API de personas respondendo 500** — o dono desligou o plano **Blaze** em 26/11/2026 e o Cloud Run
-   deixou de servir (simulador e chat fora do ar). Decidir: religar o Blaze com alerta de orçamento,
+4. **API de personas respondendo 500 — DESLIGADA DE PROPÓSITO.** O dono desligou o plano **Blaze** em
+   26/11/2026 e o Cloud Run deixou de servir (simulador e chat fora do ar). **Decisão do dono em
+   26/11/2026: manter desligado até resolver a venda** — não migrar agora, não religar o Blaze.
+   Quando o negócio for decidido, as opções continuam: religar o Blaze com alerta de orçamento,
    migrar para **Cloud Functions do Firebase (Spark)** (a RAG pesa 0,3 MB) ou Render Free.
+   ⚠️ Consequência para a demonstração: o botão "Avaliar com as 12 personas" fica habilitado
+   (a meta `personas-api` ainda aponta para a URL) e a falha aparece como erro genérico. Se for
+   mostrar o painel a um cliente antes de resolver a venda, desligar o botão com mensagem honesta
+   é a correção de 10 minutos (ou remover a meta do `frontend/index.html`).
 
 ### 3.6 Estratégia de compras públicas (26/11/2026) — pesquisa registrada
 

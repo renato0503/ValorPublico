@@ -407,7 +407,10 @@ checagem de terceiro (art. 10-D).
    decidir a ordem: 27001 primeiro.
 4. 👤 **Decidir o escopo do módulo "prova de atingimento"** (item 6.2(b) da DN TCU
    134/2013): quanto disso entra no produto e quanto vira serviço.
-5. 👤 **API de personas fora do ar** (Cloud Run exige Blaze; o plano Blaze foi
-   desligado em 26/11/2026 e a API responde 500). Decidir: religar o Blaze com
-   alerta de orçamento, migrar para Cloud Functions do Firebase (Spark; a RAG pesa
-   0,3 MB) ou Render Free.
+5. 👤 **API de personas fora do ar — decisão tomada.** O plano **Blaze** foi desligado em 26/11/2026
+   e o Cloud Run da `personas-api` responde **500** (simulador de discurso e chat com as personas).
+   **Decisão do dono: manter desligado até resolver a venda** — não religar o Blaze, não migrar
+   agora. Quando o negócio for decidido, as opções continuam sendo: religar o Blaze com alerta de
+   orçamento, migrar para **Cloud Functions do Firebase (Spark)** (a RAG pesa 0,3 MB) ou Render Free.
+   Antes de qualquer demonstração a um cliente: desligar o botão com mensagem honesta (ou remover a
+   meta `personas-api` do `frontend/index.html`), para não haver clique que só devolve erro.
