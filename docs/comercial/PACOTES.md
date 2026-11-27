@@ -11,6 +11,7 @@
 | **Clipping** | edição diária (V1), clipping oficial (V2), boletim/newsletter (R-07), relatório de gestão (R-06) | Secom |
 | **Comunicação** | + Imagem da Casa (V3), contas institucionais (V7), análise lexical da Casa (V6), discurso institucional, tendências (V9) | Secom + Presidência/Mesa |
 | **Transparência & Ouvidoria** | + Ouvidoria (V5), WhatsApp da Ouvidoria, dados abertos (R-09), conformidade de publicidade (V8), relatório de SLA (R-08) | Ouvidoria + Controle Interno + Transparência |
+| **Prova de atingimento** (novo) | + relatório de atingimento da publicidade institucional (item 6.2(b) da DN TCU 134/2013), comprovação de execução da veiculação (art. 10-D do Decreto 6.555/2008) e trilha de auditoria | Controle Interno + Secom + auditoria do TCE |
 
 ## 2. Documentos que precisam existir antes da 1ª reunião
 
@@ -56,3 +57,26 @@
 - Cobertura total de veículos.
 - Substituir a assessoria jurídica na análise de conformidade: o alerta cita o
   artigo e pede revisão humana.
+- **Exclusividade de mercado**: não é o que sustenta a venda — a via é pregão
+  (vencendo por prova de conceito) ou adesão a ata.
+
+## 7. Por qual via o governo compra (ver `ESTRATEGIA_COMPRAS_GOVERNO.md`)
+
+| Via | Quando cabe | Documento que o órgão precisa |
+|---|---|---|
+| Pregão eletrônico | padrão; vence por mérito e prova de conceito | Edital + TR (`TR.md`), ETP (`ETP.md`), pesquisa de preços (`PESQUISA_PRECOS.md`), atestado, amostra |
+| Dispensa por valor (art. 75, II) | até R$ 65.492,11 (2026) | aviso de 3 dias úteis + cotação + pesquisa de preços |
+| Adesão a ARP federal (art. 86) | se houver item do CATSER em ata federal | requerimento de adesão + vantagem demonstrada |
+| Inexigibilidade (art. 74, I) | só se o Estado já for dependente da solução | atestado de exclusividade + ETP comparando alternativas + parecer |
+
+**Três alavancas mais fortes que exclusividade:**
+1. **Margem de preferência do art. 26, §2º** — serviço nacional com desenvolvimento
+   no País = 20% de vantagem.
+2. **Contrato de eficiência (art. 39)** — remuneração pela economia comprovada.
+3. **A obrigação do TCU (item 6.2(b) da DN 134/2013)** — o relatório de atingimento
+   vira entregável contratual (RF-13/RF-14 do TR) e justifica preço acima da mediana
+   do clipping.
+
+Habilitação(state) mínima para MT: Cadastro Geral de Fornecedores do Estado,
+cadastro no SIAG, SICAF, 9 declarações (incluindo ME/EPP) e 2 atestados de
+capacidade técnica.

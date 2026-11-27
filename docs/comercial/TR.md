@@ -29,6 +29,9 @@ Ver `docs/comercial/ETP.md`.
 | RF-10 | Log de auditoria de acesso e exportação | consulta por usuário, data e tipo |
 | RF-11 | Dados abertos (CSV/JSON) dos indicadores públicos | atualização mensal |
 | RF-12 | Exportação total dos dados ao final do contrato | CSV/JSON + dicionário de campos |
+| RF-13 | **Relatório de atingimento da publicidade institucional**: demonstração dos principais resultados das ações de publicidade e propaganda (item 6.2(b) da Decisão Normativa TCU 134/2013), com classificação institucional/legal/mercadológica/utilidade pública, beneficiários e custos | PDF/CSV no formato do Quadro A.6.2 (Portaria TCU 90/2014), com ementa legal ao pé |
+| RF-14 | **Comprovação de execução da veiculação**: reconciliação entre pedido de inserção, veiculação realizada, audiência/tiragem, tabela de preços, descontos negociados e nota fiscal (rol do art. 10-D do Decreto 6.555/2008, quando aplicável) | relatório por campanha, com % de veiculações comprovadas |
+| RF-15 | Trilha de auditoria imutável de acessos e exportações (quem viu/exportou o quê, quando) | consulta por usuário, data e tipo; registro não editável |
 
 ## 4. Requisitos não funcionais
 
@@ -42,6 +45,7 @@ Ver `docs/comercial/ETP.md`.
 | RNF-06 | Dados hospedados em projeto dedicado da Casa, com backup |
 | RNF-07 | Acessibilidade eMAG (Modelo de Acessibilidade em Governo Eletrônico) |
 | RNF-08 | Suporte em horário comercial, com canal registrado |
+| RNF-09 | Certificação **ISO/IEC 27001** (ou equivalente) para o ambiente em nuvem, exigida com justificativa prévia — cf. IN SGD/ME 94/2022, item 4.2.1 |
 
 ## 5. Modelo de execução
 
@@ -97,5 +101,32 @@ acompanhamento com o relatório de SLA.
 ## 13. Sanções
 
 Conforme arts. 155–163 da Lei 14.133/2021.
+
+## 14. Prestação de contas do alcance (o que o TCU pede)
+
+O contrato inclui a prestação de contas do **atingimento** das campanhas
+institucionais da Casa, nos termos do item **6.2(b) da Decisão Normativa TCU
+134/2013** ("demonstração dos principais resultados das ações de publicidade e
+propaganda para os objetivos da unidade jurisdicionada") e do item 9.4(b) do
+**Acórdão 39/2003-Plenário** (atingimento dos objetivos previstos).
+
+- O entregável é o **relatório de atingimento** (RF-13), no formato do **Quadro
+  A.6.2 – Despesas com Publicidade** (Portaria TCU 90/2014), integrando os demais
+  documentos exigidos no Relatório de Gestão (Portarias TCU 59/2017 e 65/2018).
+- A **comprovação da execução** da veiculação (RF-14) segue o rol do art. 10-D do
+  Decreto 6.555/2008 (NF da agência, valor devido, tabela de preços, descontos
+  negociados, pedidos de inserção e, sempre que possível, relatório de checagem
+  por empresa independente) — ver Acórdão 2.062/2006-Plenário, item 9.1.4.
+- **Rótulo permanente:** o que a plataforma produz a partir de IA (análise de
+  sentimento, simulação de personas, discurso) é **hipótese de leitura**, não
+  pesquisa de opinião; a aferição de alcance apoia-se nos dados de veiculação.
+- A Casa pode acrescentar **parâmetro comparativo** (mediana do setor, outros
+  órgãos de mesmo porte) para que o atingimento seja aferível.
+
+## 15. Onde esta estratégia está registrada
+
+Via de contratação, habilitação, certificações, benchmarks de preço e plano de
+90 dias: `docs/comercial/ESTRATEGIA_COMPRAS_GOVERNO.md`.
+Pesquisa de preços e memória de cálculo: `docs/comercial/PESQUISA_PRECOS.md`.
 
 Local e data: `[...]` — Responsável: `[nome, cargo]`

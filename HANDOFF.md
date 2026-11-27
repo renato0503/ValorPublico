@@ -370,3 +370,24 @@ de teste removidos. Plano completo: `..\plano\20_SEPARACAO_FRENTES_VALOR_PUBLICO
    sessão real e ver o resultado na tela.
 2. Decidir se o resultado da simulação entra no **PDF de Personas** (hoje sai sem o painel).
 3. Botão Atualizar continua derrubando a sessão (§3.2).
+4. **API de personas respondendo 500** — o dono desligou o plano **Blaze** em 26/11/2026 e o Cloud Run
+   deixou de servir (simulador e chat fora do ar). Decidir: religar o Blaze com alerta de orçamento,
+   migrar para **Cloud Functions do Firebase (Spark)** (a RAG pesa 0,3 MB) ou Render Free.
+
+### 3.6 Estratégia de compras públicas (26/11/2026) — pesquisa registrada
+
+- `docs/comercial/ESTRATEGIA_COMPRAS_GOVERNO.md` (novo): vias de venda, o que sustenta (e o que não
+  sustenta) a inexigibilidade, certificações e registros priorizados, a **obrigação do TCU sobre o
+  atingimento de público-alvo**, regras de MT, 11 benchmarks de preço e plano de 90 dias.
+- **O TCU cria o produto:** item **6.2(b) da Decisão Normativa TCU 134/2013** — "demonstração dos
+  principais resultados das ações de publicidade e propaganda" — mais o **Acórdão 39/2003-Plenário,
+  item 9.4(b)** ("atingimento dos objetivos previstos") e o **Acórdão 2.062/2006-Plenário, item 9.1.4**
+  ("mecanismos efetivos de prestação de contas"). O decreto é da **Presidência** (6.555/2008, art. 10-D),
+  não do TCU, e vale só para o Executivo federal. Nenhuma IN do TCU trata do tema.
+- **Consequência no produto e nos documentos de venda:** novos requisitos **RF-13/14/15** e nova seção
+  **§14 "Prestação de contas do alcance"** no `TR.md`; novo pacote **"Prova de atingimento"** e §7
+  "vias de compra" no `PACOTES.md`; §§8–9 do `PESQUISA_PRECOS.md` com 11 contratos reais e a memória de
+  cálculo do art. 3º da IN 65.
+- **Venda:** pregão (padrão) → adesão a ARP federal → dispensa por valor (≤ R$ 65.492,11). Inexigibilidade
+  é frágil para SaaS; as alavancas reais são a **margem de preferência do art. 26, §2º (20%)**, o
+  **contrato de eficiência (art. 39)** e a própria obrigação do TCU.
